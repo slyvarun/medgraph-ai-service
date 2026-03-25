@@ -36,30 +36,39 @@ def search_graph(entity_name):
             print(f"⚠️ No graph data found for: {entity_name}")
         return data
 
+import time
+
 def ask_agent(question, long_doc=""):
-    try:
-        # Phase 1: Entity Extraction
-        intent_res = client.models.generate_content(
-            model=MODEL_ID,
-            contents=f"Extract the medicine name from: '{question}'. Reply ONLY with the name."
-        )
-        target = intent_res.text.strip()
-        
-        # Phase 2: Graph Retrieval
-        facts = search_graph(target)
-        
-        # Phase 3: Synthesis
-        final_prompt = f"""
-        You are MedGraph Nexus (Gemini 3). Use these clinical facts to answer.
-        GRAPH_DATA: {facts}
-        DOC_DATA: {long_doc}
-        USER_QUERY: {question}
-        """
-        
-        response = client.models.generate_content(model=MODEL_ID, contents=final_prompt)
-        return response.text
-    except Exception as e:
-        # Fallback to a guaranteed stable model if Gemini 3 is in maintenance
-        print(f"Handled Redirect: {e}")
-        stable_res = client.models.generate_content(model="gemini-2.5-flash", contents=question)
-        return f"[Fallback Mode] {stable_res.text}"
+    # List of models to try in order of preference
+    models_to_try = ["gemini-3-flash-preview", "gemini-2.0-flash", "gemini-1.5-flash"]
+    
+    for model_id in models_to_try:
+        try:
+            # 1. Extraction Phase
+            intent_res = client.models.generate_content(
+                model=model_id,
+                contents=f"Extract the medicine name from: '{question}'. Reply ONLY with the name."
+            )
+            target = intent_res.text.strip()
+            
+            # 2. Graph Retrieval
+            facts = search_graph(target)
+            
+            # 3. Synthesis Phase
+            final_prompt = f"""
+            You are MedGraph Nexus. 
+            CONTEXT: {facts if facts else "No specific graph data found."}
+            QUERY: {question}
+            """
+            
+            response = client.models.generate_content(model=model_id, contents=final_prompt)
+            return response.text
+            
+        except Exception as e:
+            if "503" in str(e) or "UNAVAILABLE" in str(e):
+                print(f"⚠️ {model_id} busy, failing over to next model...")
+                continue # Try the next model in the list
+            else:
+                return f"Nexus Engine Error: {str(e)}"
+    
+    return "All Nexus engines are currently at capacity. Please standby for 30 seconds."
