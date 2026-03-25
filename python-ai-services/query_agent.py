@@ -7,7 +7,7 @@ load_dotenv()
 
 # 2026 Production Config
 # Using the stable alias or the specific preview ID
-MODEL_ID = "gemini-2.5-flash" 
+MODEL_ID = "gemini-1.5-flash" 
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 driver = GraphDatabase.driver(
