@@ -16,17 +16,25 @@ driver = GraphDatabase.driver(
 )
 
 def search_graph(entity_name):
-    """Fuzzy Case-Insensitive Search on 50k nodes"""
+    """Deep search across 50k nodes with case-insensitivity"""
     with driver.session() as session:
+        # We search across Manufacturer, Category, AND Name
         query = """
         MATCH (d:Drug)
-        WHERE toLower(d.name) CONTAINS toLower($name)
-        OR toLower(d.indication) CONTAINS toLower($name)
-        RETURN d.name as n, d.manufacturer as m, d.indication as i, d.strength as s
-        LIMIT 5
+        WHERE toLower(d.manufacturer) CONTAINS toLower($name)
+        OR toLower(d.category) CONTAINS toLower($name)
+        OR toLower(d.name) CONTAINS toLower($name)
+        RETURN d.name as name, d.manufacturer as maker, d.indication as treats, d.category as cat
+        LIMIT 10
         """
         results = session.run(query, name=entity_name)
-        return [f"Match: {r['n']} ({r['s']}) by {r['m']} for {r['i']}" for r in results]
+        
+        # Format for Gemini to understand clearly
+        data = [f"Medicine: {r['name']} | Maker: {r['maker']} | Category: {r['cat']} | Used for: {r['treats']}" for r in results]
+        
+        if not data:
+            print(f"⚠️ No graph data found for: {entity_name}")
+        return data
 
 def ask_agent(question, long_doc=""):
     try:
