@@ -45,6 +45,19 @@
     const input = document.getElementById('user-input');
     const chat = document.getElementById('chat-box');
     const query = input.value;
+    if (data.includes("429") || data.includes("exhausted")) {
+    let seconds = 30;
+    const btn = document.querySelector('button');
+    btn.disabled = true;
+    const interval = setInterval(() => {
+        btn.innerText = `RETRY IN ${seconds--}s`;
+        if (seconds < 0) {
+            clearInterval(interval);
+            btn.disabled = false;
+            btn.innerText = "ASK";
+        }
+    }, 1000);
+}
     if(!query) return;
 
     // User message (keep it simple)
