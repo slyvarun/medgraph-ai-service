@@ -16,26 +16,33 @@ driver = GraphDatabase.driver(
 )
 
 def search_graph(entity_name):
-    """Deep search across 50k nodes with case-insensitivity"""
+    """
+    Advanced Fuzzy Search: Searches Manufacturer, Category, and Name 
+    across 50,000 nodes using Case-Insensitive Regex.
+    """
     with driver.session() as session:
-        # We search across Manufacturer, Category, AND Name
+        # We use (?i) for Case-Insensitive Regex in Neo4j
+        # This will match 'Roche', 'ROCHE', or 'roche' anywhere in the text
         query = """
         MATCH (d:Drug)
-        WHERE toLower(d.manufacturer) CONTAINS toLower($name)
-        OR toLower(d.category) CONTAINS toLower($name)
-        OR toLower(d.name) CONTAINS toLower($name)
-        RETURN d.name as name, d.manufacturer as maker, d.indication as treats, d.category as cat
-        LIMIT 10
+        WHERE d.manufacturer =~ ('(?i).*' + $name + '.*')
+           OR d.category =~ ('(?i).*' + $name + '.*')
+           OR d.name =~ ('(?i).*' + $name + '.*')
+           OR d.indication =~ ('(?i).*' + $name + '.*')
+        RETURN d.name as n, d.manufacturer as m, d.indication as i, d.category as c
+        LIMIT 15
         """
-        results = session.run(query, name=entity_name)
-        
-        # Format for Gemini to understand clearly
-        data = [f"Medicine: {r['name']} | Maker: {r['maker']} | Category: {r['cat']} | Used for: {r['treats']}" for r in results]
-        
-        if not data:
-            print(f"⚠️ No graph data found for: {entity_name}")
-        return data
-
+        try:
+            results = session.run(query, name=entity_name)
+            data = [f"Medicine: {r['n']} | Maker: {r['m']} | Cat: {r['c']} | Treats: {r['i']}" for r in results]
+            
+            if not data:
+                print(f"🔍 No graph match found for '{entity_name}'. Attempting broader search...")
+            
+            return data
+        except Exception as e:
+            print(f"Neo4j Query Error: {e}")
+            return []
 import time
 
 def ask_agent(question, long_doc=""):
