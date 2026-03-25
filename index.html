@@ -92,11 +92,12 @@
 
             try {
                 // 2. Contact Backend
-                const response = await fetch('/ask', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: query
-                });
+                // Add a random ID to the URL to force the browser to treat it as a brand new request
+const response = await fetch(`/ask?t=${Date.now()}`, { 
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: query // Ensure 'query' is getting the fresh input.value
+});
 
                 if (!response.ok) throw new Error(`Status: ${response.status}`);
 
