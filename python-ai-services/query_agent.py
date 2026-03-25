@@ -39,12 +39,12 @@ def search_graph(entity_name):
 import time
 
 def ask_agent(question, long_doc=""):
-    # List of models to try in order of preference
-    models_to_try = ["gemini-3-flash-preview", "gemini-2.0-flash", "gemini-1.5-flash"]
+    # Chain of models: Try the newest, fallback to the one with the highest quota
+    model_chain = ["gemini-3-flash-preview", "gemini-1.5-flash", "gemini-1.5-pro"]
     
-    for model_id in models_to_try:
+    for model_id in model_chain:
         try:
-            # 1. Extraction Phase
+            # 1. Intent Extraction
             intent_res = client.models.generate_content(
                 model=model_id,
                 contents=f"Extract the medicine name from: '{question}'. Reply ONLY with the name."
@@ -54,21 +54,17 @@ def ask_agent(question, long_doc=""):
             # 2. Graph Retrieval
             facts = search_graph(target)
             
-            # 3. Synthesis Phase
-            final_prompt = f"""
-            You are MedGraph Nexus. 
-            CONTEXT: {facts if facts else "No specific graph data found."}
-            QUERY: {question}
-            """
-            
+            # 3. Final Synthesis
+            final_prompt = f"Answer using these facts: {facts}. Question: {question}"
             response = client.models.generate_content(model=model_id, contents=final_prompt)
             return response.text
             
         except Exception as e:
-            if "503" in str(e) or "UNAVAILABLE" in str(e):
-                print(f"⚠️ {model_id} busy, failing over to next model...")
-                continue # Try the next model in the list
+            # If we hit a 429 (Rate Limit) or 503 (Busy), try the next model
+            if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                print(f"⚠️ {model_id} quota exhausted. Trying next in chain...")
+                continue 
             else:
                 return f"Nexus Engine Error: {str(e)}"
-    
-    return "All Nexus engines are currently at capacity. Please standby for 30 seconds."
+
+    return "All engines are currently exhausted. Please try again in 30 seconds."
