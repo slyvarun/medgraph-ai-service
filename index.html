@@ -3,98 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MedGraph Nexus | Clinical AI</title>
+    <title>MedGraph Nexus | Clinical Knowledge Graph</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+
     <style>
-        body { font-family: 'Space Grotesk', sans-serif; background: #0a0a0c; color: #e2e8f0; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .glow-text { text-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
-        .loader { border-top-color: #3b82f6; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { font-family: 'Space Grotesk', sans-serif; background-color: #050505; color: #e2e8f0; }
+        .glass-panel { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .neon-glow { text-shadow: 0 0 15px rgba(59, 130, 246, 0.6); }
+        .chat-scroll::-webkit-scrollbar { width: 4px; }
+        .chat-scroll::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        
+        /* Clean Markdown Styling */
+        .prose strong { color: #60a5fa; font-weight: 700; }
+        .prose ul { list-style-type: disc; padding-left: 1.5rem; margin-top: 1rem; }
+        .prose li { margin-bottom: 0.5rem; }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
-    <div class="max-w-3xl w-full space-y-6">
-        <header class="text-center space-y-2">
-            <h1 class="text-4xl font-bold glow-text text-blue-400">MEDGRAPH NEXUS</h1>
-            <p class="text-gray-400 uppercase tracking-widest text-xs">Knowledge Graph RAG • 50k Clinical Nodes</p>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="max-w-4xl w-full space-y-6">
+        
+        <header class="text-center space-y-1">
+            <h1 class="text-4xl font-bold tracking-tighter neon-glow text-blue-500">MEDGRAPH NEXUS</h1>
+            <div class="flex items-center justify-center gap-4 text-[10px] uppercase tracking-widest text-gray-500">
+                <span>50k Clinical Nodes</span>
+                <span class="text-blue-900">•</span>
+                <span>Gemini 2.5 Flash Stable</span>
+                <span class="text-blue-900">•</span>
+                <span id="node-status" class="text-green-500 animate-pulse">● System Online</span>
+            </div>
         </header>
 
-        <div class="glass p-6 rounded-2xl shadow-2xl">
-            <div id="chat-box" class="h-80 overflow-y-auto mb-4 space-y-4 pr-2 text-sm leading-relaxed">
-                <div class="text-blue-300">System Ready. Awaiting clinical query...</div>
-            </div>
+        <main class="glass-panel rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-blue-600/10 rounded-full blur-3xl"></div>
             
-            <div class="relative">
-                <input type="text" id="user-input" placeholder="Ask about a drug, manufacturer, or condition..." 
-                       class="w-full bg-black/50 border border-white/10 rounded-xl py-4 px-6 focus:outline-none focus:border-blue-500 transition-all text-white">
-                <button onclick="askNexus()" class="absolute right-3 top-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg transition-all font-bold">ASK</button>
+            <div id="chat-box" class="h-[450px] overflow-y-auto chat-scroll mb-6 space-y-6 pr-4">
+                <div class="flex flex-col gap-1">
+                    <span class="text-[10px] font-bold text-blue-500 uppercase">Nexus Core</span>
+                    <p class="text-sm text-gray-400">Initialize successful. Ready to query the 50,000 medicine records. Try asking about a manufacturer like <strong>'Roche'</strong> or a specific drug.</p>
+                </div>
             </div>
-        </div>
 
-        <div class="flex justify-between items-center text-[10px] text-gray-500 uppercase tracking-tighter">
-            <span>Powered by Gemini 3 Flash</span>
-            <span id="status-tag" class="hidden text-green-400">● Graph Retrieval Active</span>
-        </div>
+            <div class="flex flex-col sm:flex-row gap-3">
+                <input type="text" id="user-input" 
+                       placeholder="What are the common indications for Roche products?" 
+                       class="flex-1 bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                       onkeypress="if(event.key === 'Enter') askNexus()">
+                
+                <button id="ask-btn" onclick="askNexus()" 
+                        class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-8 rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    ASK NEXUS
+                </button>
+            </div>
+        </main>
+
+        <footer class="text-center">
+            <p class="text-[9px] text-gray-600 uppercase tracking-widest italic">
+                Developed by Sai Varun Degala • Gemini Campus Ambassador 2026
+            </p>
+        </footer>
     </div>
 
     <script>
-       async function askNexus() {
-    const input = document.getElementById('user-input');
-    const chat = document.getElementById('chat-box');
-    const query = input.value;
-    if (data.includes("429") || data.includes("exhausted")) {
-    let seconds = 30;
-    const btn = document.querySelector('button');
-    btn.disabled = true;
-    const interval = setInterval(() => {
-        btn.innerText = `RETRY IN ${seconds--}s`;
-        if (seconds < 0) {
-            clearInterval(interval);
-            btn.disabled = false;
-            btn.innerText = "ASK";
-        }
-    }, 1000);
-}
-    if(!query) return;
+        async function askNexus() {
+            const input = document.getElementById('user-input');
+            const chat = document.getElementById('chat-box');
+            const btn = document.getElementById('ask-btn');
+            const query = input.value.trim();
 
-    // User message (keep it simple)
-    chat.innerHTML += `<div class="text-white font-bold mt-4 border-b border-white/5 pb-2">User: ${query}</div>`;
-    input.value = "";
+            if (!query) return;
 
-    try {
-        const response = await fetch('/ask', {
-            method: 'POST',
-            headers: {'Content-Type': 'text/plain'},
-            body: query
-        });
-        
-        let data = await response.text();
-
-        // --- CLEANUP LOGIC ---
-        // 1. Remove the [Fallback Mode] tag if present
-        data = data.replace(/\[Fallback Mode\]/g, "");
-        
-        // 2. Remove any "Nexus Error:" prefixes if you want a cleaner look
-        data = data.replace(/Nexus Error:/g, "⚠️ System Alert:");
-
-        // 3. RENDER AS BEAUTIFUL HTML
-        // This converts **Bold**, lists (1, 2, 3), and \n into actual HTML
-        const formattedData = marked.parse(data);
-
-        chat.innerHTML += `
-            <div class="text-gray-300 bg-white/5 p-4 rounded-xl border-l-4 border-blue-600 mt-2 leading-relaxed prose prose-invert max-w-none">
-                <span class="text-blue-400 font-bold text-xs uppercase block mb-2 tracking-widest">Nexus Response</span>
-                ${formattedData}
-            </div>`;
+            // 1. Update UI for User Message
+            chat.innerHTML += `
+                <div class="flex flex-col items-end gap-1">
+                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">You</span>
+                    <div class="bg-blue-600/10 border border-blue-500/20 px-4 py-3 rounded-2xl rounded-tr-none max-w-[85%] text-sm">
+                        ${query}
+                    </div>
+                </div>`;
             
-        chat.scrollTop = chat.scrollHeight;
-    } catch (e) {
-        chat.innerHTML += `<div class="text-red-400 italic">Connection Interrupted. Check backend logs.</div>`;
-    }
-}
+            input.value = ""; // Clear for next query
+            btn.disabled = true;
+            btn.innerText = "THINKING...";
+            chat.scrollTop = chat.scrollHeight;
+
+            try {
+                // 2. Contact Backend
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: query
+                });
+
+                if (!response.ok) throw new Error(`Status: ${response.status}`);
+
+                let data = await response.text();
+                
+                // 3. Clean and Format Data
+                // Removing fallbacks or special markers for a clean clinical look
+                data = data.replace(/\[Fallback Mode\]/g, "");
+                
+                // Parse Markdown using Marked.js
+                const htmlContent = marked.parse(data);
+
+                // 4. Update UI for Nexus Response
+                chat.innerHTML += `
+                    <div class="flex flex-col gap-1 fade-in">
+                        <span class="text-[10px] font-bold text-blue-500 uppercase tracking-tighter">Nexus Intelligence</span>
+                        <div class="prose prose-invert prose-sm bg-white/5 border border-white/5 p-5 rounded-3xl rounded-tl-none max-w-[95%] text-gray-200 leading-relaxed">
+                            ${htmlContent}
+                        </div>
+                    </div>`;
+
+            } catch (err) {
+                console.error("Nexus Error:", err);
+                chat.innerHTML += `
+                    <div class="text-red-500 text-[10px] uppercase font-bold italic tracking-widest text-center py-4">
+                        ⚠️ Engine Timeout: ${err.message}
+                    </div>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "ASK NEXUS";
+                chat.scrollTop = chat.scrollHeight;
+            }
+        }
     </script>
 </body>
 </html>
