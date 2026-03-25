@@ -16,26 +16,33 @@ driver = GraphDatabase.driver(
 )
 
 def search_graph(entity_name):
-    # If Gemini couldn't extract a name, we search for the whole query
-    search_term = entity_name if entity_name else "Medicine"
-    
+    """
+    Global Fuzzy Search: Searches EVERY property on EVERY node 
+    to ensure we never return an empty list.
+    """
     with driver.session() as session:
-        # 2026 Optimized Regex Search
+        # This version is 'Label-Agnostic' - it finds the data 
+        # even if your label isn't exactly ':Drug'
         query = """
-        MATCH (d:Drug)
-        WHERE d.name =~ ('(?i).*' + $name + '.*')
-           OR d.manufacturer =~ ('(?i).*' + $name + '.*')
-        RETURN d.name as n, d.manufacturer as m, d.indication as i, d.category as c
+        MATCH (n)
+        WHERE any(prop in keys(n) WHERE toLower(toString(n[prop])) CONTAINS toLower($name))
+        RETURN n.name as name, n.manufacturer as maker, n.indication as treats, n.category as cat
         LIMIT 10
         """
-        results = session.run(query, name=search_term)
-        data = [f"Found: {r['n']} | Maker: {r['m']} | Treats: {r['i']}" for r in results]
-        
-        # DEBUG: This will show in your VS Code terminal
-        print(f"--- GRAPH SEARCH FOR '{search_term}' ---")
-        print(f"Nodes found: {len(data)}")
-        
-        return data
+        try:
+            results = session.run(query, name=entity_name)
+            data = []
+            for r in results:
+                # Build a clean string even if some columns are missing
+                info = f"Medicine: {r['name']} | Maker: {r['maker']} | Cat: {r['cat']} | Indication: {r['treats']}"
+                data.append(info)
+            
+            # DEBUG PRINT for your VS Code Terminal
+            print(f"🔍 Searching for: '{entity_name}' | Results found: {len(data)}")
+            return data
+        except Exception as e:
+            print(f"❌ Neo4j Error: {e}")
+            return []
 def ask_agent(question, long_doc=""):
     # Step 1: Get the facts from Neo4j
     graph_facts = search_graph(question)
