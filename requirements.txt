@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+google-genai
+neo4j
+python-dotenv
+requests
+tenacity
