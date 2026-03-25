@@ -4,53 +4,45 @@ from google import genai
 from neo4j import GraphDatabase
 
 load_dotenv()
-# Using the 2026 Standard: Gemini 3 Flash
+
+# Global Singleton for Driver (Speed Optimization)
+driver = GraphDatabase.driver(
+    os.getenv("NEO4J_URI"), 
+    auth=(os.getenv("NEO4J_USER"), os.getenv("NEO4J_PASSWORD"))
+)
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 def search_graph(entity_name):
-    driver = GraphDatabase.driver(
-        os.getenv("NEO4J_URI"), 
-        auth=(os.getenv("NEO4J_USER"), os.getenv("NEO4J_PASSWORD"))
-    )
+    """Fuzzy search across 50,000 nodes."""
     with driver.session() as session:
         query = """
-        MATCH (e1:MedicalEntity {name: $name})-[r]->(e2)
-        RETURN e1.name as source, type(r) as relationship, e2.name as target
+        MATCH (d:Drug)
+        WHERE toLower(d.name) CONTAINS toLower($name)
+        OR toLower(d.indication) CONTAINS toLower($name)
+        RETURN d.name as name, d.indication as treats, d.side_effects as effects, d.manufacturer as maker
+        LIMIT 5
         """
         results = session.run(query, name=entity_name)
-        data = [f"{record['source']} {record['relationship']} {record['target']}" for record in results]
-    driver.close()
-    return data
+        return [f"Fact: {r['name']} by {r['maker']} treats {r['treats']}." for r in results]
 
-def ask_agent(question, long_document_text=""):
-    # Phase 1: Identify Entity
-    intent_prompt = f"Identify the primary medical entity in this question: '{question}'. Output ONLY the name."
-    entity_res = client.models.generate_content(model="gemini-3-flash-preview", contents=intent_prompt)
-    target_entity = entity_res.text.strip()
+def ask_agent(question, long_doc=""):
+    # 1. Extract Medical Intent
+    intent_prompt = f"Extract the medicine name from: '{question}'. Reply ONLY with the name."
+    intent_res = client.models.generate_content(model="gemini-3-flash", contents=intent_prompt)
+    target = intent_res.text.strip()
     
-    print(f"🔍 Agent is searching Graph for: {target_entity}...")
-    graph_facts = search_graph(target_entity)
+    # 2. Query Neo4j
+    facts = search_graph(target)
     
-    # Phase 2: Final Answer with Long-Context Fallback
-    # We provide the graph facts AND the long document to Gemini
-    context_data = f"GRAPH FACTS: {graph_facts}\n\nLONG_DOC_REFERENCE: {long_document_text}"
-    
+    # 3. Final Synthesis
     final_prompt = f"""
-    You are a Medical AI. Use the provided context to answer the question.
-    Prioritize GRAPH FACTS. If they are missing, use the LONG_DOC_REFERENCE.
+    You are MedGraph Nexus AI. Answer using the clinical facts provided. 
+    If no facts are found, use your internal training but mention it's not in the graph.
     
-    CONTEXT:
-    {context_data}
-    
+    NEO4J_FACTS: {facts}
+    RESEARCH_DOC: {long_doc}
     QUESTION: {question}
     """
     
-    # NEW VERSION (Returns the text)
-    final_res = client.models.generate_content(model="gemini-3-flash-preview", contents=final_prompt)
-    return final_res.text  # This sends the text back to the API
-if __name__ == "__main__":
-    # Example: A long research snippet that ISN'T in your graph yet
-    extra_research = "Recent 2026 studies suggest Metformin also shows potential in longevity research by activating AMPK pathways."
-    
-    query = "What can you tell me about Metformin?"
-    ask_agent(query, extra_research)
+    response = client.models.generate_content(model="gemini-3-flash", contents=final_prompt)
+    return response.text
