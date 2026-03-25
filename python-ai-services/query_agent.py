@@ -16,35 +16,26 @@ driver = GraphDatabase.driver(
 )
 
 def search_graph(entity_name):
-    """
-    Advanced Fuzzy Search: Searches Manufacturer, Category, and Name 
-    across 50,000 nodes using Case-Insensitive Regex.
-    """
+    # If Gemini couldn't extract a name, we search for the whole query
+    search_term = entity_name if entity_name else "Medicine"
+    
     with driver.session() as session:
-        # We use (?i) for Case-Insensitive Regex in Neo4j
-        # This will match 'Roche', 'ROCHE', or 'roche' anywhere in the text
+        # 2026 Optimized Regex Search
         query = """
         MATCH (d:Drug)
-        WHERE d.manufacturer =~ ('(?i).*' + $name + '.*')
-           OR d.category =~ ('(?i).*' + $name + '.*')
-           OR d.name =~ ('(?i).*' + $name + '.*')
-           OR d.indication =~ ('(?i).*' + $name + '.*')
+        WHERE d.name =~ ('(?i).*' + $name + '.*')
+           OR d.manufacturer =~ ('(?i).*' + $name + '.*')
         RETURN d.name as n, d.manufacturer as m, d.indication as i, d.category as c
-        LIMIT 15
+        LIMIT 10
         """
-        try:
-            results = session.run(query, name=entity_name)
-            data = [f"Medicine: {r['n']} | Maker: {r['m']} | Cat: {r['c']} | Treats: {r['i']}" for r in results]
-            
-            if not data:
-                print(f"🔍 No graph match found for '{entity_name}'. Attempting broader search...")
-            
-            return data
-        except Exception as e:
-            print(f"Neo4j Query Error: {e}")
-            return []
-import time
-
+        results = session.run(query, name=search_term)
+        data = [f"Found: {r['n']} | Maker: {r['m']} | Treats: {r['i']}" for r in results]
+        
+        # DEBUG: This will show in your VS Code terminal
+        print(f"--- GRAPH SEARCH FOR '{search_term}' ---")
+        print(f"Nodes found: {len(data)}")
+        
+        return data
 def ask_agent(question, long_doc=""):
     try:
         # Phase 1: Direct Generation (Fast & Stable)
