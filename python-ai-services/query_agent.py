@@ -16,29 +16,25 @@ driver = GraphDatabase.driver(
 )
 
 def search_graph(entity_name):
-    """
-    Global Fuzzy Search: Searches EVERY property on EVERY node 
-    to ensure we never return an empty list.
-    """
+    """One-Shot Fix: Case-Insensitive Regex Search"""
     with driver.session() as session:
-        # This version is 'Label-Agnostic' - it finds the data 
-        # even if your label isn't exactly ':Drug'
+        # (?i) makes the search case-insensitive
+        # .* allows it to match the word anywhere in the string
         query = """
-        MATCH (n)
-        WHERE any(prop in keys(n) WHERE toLower(toString(n[prop])) CONTAINS toLower($name))
-        RETURN n.name as name, n.manufacturer as maker, n.indication as treats, n.category as cat
+        MATCH (d:Drug)
+        WHERE d.name =~ ('(?i).*' + $name + '.*')
+           OR d.category =~ ('(?i).*' + $name + '.*')
+           OR d.indication =~ ('(?i).*' + $name + '.*')
+           OR d.dosage =~ ('(?i).*' + $name + '.*')
+        RETURN d.name as name, d.category as cat, d.dosage as dose, d.indication as treats
         LIMIT 10
         """
         try:
             results = session.run(query, name=entity_name)
-            data = []
-            for r in results:
-                # Build a clean string even if some columns are missing
-                info = f"Medicine: {r['name']} | Maker: {r['maker']} | Cat: {r['cat']} | Indication: {r['treats']}"
-                data.append(info)
+            data = [f"Med: {r['name']} | Cat: {r['cat']} | Dose: {r['dose']} | Info: {r['treats']}" for r in results]
             
-            # DEBUG PRINT for your VS Code Terminal
-            print(f"🔍 Searching for: '{entity_name}' | Results found: {len(data)}")
+            # Terminal log to verify it's working
+            print(f"--- 📊 NEXUS LIVE: Found {len(data)} records for '{entity_name}' ---")
             return data
         except Exception as e:
             print(f"❌ Neo4j Error: {e}")
