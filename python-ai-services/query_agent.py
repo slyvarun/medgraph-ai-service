@@ -40,20 +40,18 @@ def search_graph(entity_name):
             print(f"❌ Neo4j Error: {e}")
             return []
 def ask_agent(question, long_doc=""):
-    # Step 1: Get the facts from Neo4j
-    graph_facts = search_graph(question)
+    # RE-INITIALIZE variables inside the function every time it's called
+    current_query = str(question).strip() 
     
-    # Step 2: Force Gemini to acknowledge the Graph
-    final_prompt = f"""
-    SYSTEM ROLE: You are the MedGraph Nexus Intelligence Engine.
-    DATABASE STATUS: Connected to 50,000 Clinical Records.
+    # Force a fresh graph search
+    facts = search_graph(current_query)
     
-    CRITICAL INSTRUCTION: You MUST use the 'GRAPH_DATA' below to answer. 
-    If GRAPH_DATA has content, describe it as 'Verified Graph Data'.
-    
-    GRAPH_DATA: {graph_facts}
-    USER_QUERY: {question}
+    # Create a fresh prompt
+    prompt = f"""
+    CONTEXT: {facts if facts else "No data found for " + current_query}
+    USER QUERY: {current_query}
     """
     
-    response = client.models.generate_content(model="gemini-2.5-flash", contents=final_prompt)
+    # Use the model to generate a fresh answer
+    response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
     return response.text
