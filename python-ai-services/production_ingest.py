@@ -24,8 +24,8 @@ def create_constraints():
 
 def ingest_data(csv_file):
     # Load the CSV
-    print(f"📂 Loading {csv_file}...")
-    df = pd.read_csv(csv_file)
+    print(f"📂 Loading medicine_dataset.csv...")
+    df = pd.read_csv(medicine_dataset.csv)
     
     # Standardize column names (Handling potential spaces/caps)
     df.columns = df.columns.str.strip()
