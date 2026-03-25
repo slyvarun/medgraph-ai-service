@@ -44,5 +44,5 @@ def ask_agent(question, long_doc=""):
     QUESTION: {question}
     """
     
-    response = client.models.generate_content(model="gemini-3-flash", contents=final_prompt)
+    response = client.models.generate_content(model="gemini-2.0-flash", contents=final_prompt)
     return response.text
