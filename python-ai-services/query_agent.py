@@ -16,28 +16,30 @@ driver = GraphDatabase.driver(
 )
 
 def search_graph(entity_name):
-    """One-Shot Fix: Case-Insensitive Regex Search"""
+    """
+    Precision Search for MedGraph Nexus.
+    Searches across Name, Category, Indication, and Manufacturer.
+    """
     with driver.session() as session:
-        # (?i) makes the search case-insensitive
-        # .* allows it to match the word anywhere in the string
+        # (?i) = Case-insensitive. .* = Wildcard.
         query = """
         MATCH (d:Drug)
         WHERE d.name =~ ('(?i).*' + $name + '.*')
            OR d.category =~ ('(?i).*' + $name + '.*')
            OR d.indication =~ ('(?i).*' + $name + '.*')
-           OR d.dosage =~ ('(?i).*' + $name + '.*')
-        RETURN d.name as name, d.category as cat, d.dosage as dose, d.indication as treats
+           OR d.manufacturer =~ ('(?i).*' + $name + '.*')
+           OR d.dosage_form =~ ('(?i).*' + $name + '.*')
+        RETURN d.name as n, d.manufacturer as m, d.indication as i, d.dosage_form as f
         LIMIT 10
         """
         try:
             results = session.run(query, name=entity_name)
-            data = [f"Med: {r['name']} | Cat: {r['cat']} | Dose: {r['dose']} | Info: {r['treats']}" for r in results]
+            data = [f"Med: {r['n']} | Maker: {r['m']} | Treats: {r['i']} | Form: {r['f']}" for r in results]
             
-            # Terminal log to verify it's working
             print(f"--- 📊 NEXUS LIVE: Found {len(data)} records for '{entity_name}' ---")
             return data
         except Exception as e:
-            print(f"❌ Neo4j Error: {e}")
+            print(f"❌ Neo4j Search Error: {e}")
             return []
 def ask_agent(question, long_doc=""):
     # RE-INITIALIZE variables inside the function every time it's called
