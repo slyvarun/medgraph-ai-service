@@ -17,8 +17,7 @@ import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 from query_agent import ask_agent, close_driver
 
@@ -62,7 +61,8 @@ async def root():
 class AskRequest(BaseModel):
     question: str
 
-    @validator("question")
+    @field_validator("question")
+    @classmethod
     def not_empty(cls, v):
         v = v.strip()
         if not v:

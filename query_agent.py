@@ -47,8 +47,8 @@ if _missing:
 # ── Gemini ────────────────────────────────────────────────────────────────────
 genai.configure(api_key=GEMINI_API_KEY)
 
-PRIMARY_MODEL   = "gemini-1.5-flash"
-FALLBACK_MODEL  = "gemini-1.5-flash-8b"   # lighter quota tier
+PRIMARY_MODEL   = "gemini-1.5-flash"      # stable, free-tier friendly
+FALLBACK_MODEL  = "gemini-1.5-flash-8b"   # lighter quota tier (valid model name)
 MAX_RETRIES     = 3
 RETRY_BASE_SEC  = 5   # wait = RETRY_BASE_SEC × attempt  (5 s, 10 s, 15 s)
 
@@ -80,8 +80,9 @@ except ServiceUnavailable:
 # 1.  GRAPH SEARCH
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Cypher: case-insensitive fuzzy CONTAINS across all searchable properties.
+# Cypher: safe case-insensitive fuzzy CONTAINS across all searchable properties.
 # CALL { ... UNION ... } deduplicates results that match on multiple fields.
+# Uses toLower() CONTAINS — no regex injection risk, index-friendly.
 _SEARCH_CYPHER = """
 CALL {
     MATCH (m:Medicine)
