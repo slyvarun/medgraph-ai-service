@@ -33,15 +33,15 @@ def ingest_data(csv_file):
     # 3. Optimized Cypher Query (Matches your schema)
     # Mapping CSV Columns: Name, Category, Dosage Form, Strength, Manufacturer, Indication
     query = """
-    UNWIND $batch AS row
-    MERGE (d:Drug {name: toString(row.Name)})
-    SET d.category = toString(row.Category),
-        d.dosage = toString(row['Dosage Form']),
-        d.strength = toString(row.Strength),
-        d.manufacturer = toString(row.Manufacturer),
-        d.indication = toString(row.Indication),
-        d.classification = toString(row.Classification)
-    """
+UNWIND $batch AS row
+MERGE (d:Drug {name: toString(row.Name)})
+SET d.category = toString(row.Category),
+    d.dosage_form = toString(row['Dosage Form']),
+    d.strength = toString(row.Strength),
+    d.manufacturer = toString(row.Manufacturer),
+    d.indication = toString(row.Indication),
+    d.classification = toString(row.Classification)
+"""
 
     # 4. Batch Ingestion (500 rows at a time for stability)
     batch_size = 500
