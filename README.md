@@ -1,5 +1,4 @@
-#🧬 MedGraph NexusNext-Gen
-# 🧬 MedGraph Nexus
+The error you're seeing happens because Mermaid is a bit "picky" about how it handles special characters (like colons, brackets, or spaces) inside node labels. In the previous version, the node for FastAPI or the Final Response likely triggered a syntax break because they weren't wrapped in quotes.I have fixed the Mermaid syntax below by using Node IDs (short tags like A, B, C) and wrapping the Labels in double quotes ["Text"]. This is the "bulletproof" way to write Mermaid for GitHub.Copy and Paste the section below into your README.md:Markdown# 🧬 MedGraph Nexus
 ### **Next-Gen GraphRAG for Pharmaceutical Intelligence**
 
 [![Live Demo](https://img.shields.io/badge/Demo-Live_on_Render-00E676?style=for-the-badge&logo=render&logoColor=white)](https://medgraph-ai-service.onrender.com/)
@@ -39,52 +38,41 @@ MedGraph Nexus solves the "Hallucination" problem common in standard AI models b
 | **Queries** | Struggles with "How many?" or "Compare X" | **Native Support** for property filtering |
 | **Reliability** | Fails if the LLM is offline | **Deterministic Mode** works without AI |
 
+---
+
 ## 🏗️ Technical Architecture
 
 ```mermaid
 flowchart TD
-    User([User Query]) --> API[FastAPI /ask]
-    API --> Agent[Query Agent]
+    User(["User Query"]) --> API["FastAPI /ask"]
+    API --> Agent["Query Agent"]
 
     subgraph Knowledge_Graph_Layer
-    Agent --> Neo4j[(Neo4j Graph)]
-    Neo4j -- No Match --> FDA[openFDA API]
+    Agent --> Neo4j[("Neo4j Graph")]
+    Neo4j -- No Match --> FDA["openFDA API"]
     end
 
     subgraph Intelligence_Layer
-    Neo4j --> Gemini{Gemini 2.0}
+    Neo4j --> Gemini{"Gemini 2.0"}
     FDA --> Gemini
-    Gemini -- Fail --> Det[Deterministic Formatter]
-    Gemini -- Success --> Resp[Markdown Response]
+    Gemini -- Fail --> Det["Deterministic Formatter"]
+    Gemini -- Success --> Resp["Markdown Response"]
     end
 
-    Det --> Final[Final Response]
-    Resp --> Final
-
-GraphRAG for Pharmaceutical IntelligenceMedGraph Nexus is a specialized medicine-focused RAG backend. Unlike traditional "Vector-only" models that rely on text similarity, MedGraph Nexus utilizes a Knowledge Graph (Neo4j) to provide 100% accurate, relationship-aware medical insights.🧠 Working Principle: The GraphRAG AdvantageMedGraph Nexus operates on a Structured Retrieval Lifecycle. This process ensures that every answer is grounded in factual graph nodes rather than "best-guess" text chunks.1. The Intelligence LoopEntity Extraction: The query agent (Gemini) identifies the Medicine Name, Manufacturer, or Category from the user's natural language input.Cypher Traversal: Instead of a similarity search, the backend executes a Graph Query (using Cypher) to pull the exact :Medicine node and its specific properties (strength, dosage_form, indication).Context Synthesis: The structured data is passed to the LLM. Because the data is already labeled (e.g., Manufacturer: Pfizer), the AI doesn't have to "guess" relationships.2. The Fallback Hierarchy (The "Nexus" Edge)To ensure 100% availability, the system follows this logic:Tier 1: Primary Graph Lookup (Local Neo4j)Tier 2: Global Registry Fallback (openFDA API)Tier 3: Deterministic UI (Non-LLM Table formatting if the AI is rate-limited).⚔️ GraphRAG vs. Traditional Vector RAGMost RAG models today use "Vector Databases" (like Pinecone). MedGraph Nexus uses a Graph Database (Neo4j), solving the "Hallucination" problem in medical data.FeatureStandard Vector RAGMedGraph Nexus (GraphRAG)Search LogicMathematical SimilarityRelational Logic & PropertiesData IntegrityHigh risk of mixing up different drug factsZero Cross-Contamination of dataComplexityStruggles with "How many?" or "Compare X and Y"Native Support for relational queriesReliabilityFails if the LLM is downDeterministic Mode works without AI🏗️ Technical ArchitectureCode snippetflowchart TD
-    User([User Query]) --> API[FastAPI /ask]
-    API --> Agent[Query Agent]
-
-    subgraph Knowledge_Graph_Layer
-    Agent --> Neo4j[(Neo4j Graph)]
-    Neo4j -- No Match --> FDA[openFDA API]
-    end
-
-    subgraph Intelligence_Layer
-    Neo4j --> Gemini{Gemini 2.0}
-    FDA --> Gemini
-    Gemini -- Fail --> Det[Deterministic Formatter]
-    Gemini -- Success --> Resp[Markdown Response]
-    end
-
-    Det --> Final[Final Response]
+    Det --> Final["Final Response"]
     Resp --> Final
 📊 Data Model (Neo4j Schema)The core entity is the :Medicine node, designed for high-speed indexing and property-based retrieval.Node PropertyTypeUsagenameStringPrimary Key (Indexed)categoryStringTherapeutic Class FilteringstrengthStringPrecise Dosage RetrievalmanufacturerStringBrand-specific QueriesindicationTextGrounding for AI Generation🚀 Deployment & Local Setup1. Environment Configuration (.env)Code snippetNEO4J_URI=neo4j+s://<your-id>.databases.neo4j.io
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=<your-password>
 GEMINI_API_KEY=<your-key>
-2. InstallationBashgit clone https://github.com/yourusername/medgraph-nexus.git
+OPENFDA_API_KEY=<optional>
+2. Local InstallationBash# Clone and Install
+git clone [https://github.com/yourusername/medgraph-nexus.git](https://github.com/yourusername/medgraph-nexus.git)
 pip install -r requirements.txt
-python production_ingest.py --file medicine_dataset.csv
+
+# Ingest Medicine Data
+python production_ingest.py --file medicine_dataset.csv --clear
+
+# Launch API
 uvicorn ai_service:app --host 0.0.0.0 --port 8000
-🛡️ Security & ReliabilitySafe Context: Prevents the AI from hallucinating dosages by grounding it in structured JSON objects.Health Monitoring: /health endpoint tracks Neo4j and API connectivity in real-time.Scalability: Optimized for Render deployment with Procfile and dynamic port binding.
+🛡️ Security & ReliabilityHallucination Prevention: Context is passed as structured JSON, forcing the LLM to stick to the graph data.Health Monitoring: /health endpoint tracks Neo4j and API connectivity.Scalability: Optimized for Render with dynamic PORT binding and Gunicorn/Uvicorn support.👨‍💻 Developed BySai Varun Degala | Google Gemini Campus Ambassador LinkedIn | Project Link
