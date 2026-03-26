@@ -53,6 +53,24 @@ FALLBACK_MODEL  = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-2.0-flash-lite")
 MAX_RETRIES     = 3
 RETRY_BASE_SEC  = 5   # wait = RETRY_BASE_SEC × attempt  (5 s, 10 s, 15 s)
 
+# Broad static fallback pool for environments where list_models() is limited.
+_STATIC_MODEL_FALLBACKS = [
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-8b",
+    "gemini-1.5-pro",
+    "gemini-1.5-flash-latest",
+    "gemini-1.5-pro-latest",
+    "models/gemini-2.0-flash",
+    "models/gemini-2.0-flash-lite",
+    "models/gemini-1.5-flash",
+    "models/gemini-1.5-flash-8b",
+    "models/gemini-1.5-pro",
+    "models/gemini-1.5-flash-latest",
+    "models/gemini-1.5-pro-latest",
+]
+
 
 def _resolve_available_models(candidates: list[str]) -> list[str]:
     """
@@ -75,7 +93,8 @@ def _resolve_available_models(candidates: list[str]) -> list[str]:
 
         if not available:
             log.warning("No generateContent-capable Gemini models returned for this key.")
-            return candidates
+            ordered = candidates + _STATIC_MODEL_FALLBACKS
+            return list(dict.fromkeys(ordered))
 
         available_set = set(available)
         resolved = [m for m in candidates if m in available_set]
@@ -92,13 +111,14 @@ def _resolve_available_models(candidates: list[str]) -> list[str]:
             ordered = auto_lite + auto_flash + auto_other
             resolved = list(dict.fromkeys(ordered))
 
-        # Keep small and deterministic to avoid long failover loops.
-        resolved = resolved[:5]
+        # Keep deterministic ordering and add broad static fallbacks last.
+        resolved = list(dict.fromkeys(resolved + _STATIC_MODEL_FALLBACKS))
         log.info(f"Resolved Gemini models for this key: {resolved}")
         return resolved
     except Exception as exc:
-        log.warning(f"Could not list Gemini models: {exc}. Using configured defaults.")
-        return candidates
+        log.warning(f"Could not list Gemini models: {exc}. Using static fallback pool.")
+        ordered = candidates + _STATIC_MODEL_FALLBACKS
+        return list(dict.fromkeys(ordered))
 
 
 MODEL_CANDIDATES = _resolve_available_models([PRIMARY_MODEL, FALLBACK_MODEL])
@@ -351,7 +371,13 @@ def _call_gemini(system_prompt: str, question: str) -> str:
 
             except Exception as exc:
                 msg = str(exc)
-                if "not found for API version" in msg.lower() or "is not found" in msg.lower():
+                lowered = msg.lower()
+                if (
+                    "not found for api version" in lowered
+                    or "is not found" in lowered
+                    or "unsupported" in lowered
+                    or "not supported for generatecontent" in lowered
+                ):
                     log.warning(f"Model unavailable: {model_name}. Trying next configured model.")
                     break
                 log.error(f"Gemini error on {model_name}: {exc}")
@@ -362,8 +388,8 @@ def _call_gemini(system_prompt: str, question: str) -> str:
 
     log.error("No usable Gemini models available right now.")
     return (
-        "⚠️ No supported Gemini model is available for this deployment. "
-        "Set GEMINI_PRIMARY_MODEL / GEMINI_FALLBACK_MODEL to valid models for your API key."
+        "⚠️ No usable Gemini model could be selected for this deployment. "
+        "Please verify GEMINI_API_KEY and ensure Gemini API access is enabled for its project."
     )
 
 
