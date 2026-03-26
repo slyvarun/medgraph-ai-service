@@ -38,11 +38,11 @@ MedGraph Nexus solves the "Hallucination" problem common in standard AI models b
 | **Queries** | Struggles with "How many?" or "Compare X" | **Native Support** for property filtering |
 | **Reliability** | Fails if the LLM is offline | **Deterministic Mode** works without AI |
 
----![Uploading Gemini_Generated_Image_4ga4ou4ga4ou4ga4.png…]()
+
 
 
 ## 🏗️ Technical Architecture
----![Uploading Gemini_Generated_Image_4ga4ou4ga4ou4ga4.png…]()
+
 #📊 Data Model (Neo4j Schema)
 The core entity is the :Medicine node, designed for high-speed indexing and property-based retrieval.Node PropertyTypeUsagenameStringPrimary Key (Indexed)categoryStringTherapeutic Class FilteringstrengthStringPrecise Dosage RetrievalmanufacturerStringBrand-specific QueriesindicationTextGrounding for AI Generation.
 
