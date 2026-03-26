@@ -22,6 +22,7 @@ import re
 from dotenv import load_dotenv
 
 import google.generativeai as genai
+import httpx
 from google.api_core.exceptions import ResourceExhausted
 from neo4j import GraphDatabase
 from neo4j.exceptions import ServiceUnavailable, AuthError
@@ -36,6 +37,8 @@ NEO4J_URI      = os.getenv("NEO4J_URI")
 NEO4J_USER     = os.getenv("NEO4J_USER", "neo4j")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+OPENFDA_API_KEY = os.getenv("OPENFDA_API_KEY")
+OPENFDA_BASE_URL = "https://api.fda.gov/drug/label.json"
 
 _required = {"NEO4J_URI": NEO4J_URI, "NEO4J_PASSWORD": NEO4J_PASSWORD, "GEMINI_API_KEY": GEMINI_API_KEY}
 _missing  = [k for k, v in _required.items() if not v]
@@ -245,6 +248,88 @@ def _medicine_key(m: dict) -> tuple:
     )
 
 
+def _openfda_to_medicine(item: dict) -> dict:
+    """Map openFDA drug label payload to the internal medicine schema."""
+    openfda = item.get("openfda") or {}
+    return {
+        "name": ", ".join(openfda.get("brand_name", [])[:2]) or ", ".join(openfda.get("generic_name", [])[:2]) or "Unknown",
+        "category": ", ".join(openfda.get("product_type", [])[:2]) or "N/A",
+        "indication": " ".join((item.get("indications_and_usage") or ["N/A"])[0:1])[:400] or "N/A",
+        "strength": "N/A",
+        "manufacturer": ", ".join(openfda.get("manufacturer_name", [])[:2]) or "N/A",
+        "dosage_form": ", ".join(openfda.get("dosage_form", [])[:2]) or "N/A",
+        "classification": ", ".join(openfda.get("pharm_class_epc", [])[:2]) or ", ".join(openfda.get("pharm_class_moa", [])[:2]) or "N/A",
+    }
+
+
+def search_openfda(query: str, limit: int = 8) -> list[dict]:
+    """
+    Search openFDA drug label data as a fallback when graph retrieval is empty.
+    Returns internal medicine-shaped dicts.
+    """
+    variants = _build_search_variants(query)
+    if not variants:
+        return []
+
+    seen = set()
+    records = []
+    try:
+        with httpx.Client(timeout=12.0) as client:
+            for term in variants:
+                search_expr = f'openfda.brand_name:"{term}" OR openfda.generic_name:"{term}"'
+                params = {"search": search_expr, "limit": str(limit)}
+                if OPENFDA_API_KEY:
+                    params["api_key"] = OPENFDA_API_KEY
+
+                resp = client.get(OPENFDA_BASE_URL, params=params)
+                if resp.status_code != 200:
+                    continue
+
+                payload = resp.json()
+                for item in payload.get("results", []):
+                    med = _openfda_to_medicine(item)
+                    key = _medicine_key(med)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    records.append(med)
+                    if len(records) >= limit:
+                        return records
+    except Exception as exc:
+        log.warning(f"openFDA fallback failed: {exc}")
+    return records
+
+
+def _render_fallback_answer(medicines: list[dict], source: str) -> str:
+    """
+    Deterministic non-LLM fallback used when Gemini is unavailable/rate-limited.
+    """
+    if not medicines:
+        return (
+            "I could not find matching medicines in the available data sources.\n\n"
+            "Please try a simpler medicine name or broader search term.\n\n"
+            "> ⚕ This information is for reference only. Consult a qualified healthcare\n"
+            "> professional before making any medical decisions."
+        )
+
+    lines = [f"Found {len(medicines)} medicine record(s) from **{source}**:\n"]
+    for i, m in enumerate(medicines, 1):
+        lines.append(
+            f"- **{m.get('name') or 'Unknown'}**\n"
+            f"  - Classification: {m.get('classification') or 'N/A'}\n"
+            f"  - Category: {m.get('category') or 'N/A'}\n"
+            f"  - Indication: {m.get('indication') or 'N/A'}\n"
+            f"  - Dosage Form: {m.get('dosage_form') or 'N/A'}\n"
+            f"  - Strength: {m.get('strength') or 'N/A'}\n"
+            f"  - Manufacturer: {m.get('manufacturer') or 'N/A'}"
+        )
+    lines.append(
+        "\n> ⚕ This information is for reference only. Consult a qualified healthcare\n"
+        "> professional before making any medical decisions."
+    )
+    return "\n".join(lines)
+
+
 def search_graph(query: str) -> list[dict]:
     """
     Run a fuzzy, case-insensitive search across all Medicine properties.
@@ -415,6 +500,13 @@ def ask_agent(question: str) -> str:
 
     # Step 1 — Graph retrieval
     medicines = search_graph(question)
+    source = "Neo4j graph"
+
+    # Step 1b — openFDA fallback retrieval
+    if not medicines:
+        medicines = search_openfda(question)
+        if medicines:
+            source = "openFDA fallback"
 
     # Step 2 — Build context
     context = _build_context(medicines)
@@ -423,7 +515,20 @@ def ask_agent(question: str) -> str:
     system_prompt = _SYSTEM_PROMPT.format(context=context)
 
     # Step 4 — Generate answer
-    return _call_gemini(system_prompt, question)
+    answer = _call_gemini(system_prompt, question)
+
+    # Step 5 — Deterministic fallback when Gemini is unavailable or quota-limited
+    lowered = answer.lower()
+    if (
+        "rate-limited" in lowered
+        or "no usable gemini model" in lowered
+        or "no supported gemini model" in lowered
+        or "an error occurred while generating the response" in lowered
+    ):
+        log.warning("Gemini unavailable; returning deterministic fallback answer.")
+        return _render_fallback_answer(medicines, source)
+
+    return answer
 
 
 # ─────────────────────────────────────────────────────────────────────────────
