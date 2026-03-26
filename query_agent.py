@@ -48,10 +48,40 @@ if _missing:
 # ── Gemini ────────────────────────────────────────────────────────────────────
 genai.configure(api_key=GEMINI_API_KEY)
 
-PRIMARY_MODEL   = "gemini-1.5-flash"      # stable, free-tier friendly
-FALLBACK_MODEL  = "gemini-1.5-flash-8b"   # lighter quota tier (valid model name)
+PRIMARY_MODEL   = os.getenv("GEMINI_PRIMARY_MODEL", "gemini-2.0-flash")
+FALLBACK_MODEL  = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-2.0-flash-lite")
 MAX_RETRIES     = 3
 RETRY_BASE_SEC  = 5   # wait = RETRY_BASE_SEC × attempt  (5 s, 10 s, 15 s)
+
+
+def _resolve_available_models(candidates: list[str]) -> list[str]:
+    """
+    Return only model names that are available for generateContent on this key.
+    Falls back to the candidate list if listing fails.
+    """
+    try:
+        available = set()
+        for model in genai.list_models():
+            methods = getattr(model, "supported_generation_methods", []) or []
+            if "generateContent" not in methods:
+                continue
+            # API returns names like "models/gemini-2.0-flash"
+            name = model.name.rsplit("/", 1)[-1]
+            available.add(name)
+
+        resolved = [m for m in candidates if m in available]
+        if resolved:
+            log.info(f"Resolved Gemini models for this key: {resolved}")
+            return resolved
+
+        log.warning("No preferred Gemini models available on this key; using configured defaults.")
+        return candidates
+    except Exception as exc:
+        log.warning(f"Could not list Gemini models: {exc}. Using configured defaults.")
+        return candidates
+
+
+MODEL_CANDIDATES = _resolve_available_models([PRIMARY_MODEL, FALLBACK_MODEL])
 
 # ── Neo4j driver (module-level singleton) ──────────────────────────────────────
 log.info(f"Connecting to Neo4j at {NEO4J_URI} ...")
@@ -278,7 +308,7 @@ def _call_gemini(system_prompt: str, question: str) -> str:
     Model cascade:
         gemini-1.5-flash  →  gemini-1.5-flash-8b  →  error message
     """
-    for model_name in (PRIMARY_MODEL, FALLBACK_MODEL):
+    for model_name in MODEL_CANDIDATES:
         for attempt in range(1, MAX_RETRIES + 1):
             try:
                 log.info(f"Calling {model_name} (attempt {attempt}/{MAX_RETRIES})")
@@ -300,16 +330,20 @@ def _call_gemini(system_prompt: str, question: str) -> str:
                     break
 
             except Exception as exc:
+                msg = str(exc)
+                if "not found for API version" in msg.lower() or "is not found" in msg.lower():
+                    log.warning(f"Model unavailable: {model_name}. Trying next configured model.")
+                    break
                 log.error(f"Gemini error on {model_name}: {exc}")
                 return (
                     f"⚠️ An error occurred while generating the response: {exc}\n\n"
                     "Please try again in a moment."
                 )
 
-    log.error("All Gemini models rate-limited.")
+    log.error("No usable Gemini models available right now.")
     return (
-        "⚠️ The AI service is temporarily rate-limited. "
-        "Please wait 60 seconds and try again."
+        "⚠️ No supported Gemini model is available for this deployment. "
+        "Set GEMINI_PRIMARY_MODEL / GEMINI_FALLBACK_MODEL to valid models for your API key."
     )
 
 
