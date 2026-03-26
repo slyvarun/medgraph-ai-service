@@ -42,6 +42,7 @@ MedGraph Nexus solves the "Hallucination" problem common in standard AI models b
 
 
 ## 🏗️ Technical Architecture
+<img width="2816" height="1536" alt="Gemini_Generated_Image_4ga4ou4ga4ou4ga4" src="https://github.com/user-attachments/assets/b0a2f8fc-0802-4d43-8b98-78573087ea99" />
 
 #📊 Data Model (Neo4j Schema)
 The core entity is the :Medicine node, designed for high-speed indexing and property-based retrieval.Node PropertyTypeUsagenameStringPrimary Key (Indexed)categoryStringTherapeutic Class FilteringstrengthStringPrecise Dosage RetrievalmanufacturerStringBrand-specific QueriesindicationTextGrounding for AI Generation.
