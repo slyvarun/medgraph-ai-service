@@ -17,25 +17,24 @@ driver = GraphDatabase.driver(
 
 def search_graph(entity_name):
     """
-    Precision Search for MedGraph Nexus.
-    Searches across Name, Category, Indication, and Manufacturer.
+    Matched to your 4 existing keys: 
+    name, category, strength, indication
     """
     with driver.session() as session:
-        # (?i) = Case-insensitive. .* = Wildcard.
         query = """
         MATCH (d:Drug)
-        WHERE d.name =~ ('(?i).*' + $name + '.*')
-           OR d.category =~ ('(?i).*' + $name + '.*')
-           OR d.indication =~ ('(?i).*' + $name + '.*')
-           OR d.manufacturer =~ ('(?i).*' + $name + '.*')
-           OR d.dosage_form =~ ('(?i).*' + $name + '.*')
-        RETURN d.name as n, d.manufacturer as m, d.indication as i, d.dosage_form as f
+        WHERE toLower(d.name) CONTAINS toLower($name)
+           OR toLower(d.category) CONTAINS toLower($name)
+           OR toLower(d.indication) CONTAINS toLower($name)
+        RETURN d.name as name, 
+               d.category as cat, 
+               d.indication as treats, 
+               d.strength as str
         LIMIT 10
         """
         try:
             results = session.run(query, name=entity_name)
-            data = [f"Med: {r['n']} | Maker: {r['m']} | Treats: {r['i']} | Form: {r['f']}" for r in results]
-            
+            data = [f"Med: {r['name']} | Cat: {r['cat']} | Info: {r['treats']} | Str: {r['str']}" for r in results]
             print(f"--- 📊 NEXUS LIVE: Found {len(data)} records for '{entity_name}' ---")
             return data
         except Exception as e:
