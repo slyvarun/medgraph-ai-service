@@ -32,7 +32,8 @@ def ingest_data(csv_file):
     
     # 3. Optimized Cypher Query (Matches your schema)
     # Mapping CSV Columns: Name, Category, Dosage Form, Strength, Manufacturer, Indication
-    query = """
+    # Updated Cypher for your production_ingest.py
+query = """
 UNWIND $batch AS row
 MERGE (d:Drug {name: toString(row.Name)})
 SET d.category = toString(row.Category),
