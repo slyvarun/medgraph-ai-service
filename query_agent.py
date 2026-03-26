@@ -56,26 +56,46 @@ RETRY_BASE_SEC  = 5   # wait = RETRY_BASE_SEC × attempt  (5 s, 10 s, 15 s)
 
 def _resolve_available_models(candidates: list[str]) -> list[str]:
     """
-    Return only model names that are available for generateContent on this key.
-    Falls back to the candidate list if listing fails.
+    Return a robust ordered model list for generateContent.
+    Priority:
+      1) User-configured candidates that are available
+      2) Auto-discovered flash/lite models available to this key
+      3) Any remaining generateContent-capable models
+    Falls back to candidates if listing fails.
     """
     try:
-        available = set()
+        available = []
         for model in genai.list_models():
             methods = getattr(model, "supported_generation_methods", []) or []
             if "generateContent" not in methods:
                 continue
             # API returns names like "models/gemini-2.0-flash"
             name = model.name.rsplit("/", 1)[-1]
-            available.add(name)
+            available.append(name)
 
-        resolved = [m for m in candidates if m in available]
-        if resolved:
-            log.info(f"Resolved Gemini models for this key: {resolved}")
-            return resolved
+        if not available:
+            log.warning("No generateContent-capable Gemini models returned for this key.")
+            return candidates
 
-        log.warning("No preferred Gemini models available on this key; using configured defaults.")
-        return candidates
+        available_set = set(available)
+        resolved = [m for m in candidates if m in available_set]
+        if not resolved:
+            # Prefer fast general-purpose chat models first.
+            auto_flash = [
+                m for m in available
+                if "flash" in m.lower() and ("vision" not in m.lower())
+            ]
+            auto_lite = [m for m in auto_flash if "lite" in m.lower()]
+            auto_other = [m for m in available if m not in auto_flash]
+
+            # Ordered unique merge.
+            ordered = auto_lite + auto_flash + auto_other
+            resolved = list(dict.fromkeys(ordered))
+
+        # Keep small and deterministic to avoid long failover loops.
+        resolved = resolved[:5]
+        log.info(f"Resolved Gemini models for this key: {resolved}")
+        return resolved
     except Exception as exc:
         log.warning(f"Could not list Gemini models: {exc}. Using configured defaults.")
         return candidates
