@@ -18,6 +18,7 @@ Neo4j property schema (must match production_ingest.py COLUMN_MAP):
 import os
 import time
 import logging
+import re
 from dotenv import load_dotenv
 
 import google.generativeai as genai
@@ -118,6 +119,12 @@ CALL {
     MATCH (m:Medicine)
     WHERE toLower(m.dosage_form) CONTAINS toLower($q)
     RETURN m LIMIT 5
+
+    UNION
+
+    MATCH (m:Medicine)
+    WHERE toLower(m.strength) CONTAINS toLower($q)
+    RETURN m LIMIT 5
 }
 RETURN DISTINCT m {
     .name,
@@ -131,6 +138,42 @@ RETURN DISTINCT m {
 LIMIT 12
 """
 
+_TOKEN_RE = re.compile(r"[a-z0-9]+(?:mg|ml|mcg|g|iu)?")
+_STOPWORDS = {
+    "medicine", "medicines", "drug", "drugs", "strength", "show",
+    "list", "find", "with", "for", "the", "and", "or", "of", "a", "an",
+}
+
+
+def _build_search_variants(query: str) -> list[str]:
+    """
+    Build search variants so broad natural-language queries still match records.
+    Example: '500mg strength medicines' -> ['500mg strength medicines', '500mg']
+    """
+    normalized = " ".join(query.strip().lower().split())
+    if not normalized:
+        return []
+
+    variants = [normalized]
+    for token in _TOKEN_RE.findall(normalized):
+        if token in _STOPWORDS:
+            continue
+        # Keep dosage tokens (500mg, 5ml, etc.) and meaningful words.
+        if len(token) >= 3 or any(ch.isdigit() for ch in token):
+            variants.append(token)
+
+    # Preserve order while removing duplicates.
+    return list(dict.fromkeys(variants))
+
+
+def _medicine_key(m: dict) -> tuple:
+    """Stable key used to remove duplicate medicines from multi-pass search."""
+    return (
+        (m.get("name") or "").strip().lower(),
+        (m.get("strength") or "").strip().lower(),
+        (m.get("manufacturer") or "").strip().lower(),
+    )
+
 
 def search_graph(query: str) -> list[dict]:
     """
@@ -141,9 +184,27 @@ def search_graph(query: str) -> list[dict]:
     empty-context case gracefully).
     """
     try:
+        variants = _build_search_variants(query)
+        if not variants:
+            return []
+
+        seen = set()
+        records = []
         with _driver.session() as session:
-            result  = session.run(_SEARCH_CYPHER, q=query)
-            records = [dict(r["medicine"]) for r in result]
+            for variant in variants:
+                result = session.run(_SEARCH_CYPHER, q=variant)
+                for r in result:
+                    med = dict(r["medicine"])
+                    key = _medicine_key(med)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    records.append(med)
+                    if len(records) >= 12:
+                        break
+                if len(records) >= 12:
+                    break
+
             log.info(f"Graph search '{query}' → {len(records)} record(s)")
             return records
     except Exception as exc:
