@@ -1,136 +1,411 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MedGraph Nexus | Clinical Knowledge Graph</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MedGraph Nexus</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:        #080e18;
+      --bg2:       #0c1422;
+      --bg3:       #101c2e;
+      --card:      #111827;
+      --border:    #1c2d42;
+      --border2:   #243650;
+      --cyan:      #00d4ff;
+      --cyan-dim:  rgba(0,212,255,0.12);
+      --green:     #00ff9d;
+      --purple:    #8b6fd4;
+      --text:      #dce8f5;
+      --muted:     #6a7f99;
+      --faint:     #334155;
+      --error:     #ff5370;
+      --radius:    10px;
+    }
 
-    <style>
-        body { font-family: 'Space Grotesk', sans-serif; background-color: #050505; color: #e2e8f0; }
-        .glass-panel { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .neon-glow { text-shadow: 0 0 15px rgba(59, 130, 246, 0.6); }
-        .chat-scroll::-webkit-scrollbar { width: 4px; }
-        .chat-scroll::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-        
-        /* Clean Markdown Styling */
-        .prose strong { color: #60a5fa; font-weight: 700; }
-        .prose ul { list-style-type: disc; padding-left: 1.5rem; margin-top: 1rem; }
-        .prose li { margin-bottom: 0.5rem; }
-    </style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── HEADER ───────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-icon {
+      width: 34px; height: 34px;
+      background: var(--cyan-dim);
+      border: 1px solid var(--cyan);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px;
+    }
+    .logo h1 {
+      font-size: 17px; font-weight: 700;
+      background: linear-gradient(120deg, #dce8f5 30%, var(--cyan));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .logo p {
+      font-size: 10px; color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.6px;
+    }
+    .hstats { display: flex; gap: 10px; }
+    .pill {
+      display: flex; align-items: center; gap: 6px;
+      padding: 4px 11px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+    }
+    .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 5px var(--green);
+      animation: blink 2s infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── LAYOUT ───────────────────────────────── */
+    .main {
+      flex: 1; display: flex; overflow: hidden;
+      max-width: 960px; width: 100%; margin: 0 auto;
+      padding: 0 20px;
+      flex-direction: column;
+    }
+
+    /* ── CHAT LOG ─────────────────────────────── */
+    #log {
+      flex: 1; overflow-y: auto;
+      padding: 24px 0; display: flex;
+      flex-direction: column; gap: 18px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    #log::-webkit-scrollbar { width: 4px; }
+    #log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ── WELCOME ──────────────────────────────── */
+    .welcome {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 14px; text-align: center; padding: 32px 0;
+    }
+    .welcome-icon {
+      width: 60px; height: 60px;
+      border: 1px solid var(--cyan); border-radius: 14px;
+      background: var(--cyan-dim);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+    }
+    .welcome h2 { font-size: 20px; font-weight: 600; }
+    .welcome p  { font-size: 13px; color: var(--muted); max-width: 380px; line-height: 1.6; }
+    .chips { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin-top: 6px; }
+    .chip {
+      padding: 6px 13px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 18px; font-size: 12px; color: var(--muted);
+      cursor: pointer; transition: all .18s;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .chip:hover { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-dim); }
+
+    /* ── MESSAGES ─────────────────────────────── */
+    .msg { display: flex; gap: 10px; align-items: flex-start; animation: fadeUp .25s ease-out; }
+    .msg.user { flex-direction: row-reverse; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+    .av {
+      width: 30px; height: 30px; border-radius: 7px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
+    }
+    .av.user { background: var(--bg3); border: 1px solid var(--border2); }
+    .av.bot  { background: var(--cyan-dim); border: 1px solid var(--cyan); }
+
+    .bubble {
+      max-width: 78%; padding: 13px 16px;
+      border-radius: var(--radius); font-size: 14px; line-height: 1.7;
+    }
+    .bubble.user {
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-bottom-right-radius: 3px;
+    }
+    .bubble.bot {
+      background: var(--card); border: 1px solid var(--border);
+      border-bottom-left-radius: 3px;
+    }
+    .bubble.bot.glow { border-color: rgba(0,212,255,.3); }
+    .bubble.error    { border-color: var(--error); background: rgba(255,83,112,.06); }
+
+    .bhead {
+      display: flex; align-items: center; gap: 7px;
+      margin-bottom: 9px; padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .bhead-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--cyan); }
+    .bhead span { font-size: 10px; font-family:'JetBrains Mono',monospace; color: var(--cyan); letter-spacing:.5px; }
+
+    /* Markdown inside bubbles */
+    .bubble h1,.bubble h2,.bubble h3 { color:var(--cyan); margin:10px 0 5px; font-size:14px; }
+    .bubble p  { margin-bottom:7px; }
+    .bubble ul,.bubble ol { padding-left:18px; margin-bottom:7px; }
+    .bubble li { margin-bottom:3px; }
+    .bubble strong { color:var(--text); font-weight:600; }
+    .bubble em     { color:var(--muted); }
+    .bubble code {
+      font-family:'JetBrains Mono',monospace; font-size:12px;
+      background:#07101d; padding:2px 5px; border-radius:4px; color:var(--green);
+    }
+    .bubble pre { background:#07101d; padding:10px; border-radius:7px; margin:7px 0; border:1px solid var(--border); overflow-x:auto; }
+    .bubble pre code { background:none; padding:0; }
+    .bubble table { width:100%; border-collapse:collapse; margin:8px 0; font-size:13px; }
+    .bubble th,.bubble td { padding:7px 11px; border:1px solid var(--border); text-align:left; }
+    .bubble th { background:var(--bg2); color:var(--cyan); font-weight:500; }
+    .bubble tr:nth-child(even) td { background:var(--bg3); }
+    .bubble a  { color:var(--cyan); }
+
+    /* ── TYPING ───────────────────────────────── */
+    .typing {
+      display:flex; align-items:center; gap:5px;
+      padding:12px 16px; background:var(--card);
+      border:1px solid rgba(0,212,255,.3);
+      border-radius:var(--radius); border-bottom-left-radius:3px;
+      width:fit-content;
+    }
+    .typing span {
+      width:6px;height:6px;border-radius:50%;
+      background:var(--cyan); animation:bounce 1.1s infinite;
+    }
+    .typing span:nth-child(2){animation-delay:.18s}
+    .typing span:nth-child(3){animation-delay:.36s}
+    @keyframes bounce{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+
+    /* ── INPUT ────────────────────────────────── */
+    .input-zone { padding: 14px 0 18px; flex-shrink: 0; }
+    .input-wrap {
+      display:flex; align-items:flex-end; gap:9px;
+      background:var(--bg3); border:1px solid var(--border);
+      border-radius:var(--radius); padding:10px 12px;
+      transition:border-color .2s;
+    }
+    .input-wrap:focus-within { border-color:rgba(0,212,255,.4); }
+    #inp {
+      flex:1; background:none; border:none; outline:none;
+      color:var(--text); font-family:'Space Grotesk',sans-serif;
+      font-size:14px; line-height:1.5; resize:none;
+      max-height:110px; min-height:21px;
+    }
+    #inp::placeholder { color:var(--faint); }
+    #inp:disabled     { opacity:.4; cursor:not-allowed; }
+
+    #btn {
+      width:36px; height:36px; flex-shrink:0;
+      background:var(--cyan); border:none; border-radius:7px;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      font-size:15px; color:#000; font-weight:700;
+      transition:all .18s;
+    }
+    #btn:hover:not(:disabled) { filter:brightness(1.15); }
+    #btn:disabled { opacity:.35; cursor:not-allowed; }
+    #btn.spin { animation:rotate 1s linear infinite; background:var(--bg3); color:var(--cyan); border:1px solid var(--cyan); }
+    @keyframes rotate{to{transform:rotate(360deg)}}
+
+    .input-foot {
+      display:flex; justify-content:space-between;
+      margin-top:6px; padding:0 2px;
+    }
+    .input-foot span { font-size:11px; color:var(--faint); font-family:'JetBrains Mono',monospace; }
+  </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4">
+<body>
 
-    <div class="max-w-4xl w-full space-y-6">
-        
-        <header class="text-center space-y-1">
-            <h1 class="text-4xl font-bold tracking-tighter neon-glow text-blue-500">MEDGRAPH NEXUS</h1>
-            <div class="flex items-center justify-center gap-4 text-[10px] uppercase tracking-widest text-gray-500">
-                <span>50k Clinical Nodes</span>
-                <span class="text-blue-900">•</span>
-                <span>Gemini 2.5 Flash Stable</span>
-                <span class="text-blue-900">•</span>
-                <span id="node-status" class="text-green-500 animate-pulse">● System Online</span>
-            </div>
-        </header>
-
-        <main class="glass-panel rounded-3xl p-6 shadow-2xl relative overflow-hidden">
-            <div class="absolute -top-24 -right-24 w-48 h-48 bg-blue-600/10 rounded-full blur-3xl"></div>
-            
-            <div id="chat-box" class="h-[450px] overflow-y-auto chat-scroll mb-6 space-y-6 pr-4">
-                <div class="flex flex-col gap-1">
-                    <span class="text-[10px] font-bold text-blue-500 uppercase">Nexus Core</span>
-                    <p class="text-sm text-gray-400">Initialize successful. Ready to query the 50,000 medicine records. Try asking about a manufacturer like <strong>'Roche'</strong> or a specific drug.</p>
-                </div>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-3">
-                <input type="text" id="user-input" 
-                       placeholder="What are the common indications for Roche products?" 
-                       class="flex-1 bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
-                       onkeypress="if(event.key === 'Enter') askNexus()">
-                
-                <button id="ask-btn" onclick="askNexus()" 
-                        class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-8 rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-                    ASK NEXUS
-                </button>
-            </div>
-        </main>
-
-        <footer class="text-center">
-            <p class="text-[9px] text-gray-600 uppercase tracking-widest italic">
-                Developed by Sai Varun Degala • Gemini Campus Ambassador 2026
-            </p>
-        </footer>
+<header>
+  <div class="logo">
+    <div class="logo-icon">⬡</div>
+    <div>
+      <h1>MedGraph Nexus</h1>
+      <p>NEO4J · GEMINI · RAG PIPELINE</p>
     </div>
+  </div>
+  <div class="hstats">
+    <div class="pill"><div class="dot"></div><span>50K nodes</span></div>
+    <div class="pill" style="border-color:#8b6fd450;color:#8b6fd4">✦ <span>Gemini 1.5 Flash</span></div>
+  </div>
+</header>
 
-    <script>
-        async function askNexus() {
-            const input = document.getElementById('user-input');
-            const chat = document.getElementById('chat-box');
-            const btn = document.getElementById('ask-btn');
-            const query = input.value.trim();
+<div class="main">
+  <div id="log">
+    <div class="welcome" id="welcome">
+      <div class="welcome-icon">⬡</div>
+      <h2>MedGraph Nexus Intelligence</h2>
+      <p>Query 50,000 verified medicine records using natural language. Ask about dosages, indications, manufacturers, or categories.</p>
+      <div class="chips">
+        <div class="chip" onclick="chip(this)">What is Metformin used for?</div>
+        <div class="chip" onclick="chip(this)">OTC creams for pain relief</div>
+        <div class="chip" onclick="chip(this)">Antidiabetic tablets by Roche</div>
+        <div class="chip" onclick="chip(this)">Antibiotics in capsule form</div>
+        <div class="chip" onclick="chip(this)">Prescription medicines for hypertension</div>
+        <div class="chip" onclick="chip(this)">500mg strength medicines</div>
+      </div>
+    </div>
+  </div>
 
-            if (!query) return;
+  <div class="input-zone">
+    <div class="input-wrap">
+      <textarea id="inp" rows="1" maxlength="500"
+        placeholder="Ask about any medicine, indication, dosage, or category..."
+        onkeydown="onKey(event)" oninput="resize(this);countChars(this)"></textarea>
+      <button id="btn" onclick="send()" title="Send (Enter)">➤</button>
+    </div>
+    <div class="input-foot">
+      <span>Enter to send · Shift+Enter for newline</span>
+      <span id="cnt">0 / 500</span>
+    </div>
+  </div>
+</div>
 
-            // 1. Update UI for User Message
-            chat.innerHTML += `
-                <div class="flex flex-col items-end gap-1">
-                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">You</span>
-                    <div class="bg-blue-600/10 border border-blue-500/20 px-4 py-3 rounded-2xl rounded-tr-none max-w-[85%] text-sm">
-                        ${query}
-                    </div>
-                </div>`;
-            
-            input.value = ""; // Clear for next query
-            btn.disabled = true;
-            btn.innerText = "THINKING...";
-            chat.scrollTop = chat.scrollHeight;
+<script>
+  const API = '/ask';
+  let busy = false;
 
-            try {
-                // 2. Contact Backend
-                // Add a random ID to the URL to force the browser to treat it as a brand new request
-const response = await fetch(`/ask?t=${Date.now()}`, { 
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: query // Ensure 'query' is getting the fresh input.value
-});
+  function resize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 110) + 'px';
+  }
+  function countChars(el) {
+    document.getElementById('cnt').textContent = el.value.length + ' / 500';
+  }
+  function onKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  }
+  function chip(el) {
+    document.getElementById('inp').value = el.textContent;
+    countChars(document.getElementById('inp'));
+    send();
+  }
 
-                if (!response.ok) throw new Error(`Status: ${response.status}`);
+  function removeWelcome() {
+    const w = document.getElementById('welcome');
+    if (w) w.remove();
+  }
 
-                let data = await response.text();
-                
-                // 3. Clean and Format Data
-                // Removing fallbacks or special markers for a clean clinical look
-                data = data.replace(/\[Fallback Mode\]/g, "");
-                
-                // Parse Markdown using Marked.js
-                const htmlContent = marked.parse(data);
+  function addMsg(role, html, isError = false) {
+    removeWelcome();
+    const log = document.getElementById('log');
+    const wrap = document.createElement('div');
+    wrap.className = 'msg ' + role;
 
-                // 4. Update UI for Nexus Response
-                chat.innerHTML += `
-                    <div class="flex flex-col gap-1 fade-in">
-                        <span class="text-[10px] font-bold text-blue-500 uppercase tracking-tighter">Nexus Intelligence</span>
-                        <div class="prose prose-invert prose-sm bg-white/5 border border-white/5 p-5 rounded-3xl rounded-tl-none max-w-[95%] text-gray-200 leading-relaxed">
-                            ${htmlContent}
-                        </div>
-                    </div>`;
+    const av = document.createElement('div');
+    av.className = 'av ' + (role === 'user' ? 'user' : 'bot');
+    av.textContent = role === 'user' ? '👤' : '⬡';
 
-            } catch (err) {
-                console.error("Nexus Error:", err);
-                chat.innerHTML += `
-                    <div class="text-red-500 text-[10px] uppercase font-bold italic tracking-widest text-center py-4">
-                        ⚠️ Engine Timeout: ${err.message}
-                    </div>`;
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "ASK NEXUS";
-                chat.scrollTop = chat.scrollHeight;
-            }
-        }
-    </script>
+    const bub = document.createElement('div');
+    bub.className = 'bubble ' + (role === 'user' ? 'user' : 'bot glow') + (isError ? ' error' : '');
+
+    if (role === 'bot' && !isError) {
+      const head = document.createElement('div');
+      head.className = 'bhead';
+      head.innerHTML = '<div class="bhead-dot"></div><span>NEXUS INTELLIGENCE</span>';
+      bub.appendChild(head);
+    }
+
+    const body = document.createElement('div');
+    body.innerHTML = html;
+    bub.appendChild(body);
+
+    wrap.appendChild(av);
+    wrap.appendChild(bub);
+    log.appendChild(wrap);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function showTyping() {
+    removeWelcome();
+    const log = document.getElementById('log');
+    const wrap = document.createElement('div');
+    wrap.className = 'msg bot'; wrap.id = 'typing';
+    const av = document.createElement('div');
+    av.className = 'av bot'; av.textContent = '⬡';
+    const t = document.createElement('div');
+    t.className = 'typing';
+    t.innerHTML = '<span></span><span></span><span></span>';
+    wrap.appendChild(av); wrap.appendChild(t);
+    log.appendChild(wrap);
+    log.scrollTop = log.scrollHeight;
+  }
+  function hideTyping() {
+    const t = document.getElementById('typing');
+    if (t) t.remove();
+  }
+
+  function lock(state) {
+    busy = state;
+    const btn = document.getElementById('btn');
+    const inp = document.getElementById('inp');
+    btn.disabled = inp.disabled = state;
+    if (state) { btn.classList.add('spin'); btn.textContent = '↻'; }
+    else        { btn.classList.remove('spin'); btn.textContent = '➤'; inp.focus(); }
+  }
+
+  async function send() {
+    if (busy) return;
+    const inp = document.getElementById('inp');
+    const q = inp.value.trim();
+    if (!q) return;
+
+    addMsg('user', q);
+    inp.value = ''; inp.style.height = 'auto';
+    countChars(inp);
+    lock(true); showTyping();
+
+    try {
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q })
+      });
+      hideTyping();
+
+      if (!res.ok) {
+        let msg = 'Server error: ' + res.status;
+        try { const d = await res.json(); msg = d.detail || msg; } catch(_) {}
+        addMsg('bot', '⚠️ ' + msg, true);
+        return;
+      }
+
+      const data = await res.json();
+      addMsg('bot', data.answer ? marked.parse(data.answer) : '⚠️ Empty response from server.', !data.answer);
+
+    } catch(err) {
+      hideTyping();
+      addMsg('bot', err.name === 'TypeError'
+        ? '⚠️ Cannot connect to backend. Make sure the server is running on port 8000.'
+        : '⚠️ ' + err.message, true);
+    } finally {
+      lock(false);
+    }
+  }
+</script>
 </body>
 </html>
