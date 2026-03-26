@@ -38,34 +38,21 @@ MedGraph Nexus solves the "Hallucination" problem common in standard AI models b
 | **Queries** | Struggles with "How many?" or "Compare X" | **Native Support** for property filtering |
 | **Reliability** | Fails if the LLM is offline | **Deterministic Mode** works without AI |
 
----
+---![Uploading Gemini_Generated_Image_4ga4ou4ga4ou4ga4.png…]()
+
 
 ## 🏗️ Technical Architecture
+---![Uploading Gemini_Generated_Image_4ga4ou4ga4ou4ga4.png…]()
+#📊 Data Model (Neo4j Schema)
+The core entity is the :Medicine node, designed for high-speed indexing and property-based retrieval.Node PropertyTypeUsagenameStringPrimary Key (Indexed)categoryStringTherapeutic Class FilteringstrengthStringPrecise Dosage RetrievalmanufacturerStringBrand-specific QueriesindicationTextGrounding for AI Generation.
 
-```mermaid
-flowchart TD
-    User(["User Query"]) --> API["FastAPI /ask"]
-    API --> Agent["Query Agent"]
-
-    subgraph Knowledge_Graph_Layer
-    Agent --> Neo4j[("Neo4j Graph")]
-    Neo4j -- No Match --> FDA["openFDA API"]
-    end
-
-    subgraph Intelligence_Layer
-    Neo4j --> Gemini{"Gemini 2.0"}
-    FDA --> Gemini
-    Gemini -- Fail --> Det["Deterministic Formatter"]
-    Gemini -- Success --> Resp["Markdown Response"]
-    end
-
-    Det --> Final["Final Response"]
-    Resp --> Final
-📊 Data Model (Neo4j Schema)The core entity is the :Medicine node, designed for high-speed indexing and property-based retrieval.Node PropertyTypeUsagenameStringPrimary Key (Indexed)categoryStringTherapeutic Class FilteringstrengthStringPrecise Dosage RetrievalmanufacturerStringBrand-specific QueriesindicationTextGrounding for AI Generation🚀 Deployment & Local Setup1. Environment Configuration (.env)Code snippetNEO4J_URI=neo4j+s://<your-id>.databases.neo4j.io
+#🚀 Deployment & Local Setup
+1. Environment Configuration (.env)Code snippetNEO4J_URI=neo4j+s://<your-id>.databases.neo4j.io
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=<your-password>
 GEMINI_API_KEY=<your-key>
 OPENFDA_API_KEY=<optional>
+
 2. Local InstallationBash# Clone and Install
 git clone [https://github.com/yourusername/medgraph-nexus.git](https://github.com/yourusername/medgraph-nexus.git)
 pip install -r requirements.txt
@@ -75,4 +62,5 @@ python production_ingest.py --file medicine_dataset.csv --clear
 
 # Launch API
 uvicorn ai_service:app --host 0.0.0.0 --port 8000
-🛡️ Security & ReliabilityHallucination Prevention: Context is passed as structured JSON, forcing the LLM to stick to the graph data.Health Monitoring: /health endpoint tracks Neo4j and API connectivity.Scalability: Optimized for Render with dynamic PORT binding and Gunicorn/Uvicorn support.👨‍💻 Developed BySai Varun Degala | Google Gemini Campus Ambassador LinkedIn | Project Link
+🛡️ Security & ReliabilityHallucination Prevention: Context is passed as structured JSON, forcing the LLM to stick to the graph data.Health Monitoring: /health endpoint tracks Neo4j and API connectivity.Scalability: Optimized for Render with dynamic PORT binding and Gunicorn/Uvicorn support.
+#👨‍💻 Developed BySai Varun Degala | Google Gemini Campus Ambassador LinkedIn | https://medgraph-ai-service.onrender.com/
