@@ -10,8 +10,6 @@ This backend is designed for clean containerization, local execution, and effort
 
 To ensure 100% data reliability, the service implements a **hybrid query engine**. The backend connects to Neo4j to find matching medicine nodes, and dynamically merges their attributes with local CSV datasets (containing side effects, substitutes, and uses) if present. This allows for rich data retrieval even if the graph relationships are still being built in the database.
 
-![System Architecture Diagram](architecture_diagram.png)
-
 ### Query Retrieval Workflow
 
 ```mermaid
