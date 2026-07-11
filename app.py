@@ -30,10 +30,10 @@ class MedicineGraphRetriever:
         # Load environment variables
         load_dotenv()
         
-        self.uri = uri or os.getenv("NEO4J_URI", "neo4j+s://60889094.databases.neo4j.io")
-        self.user = user or os.getenv("NEO4J_USERNAME", "60889094")
-        self.password = password or os.getenv("NEO4J_PASSWORD", "nWB5R-7VttDodCwa3al_s2wNQ6oNzCnH64ToJQO7XuM")
-        self.database = os.getenv("NEO4J_DATABASE", "60889094")
+        self.uri = uri or os.getenv("NEO4J_URI", "")
+        self.user = user or os.getenv("NEO4J_USERNAME", "")
+        self.password = password or os.getenv("NEO4J_PASSWORD", "")
+        self.database = os.getenv("NEO4J_DATABASE", "")
         
         self.driver: Optional[Driver] = None
         self._connect()
