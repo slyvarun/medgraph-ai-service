@@ -88,10 +88,10 @@ The API is fully CORS-enabled, allowing your Lovable AI frontend to fetch data d
 3. **Configure Environment variables:**
    Create a `.env` file in the folder root:
    ```ini
-   NEO4J_URI=neo4j+s://60889094.databases.neo4j.io
-   NEO4J_USERNAME=60889094
-   NEO4J_PASSWORD=your_password
-   NEO4J_DATABASE=60889094
+   NEO4J_URI=neo4j+s://<your-instance-id>.databases.neo4j.io
+   NEO4J_USERNAME=<your-username>
+   NEO4J_PASSWORD=<your-password>
+   NEO4J_DATABASE=<your-db-name>
    ```
 
 4. **Start the server:**
@@ -115,10 +115,10 @@ The API is fully CORS-enabled, allowing your Lovable AI frontend to fetch data d
    Pass env variables directly during runtime to keep your secrets safe:
    ```bash
    docker run -p 8080:8080 \
-     -e NEO4J_URI="neo4j+s://60889094.databases.neo4j.io" \
-     -e NEO4J_USERNAME="60889094" \
-     -e NEO4J_PASSWORD="your_password" \
-     -e NEO4J_DATABASE="60889094" \
+     -e NEO4J_URI="neo4j+s://<your-instance-id>.databases.neo4j.io" \
+     -e NEO4J_USERNAME="<your-username>" \
+     -e NEO4J_PASSWORD="<your-password>" \
+     -e NEO4J_DATABASE="<your-db-name>" \
      medgraph-backend
    ```
    The application will be online at `http://localhost:8080`.
@@ -137,5 +137,5 @@ gcloud run deploy medgraph-backend \
   --platform managed \
   --region us-central1 \
   --allow-unauthenticated \
-  --set-env-vars NEO4J_URI="neo4j+s://60889094.databases.neo4j.io",NEO4J_USERNAME="60889094",NEO4J_PASSWORD="your_password",NEO4J_DATABASE="60889094"
+  --set-env-vars NEO4J_URI="neo4j+s://<your-instance-id>.databases.neo4j.io",NEO4J_USERNAME="<your-username>",NEO4J_PASSWORD="<your-password>",NEO4J_DATABASE="<your-db-name>"
 ```
