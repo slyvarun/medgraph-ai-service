@@ -556,7 +556,8 @@
       </div>
     </div>
     <div class="header-actions">
-      <button class="lang-select" onclick="setBackendUrl()" title="Configure live Backend API URL">⚙️ API Settings</button>
+      <button class="lang-select" onclick="setBackendUrl()" title="Configure live Backend API URL">⚙️ API
+        Settings</button>
       <select id="lang-select" class="lang-select" title="Choose response language">
         <option value="en">🌐 English</option>
         <option value="te">🌐 తెలుగు (Telugu)</option>
@@ -601,19 +602,27 @@
   </div>
 
   <script>
-    const DEFAULT_BACKEND = 'https://medgraph-nexus.onrender.com';
+    const DEFAULT_BACKEND = 'https://medgraph-ai-service-1.onrender.com';
+
+    function getBackendBaseUrl() {
+      const saved = localStorage.getItem('MEDGRAPH_BACKEND_URL');
+      if (saved && saved.trim()) return saved.trim().replace(/\/$/, '');
+      if (window.MEDGRAPH_BACKEND_URL) return window.MEDGRAPH_BACKEND_URL.replace(/\/$/, '');
+      
+      const host = window.location.hostname;
+      const proto = window.location.protocol;
+
+      if (proto === 'file:' || host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
+        return 'http://localhost:8000';
+      }
+      return DEFAULT_BACKEND;
+    }
 
     function getApiUrl() {
-      if (window.MEDGRAPH_BACKEND_URL) return window.MEDGRAPH_BACKEND_URL + '/ask';
-      const host = window.location.hostname;
-      if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
-        return '/ask';
-      }
-      if (host.endsWith('vercel.app') || host.endsWith('netlify.app') || host.endsWith('github.io') || window.location.protocol === 'file:') {
-        return DEFAULT_BACKEND + '/ask';
-      }
-      return '/ask';
+      const base = getBackendBaseUrl();
+      return base ? (base + '/ask') : '/ask';
     }
+
 
     let busy = false;
 
@@ -737,12 +746,12 @@
       } catch (err) {
         hideDoctorThinking();
         const targetUrl = getApiUrl();
-        addMsg('bot', 
+        addMsg('bot',
           `⚠️ **Connection Error**: Unable to reach backend API at \`${targetUrl}\`.\n\n` +
           `💡 **Troubleshooting Tips**:\n` +
           `- If your backend is hosted on **Render free tier**, it takes ~30 seconds to wake up from sleep.\n` +
           `- Click **⚙️ API Settings** in the top right to verify or update your live Render URL.\n` +
-          `- Ensure backend deployment contains the updated CORS settings.`, 
+          `- Ensure backend deployment contains the updated CORS settings.`,
           true
         );
       } finally {
@@ -752,4 +761,4 @@
   </script>
 </body>
 
-</html>
+</html>
