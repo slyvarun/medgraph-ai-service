@@ -9,7 +9,7 @@ import json
 import logging
 from typing import Optional, Dict, Any, List
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, field_validator
@@ -39,9 +39,24 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["GET", "POST"],
+    allow_credentials=False,
+    allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.options("/{full_path:path}", include_in_schema=False)
+async def options_handler(full_path: str):
+    """Explicit preflight handler to guarantee Access-Control headers on all cross-origin requests."""
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, DELETE, PATCH, HEAD",
+            "Access-Control-Allow-Headers": "*",
+        },
+    )
+
 
 
 FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
@@ -204,4 +219,4 @@ async def shutdown():
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run(app, host="0.0.0.0", port=port)
