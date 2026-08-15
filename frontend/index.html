@@ -556,8 +556,6 @@
       </div>
     </div>
     <div class="header-actions">
-      <button class="lang-select" onclick="setBackendUrl()" title="Configure live Backend API URL">⚙️ API
-        Settings</button>
       <select id="lang-select" class="lang-select" title="Choose response language">
         <option value="en">🌐 English</option>
         <option value="te">🌐 తెలుగు (Telugu)</option>
@@ -569,6 +567,7 @@
       </div>
     </div>
   </header>
+
 
 
   <div class="chat-container">
@@ -745,13 +744,9 @@
 
       } catch (err) {
         hideDoctorThinking();
-        const targetUrl = getApiUrl();
-        addMsg('bot',
-          `⚠️ **Connection Error**: Unable to reach backend API at \`${targetUrl}\`.\n\n` +
-          `💡 **Troubleshooting Tips**:\n` +
-          `- If your backend is hosted on **Render free tier**, it takes ~30 seconds to wake up from sleep.\n` +
-          `- Click **⚙️ API Settings** in the top right to verify or update your live Render URL.\n` +
-          `- Ensure backend deployment contains the updated CORS settings.`,
+        addMsg('bot', 
+          `⚠️ **Connection Error**: Unable to reach Doctor AI engine at \`${getApiUrl()}\`.\n\n` +
+          `💡 *Note: If hosted on Render free tier, the backend server takes ~30 seconds to wake up from cold start.*`, 
           true
         );
       } finally {
@@ -761,4 +756,4 @@
   </script>
 </body>
 
-</html>
+</html>
