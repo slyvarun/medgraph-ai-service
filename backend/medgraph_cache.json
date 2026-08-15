@@ -1,0 +1,588 @@
+{
+  "metadata": {
+    "total_medicines": 64,
+    "unique_indications": 8,
+    "unique_categories": 8,
+    "unique_manufacturers": 20,
+    "unique_dosage_forms": 8,
+    "updated_at": "2026-08-15 16:39:45"
+  },
+  "records": [
+    {
+      "name": "Acetocillin",
+      "classification": "Over-the-Counter",
+      "category": "Antidiabetic",
+      "indication": "Virus",
+      "dosage_form": "Cream",
+      "strength": "938 mg",
+      "manufacturer": "Roche Holding AG"
+    },
+    {
+      "name": "Ibuprocillin",
+      "classification": "Over-the-Counter",
+      "category": "Antiviral",
+      "indication": "Infection",
+      "dosage_form": "Injection",
+      "strength": "337 mg",
+      "manufacturer": "CSL Limited"
+    },
+    {
+      "name": "Dextrophen",
+      "classification": "Prescription",
+      "category": "Antibiotic",
+      "indication": "Wound",
+      "dosage_form": "Ointment",
+      "strength": "333 mg",
+      "manufacturer": "Johnson & Johnson"
+    },
+    {
+      "name": "Clarinazole",
+      "classification": "Prescription",
+      "category": "Antifungal",
+      "indication": "Pain",
+      "dosage_form": "Syrup",
+      "strength": "362 mg",
+      "manufacturer": "AbbVie Inc."
+    },
+    {
+      "name": "Amoxicillin",
+      "classification": "Over-the-Counter",
+      "category": "Antifungal",
+      "indication": "Wound",
+      "dosage_form": "Tablet",
+      "strength": "802 mg",
+      "manufacturer": "Teva Pharmaceutical Industries Ltd."
+    },
+    {
+      "name": "Ibupromycin",
+      "classification": "Prescription",
+      "category": "Antibiotic",
+      "indication": "Infection",
+      "dosage_form": "Injection",
+      "strength": "140 mg",
+      "manufacturer": "Takeda Pharmaceutical Company Limited"
+    },
+    {
+      "name": "Metovir",
+      "classification": "Over-the-Counter",
+      "category": "Antipyretic",
+      "indication": "Infection",
+      "dosage_form": "Ointment",
+      "strength": "641 mg",
+      "manufacturer": "Takeda Pharmaceutical Company Limited"
+    },
+    {
+      "name": "Ibuprovir",
+      "classification": "Over-the-Counter",
+      "category": "Antidepressant",
+      "indication": "Fungus",
+      "dosage_form": "Syrup",
+      "strength": "758 mg",
+      "manufacturer": "Eli Lilly and Company"
+    },
+    {
+      "name": "Cefcillin",
+      "classification": "Over-the-Counter",
+      "category": "Antipyretic",
+      "indication": "Fungus",
+      "dosage_form": "Tablet",
+      "strength": "954 mg",
+      "manufacturer": "Takeda Pharmaceutical Company Limited"
+    },
+    {
+      "name": "Acetomycin",
+      "classification": "Prescription",
+      "category": "Analgesic",
+      "indication": "Wound",
+      "dosage_form": "Inhaler",
+      "strength": "838 mg",
+      "manufacturer": "Novo Nordisk A/S"
+    },
+    {
+      "name": "Acetonazole",
+      "classification": "Prescription",
+      "category": "Antipyretic",
+      "indication": "Wound",
+      "dosage_form": "Ointment",
+      "strength": "575 mg",
+      "manufacturer": "Bayer AG"
+    },
+    {
+      "name": "Dolocillin",
+      "classification": "Prescription",
+      "category": "Antiviral",
+      "indication": "Diabetes",
+      "dosage_form": "Ointment",
+      "strength": "451 mg",
+      "manufacturer": "Novo Nordisk A/S"
+    },
+    {
+      "name": "Cefmet",
+      "classification": "Prescription",
+      "category": "Antifungal",
+      "indication": "Depression",
+      "dosage_form": "Tablet",
+      "strength": "440 mg",
+      "manufacturer": "AstraZeneca plc"
+    },
+    {
+      "name": "Dolophen",
+      "classification": "Prescription",
+      "category": "Antibiotic",
+      "indication": "Depression",
+      "dosage_form": "Capsule",
+      "strength": "469 mg",
+      "manufacturer": "Johnson & Johnson"
+    },
+    {
+      "name": "Ibupronazole",
+      "classification": "Prescription",
+      "category": "Analgesic",
+      "indication": "Fungus",
+      "dosage_form": "Injection",
+      "strength": "720 mg",
+      "manufacturer": "Novartis AG"
+    },
+    {
+      "name": "Amoxiprofen",
+      "classification": "Prescription",
+      "category": "Antiviral",
+      "indication": "Diabetes",
+      "dosage_form": "Ointment",
+      "strength": "861 mg",
+      "manufacturer": "Novo Nordisk A/S"
+    },
+    {
+      "name": "Amoxistatin",
+      "classification": "Over-the-Counter",
+      "category": "Antiviral",
+      "indication": "Fever",
+      "dosage_form": "Inhaler",
+      "strength": "46 mg",
+      "manufacturer": "Sanofi S.A."
+    },
+    {
+      "name": "Dextrocillin",
+      "classification": "Over-the-Counter",
+      "category": "Antidiabetic",
+      "indication": "Pain",
+      "dosage_form": "Inhaler",
+      "strength": "392 mg",
+      "manufacturer": "Sanofi S.A."
+    },
+    {
+      "name": "Clariphen",
+      "classification": "Over-the-Counter",
+      "category": "Antidiabetic",
+      "indication": "Fungus",
+      "dosage_form": "Syrup",
+      "strength": "300 mg",
+      "manufacturer": "GlaxoSmithKline plc"
+    },
+    {
+      "name": "Dolomet",
+      "classification": "Prescription",
+      "category": "Antifungal",
+      "indication": "Diabetes",
+      "dosage_form": "Drops",
+      "strength": "335 mg",
+      "manufacturer": "Amgen Inc."
+    },
+    {
+      "name": "Acetoprofen",
+      "classification": "Prescription",
+      "category": "Antibiotic",
+      "indication": "Fever",
+      "dosage_form": "Inhaler",
+      "strength": "909 mg",
+      "manufacturer": "CSL Limited"
+    },
+    {
+      "name": "Amoximet",
+      "classification": "Prescription",
+      "category": "Analgesic",
+      "indication": "Pain",
+      "dosage_form": "Ointment",
+      "strength": "795 mg",
+      "manufacturer": "Gilead Sciences, Inc."
+    },
+    {
+      "name": "Doloprofen",
+      "classification": "Over-the-Counter",
+      "category": "Antibiotic",
+      "indication": "Fungus",
+      "dosage_form": "Inhaler",
+      "strength": "981 mg",
+      "manufacturer": "Eli Lilly and Company"
+    },
+    {
+      "name": "Clariprofen",
+      "classification": "Prescription",
+      "category": "Antifungal",
+      "indication": "Infection",
+      "dosage_form": "Tablet",
+      "strength": "123 mg",
+      "manufacturer": "Pfizer Inc."
+    },
+    {
+      "name": "Metocillin",
+      "classification": "Over-the-Counter",
+      "category": "Analgesic",
+      "indication": "Pain",
+      "dosage_form": "Tablet",
+      "strength": "892 mg",
+      "manufacturer": "Eli Lilly and Company"
+    },
+    {
+      "name": "Cefstatin",
+      "classification": "Prescription",
+      "category": "Antipyretic",
+      "indication": "Fever",
+      "dosage_form": "Ointment",
+      "strength": "19 mg",
+      "manufacturer": "Roche Holding AG"
+    },
+    {
+      "name": "Metomycin",
+      "classification": "Over-the-Counter",
+      "category": "Antifungal",
+      "indication": "Wound",
+      "dosage_form": "Capsule",
+      "strength": "718 mg",
+      "manufacturer": "Pfizer Inc."
+    },
+    {
+      "name": "Metoprofen",
+      "classification": "Prescription",
+      "category": "Antiseptic",
+      "indication": "Wound",
+      "dosage_form": "Capsule",
+      "strength": "319 mg",
+      "manufacturer": "Novartis AG"
+    },
+    {
+      "name": "Clarivir",
+      "classification": "Prescription",
+      "category": "Analgesic",
+      "indication": "Pain",
+      "dosage_form": "Tablet",
+      "strength": "14 mg",
+      "manufacturer": "Bristol-Myers Squibb Company"
+    },
+    {
+      "name": "Ibuproprofen",
+      "classification": "Over-the-Counter",
+      "category": "Analgesic",
+      "indication": "Pain",
+      "dosage_form": "Cream",
+      "strength": "178 mg",
+      "manufacturer": "CSL Limited"
+    },
+    {
+      "name": "Cefprofen",
+      "classification": "Over-the-Counter",
+      "category": "Antiseptic",
+      "indication": "Pain",
+      "dosage_form": "Tablet",
+      "strength": "245 mg",
+      "manufacturer": "Novartis AG"
+    },
+    {
+      "name": "Dextromycin",
+      "classification": "Over-the-Counter",
+      "category": "Antipyretic",
+      "indication": "Wound",
+      "dosage_form": "Capsule",
+      "strength": "986 mg",
+      "manufacturer": "Takeda Pharmaceutical Company Limited"
+    },
+    {
+      "name": "Acetophen",
+      "classification": "Over-the-Counter",
+      "category": "Analgesic",
+      "indication": "Virus",
+      "dosage_form": "Cream",
+      "strength": "76 mg",
+      "manufacturer": "Merck & Co., Inc."
+    },
+    {
+      "name": "Dextrostatin",
+      "classification": "Prescription",
+      "category": "Antifungal",
+      "indication": "Wound",
+      "dosage_form": "Capsule",
+      "strength": "296 mg",
+      "manufacturer": "Merck & Co., Inc."
+    },
+    {
+      "name": "Metophen",
+      "classification": "Prescription",
+      "category": "Antiseptic",
+      "indication": "Virus",
+      "dosage_form": "Tablet",
+      "strength": "404 mg",
+      "manufacturer": "AstraZeneca plc"
+    },
+    {
+      "name": "Amoxivir",
+      "classification": "Over-the-Counter",
+      "category": "Antifungal",
+      "indication": "Virus",
+      "dosage_form": "Syrup",
+      "strength": "289 mg",
+      "manufacturer": "Novartis AG"
+    },
+    {
+      "name": "Cefnazole",
+      "classification": "Prescription",
+      "category": "Antiviral",
+      "indication": "Diabetes",
+      "dosage_form": "Inhaler",
+      "strength": "520 mg",
+      "manufacturer": "CSL Limited"
+    },
+    {
+      "name": "Acetovir",
+      "classification": "Prescription",
+      "category": "Antidepressant",
+      "indication": "Wound",
+      "dosage_form": "Injection",
+      "strength": "188 mg",
+      "manufacturer": "Gilead Sciences, Inc."
+    },
+    {
+      "name": "Amoxinazole",
+      "classification": "Prescription",
+      "category": "Analgesic",
+      "indication": "Depression",
+      "dosage_form": "Ointment",
+      "strength": "35 mg",
+      "manufacturer": "Pfizer Inc."
+    },
+    {
+      "name": "Dextromet",
+      "classification": "Prescription",
+      "category": "Antiviral",
+      "indication": "Fever",
+      "dosage_form": "Syrup",
+      "strength": "564 mg",
+      "manufacturer": "AstraZeneca plc"
+    },
+    {
+      "name": "Clarimycin",
+      "classification": "Over-the-Counter",
+      "category": "Antibiotic",
+      "indication": "Pain",
+      "dosage_form": "Syrup",
+      "strength": "254 mg",
+      "manufacturer": "Biogen Inc."
+    },
+    {
+      "name": "Acetostatin",
+      "classification": "Prescription",
+      "category": "Analgesic",
+      "indication": "Diabetes",
+      "dosage_form": "Inhaler",
+      "strength": "490 mg",
+      "manufacturer": "CSL Limited"
+    },
+    {
+      "name": "Ibuprophen",
+      "classification": "Over-the-Counter",
+      "category": "Antifungal",
+      "indication": "Depression",
+      "dosage_form": "Ointment",
+      "strength": "967 mg",
+      "manufacturer": "AbbVie Inc."
+    },
+    {
+      "name": "Clarimet",
+      "classification": "Prescription",
+      "category": "Antidepressant",
+      "indication": "Diabetes",
+      "dosage_form": "Injection",
+      "strength": "424 mg",
+      "manufacturer": "AstraZeneca plc"
+    },
+    {
+      "name": "Acetomet",
+      "classification": "Prescription",
+      "category": "Antiviral",
+      "indication": "Pain",
+      "dosage_form": "Drops",
+      "strength": "226 mg",
+      "manufacturer": "GlaxoSmithKline plc"
+    },
+    {
+      "name": "Claricillin",
+      "classification": "Prescription",
+      "category": "Antidiabetic",
+      "indication": "Virus",
+      "dosage_form": "Tablet",
+      "strength": "734 mg",
+      "manufacturer": "Novo Nordisk A/S"
+    },
+    {
+      "name": "Cefphen",
+      "classification": "Prescription",
+      "category": "Antifungal",
+      "indication": "Fungus",
+      "dosage_form": "Cream",
+      "strength": "991 mg",
+      "manufacturer": "Bristol-Myers Squibb Company"
+    },
+    {
+      "name": "Metostatin",
+      "classification": "Over-the-Counter",
+      "category": "Antipyretic",
+      "indication": "Pain",
+      "dosage_form": "Ointment",
+      "strength": "982 mg",
+      "manufacturer": "CSL Limited"
+    },
+    {
+      "name": "Dextronazole",
+      "classification": "Prescription",
+      "category": "Antiseptic",
+      "indication": "Diabetes",
+      "dosage_form": "Tablet",
+      "strength": "367 mg",
+      "manufacturer": "Boehringer Ingelheim GmbH"
+    },
+    {
+      "name": "Dolonazole",
+      "classification": "Over-the-Counter",
+      "category": "Antifungal",
+      "indication": "Pain",
+      "dosage_form": "Ointment",
+      "strength": "533 mg",
+      "manufacturer": "GlaxoSmithKline plc"
+    },
+    {
+      "name": "Claristatin",
+      "classification": "Prescription",
+      "category": "Antipyretic",
+      "indication": "Infection",
+      "dosage_form": "Capsule",
+      "strength": "47 mg",
+      "manufacturer": "Pfizer Inc."
+    },
+    {
+      "name": "Amoximycin",
+      "classification": "Over-the-Counter",
+      "category": "Antipyretic",
+      "indication": "Fungus",
+      "dosage_form": "Syrup",
+      "strength": "808 mg",
+      "manufacturer": "Roche Holding AG"
+    },
+    {
+      "name": "Dolomycin",
+      "classification": "Prescription",
+      "category": "Antidiabetic",
+      "indication": "Fungus",
+      "dosage_form": "Capsule",
+      "strength": "135 mg",
+      "manufacturer": "Bayer AG"
+    },
+    {
+      "name": "Metonazole",
+      "classification": "Prescription",
+      "category": "Analgesic",
+      "indication": "Fever",
+      "dosage_form": "Cream",
+      "strength": "124 mg",
+      "manufacturer": "Pfizer Inc."
+    },
+    {
+      "name": "Metomet",
+      "classification": "Over-the-Counter",
+      "category": "Analgesic",
+      "indication": "Fungus",
+      "dosage_form": "Syrup",
+      "strength": "271 mg",
+      "manufacturer": "Bayer AG"
+    },
+    {
+      "name": "Dextrovir",
+      "classification": "Prescription",
+      "category": "Antifungal",
+      "indication": "Diabetes",
+      "dosage_form": "Inhaler",
+      "strength": "940 mg",
+      "manufacturer": "Biogen Inc."
+    },
+    {
+      "name": "Ibuprostatin",
+      "classification": "Prescription",
+      "category": "Antidiabetic",
+      "indication": "Diabetes",
+      "dosage_form": "Drops",
+      "strength": "157 mg",
+      "manufacturer": "Amgen Inc."
+    },
+    {
+      "name": "Dolovir",
+      "classification": "Prescription",
+      "category": "Antibiotic",
+      "indication": "Infection",
+      "dosage_form": "Ointment",
+      "strength": "790 mg",
+      "manufacturer": "Sanofi S.A."
+    },
+    {
+      "name": "Cefmycin",
+      "classification": "Prescription",
+      "category": "Antifungal",
+      "indication": "Diabetes",
+      "dosage_form": "Ointment",
+      "strength": "778 mg",
+      "manufacturer": "Sanofi S.A."
+    },
+    {
+      "name": "Amoxiphen",
+      "classification": "Prescription",
+      "category": "Antipyretic",
+      "indication": "Pain",
+      "dosage_form": "Injection",
+      "strength": "984 mg",
+      "manufacturer": "Merck & Co., Inc."
+    },
+    {
+      "name": "Cefvir",
+      "classification": "Prescription",
+      "category": "Analgesic",
+      "indication": "Wound",
+      "dosage_form": "Capsule",
+      "strength": "305 mg",
+      "manufacturer": "Bristol-Myers Squibb Company"
+    },
+    {
+      "name": "Dextroprofen",
+      "classification": "Over-the-Counter",
+      "category": "Antidepressant",
+      "indication": "Diabetes",
+      "dosage_form": "Drops",
+      "strength": "389 mg",
+      "manufacturer": "Merck & Co., Inc."
+    },
+    {
+      "name": "Dolostatin",
+      "classification": "Over-the-Counter",
+      "category": "Antiviral",
+      "indication": "Infection",
+      "dosage_form": "Drops",
+      "strength": "865 mg",
+      "manufacturer": "Teva Pharmaceutical Industries Ltd."
+    },
+    {
+      "name": "Ibupromet",
+      "classification": "Prescription",
+      "category": "Antibiotic",
+      "indication": "Depression",
+      "dosage_form": "Drops",
+      "strength": "919 mg",
+      "manufacturer": "Biogen Inc."
+    }
+  ]
+}
