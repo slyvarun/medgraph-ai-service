@@ -1,35 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MedGraph Nexus — Doctor AI Assistant</title>
   <link rel="icon" type="image/png" href="/logo.png" />
   <!-- Marked.js for clean markdown rendering -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
   <style>
     :root {
-      --bg:          #f8fafc;
-      --header-bg:   #ffffff;
-      --card-bg:     #ffffff;
-      --user-bg:     #0f172a;
-      --user-text:   #ffffff;
-      --border:      #e2e8f0;
-      --border-hover:#cbd5e1;
-      --primary:     #2563eb;
-      --primary-soft:#eff6ff;
-      --text:        #0f172a;
-      --muted:       #64748b;
-      --faint:       #94a3b8;
-      --error:       #ef4444;
-      --shadow:      0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
-      --shadow-md:   0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-      --radius:      16px;
+      --bg: #f8fafc;
+      --header-bg: #ffffff;
+      --card-bg: #ffffff;
+      --user-bg: #0f172a;
+      --user-text: #ffffff;
+      --border: #e2e8f0;
+      --border-hover: #cbd5e1;
+      --primary: #2563eb;
+      --primary-soft: #eff6ff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --faint: #94a3b8;
+      --error: #ef4444;
+      --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --radius: 16px;
     }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -53,120 +62,257 @@
       flex-shrink: 0;
       box-shadow: var(--shadow);
     }
-    .logo { display: flex; align-items: center; gap: 14px; }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
     .logo img {
-      height: 38px; width: auto; object-fit: contain;
+      height: 38px;
+      width: auto;
+      object-fit: contain;
     }
+
     .logo h1 {
-      font-size: 18px; font-weight: 700; color: var(--text);
-      letter-spacing: -0.3px; line-height: 1.2;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.3px;
+      line-height: 1.2;
     }
+
     .logo p {
-      font-size: 11.5px; color: var(--muted);
+      font-size: 11.5px;
+      color: var(--muted);
       font-weight: 400;
     }
+
     .header-actions {
-      display: flex; align-items: center; gap: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
+
     .lang-select {
       padding: 7px 14px;
       background: #f1f5f9;
       border: 1px solid var(--border);
       border-radius: 12px;
-      font-size: 13px; font-weight: 600;
-      color: var(--text); outline: none;
-      cursor: pointer; transition: all .2s ease;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      outline: none;
+      cursor: pointer;
+      transition: all .2s ease;
       font-family: 'Inter', sans-serif;
     }
-    .lang-select:hover { border-color: var(--primary); background: #ffffff; }
+
+    .lang-select:hover {
+      border-color: var(--primary);
+      background: #ffffff;
+    }
 
     .status-pill {
-      display: flex; align-items: center; gap: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       padding: 6px 14px;
       background: #f1f5f9;
       border: 1px solid var(--border);
       border-radius: 20px;
-      font-size: 12px; font-weight: 500;
+      font-size: 12px;
+      font-weight: 500;
       color: var(--muted);
     }
+
     .dot {
-      width: 8px; height: 8px; border-radius: 50%;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
       background: #10b981;
       box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
     }
 
     /* ── MAIN CHAT LAYOUT ─────────────────────── */
     .chat-container {
-      flex: 1; display: flex; flex-direction: column;
-      max-width: 840px; width: 100%; margin: 0 auto;
-      height: 100%; overflow: hidden;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      max-width: 840px;
+      width: 100%;
+      margin: 0 auto;
+      height: 100%;
+      overflow: hidden;
     }
 
     /* ── MESSAGES LOG ─────────────────────────── */
     #log {
-      flex: 1; overflow-y: auto;
-      padding: 28px 20px; display: flex;
-      flex-direction: column; gap: 20px;
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
       scrollbar-width: thin;
       scrollbar-color: var(--border) transparent;
     }
-    #log::-webkit-scrollbar { width: 5px; }
-    #log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    #log::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    #log::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
 
     /* ── WELCOME SCREEN ───────────────────────── */
     .welcome {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 16px; text-align: center; padding: 40px 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      text-align: center;
+      padding: 40px 20px;
       margin: auto 0;
     }
+
     .welcome img {
-      width: 90px; height: auto; object-fit: contain;
-      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.06));
+      width: 90px;
+      height: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.06));
     }
-    .welcome h2 { font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -0.4px; }
-    .welcome p  { font-size: 14px; color: var(--muted); max-width: 480px; line-height: 1.6; }
-    .chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 8px; }
+
+    .welcome h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.4px;
+    }
+
+    .welcome p {
+      font-size: 14px;
+      color: var(--muted);
+      max-width: 480px;
+      line-height: 1.6;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
     .chip {
       padding: 9px 16px;
-      background: #ffffff; border: 1px solid var(--border);
-      border-radius: 24px; font-size: 13px; font-weight: 500; color: var(--text);
-      cursor: pointer; transition: all .2s ease;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      transition: all .2s ease;
       box-shadow: var(--shadow);
     }
+
     .chip:hover {
-      border-color: var(--primary); color: var(--primary);
-      background: var(--primary-soft); transform: translateY(-1px);
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-soft);
+      transform: translateY(-1px);
     }
 
     /* ── MESSAGES ─────────────────────────────── */
-    .msg { display: flex; gap: 14px; align-items: flex-start; animation: fadeIn .2s ease-out; }
-    .msg.user { flex-direction: row-reverse; }
-    @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+    .msg {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      animation: fadeIn .2s ease-out;
+    }
+
+    .msg.user {
+      flex-direction: row-reverse;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
 
     .avatar {
-      width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center; font-size: 18px;
-      font-weight: 600; overflow: hidden;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 600;
+      overflow: hidden;
     }
-    .avatar.user { background: var(--user-bg); color: #fff; }
-    .avatar.bot  { background: #ffffff; border: 1px solid var(--border); padding: 4px; box-shadow: var(--shadow); }
-    .avatar.bot img { width: 100%; height: 100%; object-fit: contain; }
 
-    .bubble {
-      max-width: 82%; padding: 18px 22px;
-      border-radius: var(--radius); font-size: 14.5px; line-height: 1.65;
+    .avatar.user {
+      background: var(--user-bg);
+      color: #fff;
     }
-    .bubble.user {
-      background: var(--user-bg); color: var(--user-text);
-      border-bottom-right-radius: 4px; font-weight: 400;
-    }
-    .bubble.bot {
-      background: var(--card-bg); border: 1px solid var(--border);
-      border-bottom-left-radius: 4px; color: var(--text);
+
+    .avatar.bot {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      padding: 4px;
       box-shadow: var(--shadow);
     }
-    .bubble.error { border-color: var(--error); background: #fef2f2; color: #991b1b; }
+
+    .avatar.bot img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .bubble {
+      max-width: 82%;
+      padding: 18px 22px;
+      border-radius: var(--radius);
+      font-size: 14.5px;
+      line-height: 1.65;
+    }
+
+    .bubble.user {
+      background: var(--user-bg);
+      color: var(--user-text);
+      border-bottom-right-radius: 4px;
+      font-weight: 400;
+    }
+
+    .bubble.bot {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+      color: var(--text);
+      box-shadow: var(--shadow);
+    }
+
+    .bubble.error {
+      border-color: var(--error);
+      background: #fef2f2;
+      color: #991b1b;
+    }
 
     /* Doctor Thinking Card */
     .doctor-thinking {
@@ -176,203 +322,349 @@
       border-bottom-left-radius: 4px;
       padding: 16px 20px;
       box-shadow: var(--shadow);
-      width: fit-content; max-width: 82%;
+      width: fit-content;
+      max-width: 82%;
     }
+
     .doctor-thinking-header {
-      display: flex; align-items: center; gap: 10px;
-      font-size: 14px; font-weight: 600; color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--primary);
       margin-bottom: 10px;
     }
+
     .pulse-dot {
-      width: 9px; height: 9px; border-radius: 50%; background: var(--primary);
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--primary);
       animation: pulse 1.5s infinite;
     }
-    @keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.4);opacity:.4} }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1
+      }
+
+      50% {
+        transform: scale(1.4);
+        opacity: .4
+      }
+    }
+
     .doctor-steps {
-      display: flex; flex-direction: column; gap: 6px;
-      font-size: 12.5px; color: var(--muted); font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 12.5px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
     }
+
     .doctor-step {
-      display: flex; align-items: center; gap: 8px; opacity: 0.5; transition: opacity .3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0.5;
+      transition: opacity .3s;
     }
-    .doctor-step.active { opacity: 1; color: var(--text); font-weight: 500; }
+
+    .doctor-step.active {
+      opacity: 1;
+      color: var(--text);
+      font-weight: 500;
+    }
 
     /* Markdown inside Bot bubbles */
-    .bubble h1,.bubble h2,.bubble h3 {
-      color: var(--text); margin: 14px 0 8px; font-size: 15px; font-weight: 700;
+    .bubble h1,
+    .bubble h2,
+    .bubble h3 {
+      color: var(--text);
+      margin: 14px 0 8px;
+      font-size: 15px;
+      font-weight: 700;
       letter-spacing: -0.2px;
     }
-    .bubble h1:first-child,.bubble h2:first-child,.bubble h3:first-child { margin-top: 0; }
-    .bubble p { margin-bottom: 10px; }
-    .bubble p:last-child { margin-bottom: 0; }
-    .bubble ul,.bubble ol { padding-left: 20px; margin-bottom: 10px; }
-    .bubble li { margin-bottom: 5px; }
-    .bubble strong { color: var(--text); font-weight: 600; }
-    .bubble em { color: var(--muted); }
-    .bubble code {
-      font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
-      background: #f1f5f9; padding: 3px 6px; border-radius: 6px; color: #0f172a;
+
+    .bubble h1:first-child,
+    .bubble h2:first-child,
+    .bubble h3:first-child {
+      margin-top: 0;
     }
-    .bubble table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13.5px; }
-    .bubble th,.bubble td { padding: 9px 13px; border: 1px solid var(--border); text-align: left; }
-    .bubble th { background: #f8fafc; color: var(--text); font-weight: 600; }
-    .bubble tr:nth-child(even) td { background: #f8fafc; }
+
+    .bubble p {
+      margin-bottom: 10px;
+    }
+
+    .bubble p:last-child {
+      margin-bottom: 0;
+    }
+
+    .bubble ul,
+    .bubble ol {
+      padding-left: 20px;
+      margin-bottom: 10px;
+    }
+
+    .bubble li {
+      margin-bottom: 5px;
+    }
+
+    .bubble strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .bubble em {
+      color: var(--muted);
+    }
+
+    .bubble code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      background: #f1f5f9;
+      padding: 3px 6px;
+      border-radius: 6px;
+      color: #0f172a;
+    }
+
+    .bubble table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 13.5px;
+    }
+
+    .bubble th,
+    .bubble td {
+      padding: 9px 13px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+
+    .bubble th {
+      background: #f8fafc;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .bubble tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
     .bubble blockquote {
-      border-left: 3px solid var(--primary); padding-left: 12px; color: var(--muted);
-      margin: 12px 0; font-style: italic; font-size: 13.5px;
+      border-left: 3px solid var(--primary);
+      padding-left: 12px;
+      color: var(--muted);
+      margin: 12px 0;
+      font-style: italic;
+      font-size: 13.5px;
     }
 
     /* ── INPUT AREA ───────────────────────────── */
     .input-zone {
-      padding: 16px 20px 24px; flex-shrink: 0; background: var(--bg);
+      padding: 16px 20px 24px;
+      flex-shrink: 0;
+      background: var(--bg);
     }
+
     .input-wrap {
-      display: flex; align-items: flex-end; gap: 12px;
-      background: #ffffff; border: 1px solid var(--border);
-      border-radius: 20px; padding: 12px 16px;
-      transition: all .2s ease; box-shadow: var(--shadow-md);
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 12px 16px;
+      transition: all .2s ease;
+      box-shadow: var(--shadow-md);
     }
-    .input-wrap:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12); }
+
+    .input-wrap:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
     #inp {
-      flex: 1; background: none; border: none; outline: none;
-      color: var(--text); font-family: 'Inter', sans-serif;
-      font-size: 15px; line-height: 1.5; resize: none;
-      max-height: 120px; min-height: 24px;
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+      resize: none;
+      max-height: 120px;
+      min-height: 24px;
     }
-    #inp::placeholder { color: var(--faint); }
+
+    #inp::placeholder {
+      color: var(--faint);
+    }
+
     #btn {
-      width: 40px; height: 40px; flex-shrink: 0;
-      background: var(--primary); border: none; border-radius: 12px;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      font-size: 16px; color: #ffffff; transition: all .18s ease;
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      background: var(--primary);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #ffffff;
+      transition: all .18s ease;
     }
-    #btn:hover:not(:disabled) { background: #1d4ed8; transform: scale(1.02); }
-    #btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+    #btn:hover:not(:disabled) {
+      background: #1d4ed8;
+      transform: scale(1.02);
+    }
+
+    #btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      transform: none;
+    }
 
     .foot-info {
-      text-align: center; margin-top: 8px; font-size: 12px; color: var(--muted);
+      text-align: center;
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
     }
   </style>
 </head>
+
 <body>
 
-<header>
-  <div class="logo">
-    <img src="/logo.png" alt="MedGraph Nexus Logo" />
-    <div>
-      <h1>MedGraph Nexus</h1>
-      <p>Doctor AI Clinical Knowledge Assistant</p>
-    </div>
-  </div>
-  <div class="header-actions">
-    <select id="lang-select" class="lang-select" title="Choose response language">
-      <option value="en">🌐 English</option>
-      <option value="te">🌐 తెలుగు (Telugu)</option>
-      <option value="hi">🌐 हिन्दी (Hindi)</option>
-    </select>
-    <div class="status-pill">
-      <div class="dot"></div>
-      <span>50,000 Medicine Records</span>
-    </div>
-  </div>
-</header>
-
-<div class="chat-container">
-  <div id="log">
-    <div class="welcome" id="welcome">
+  <header>
+    <div class="logo">
       <img src="/logo.png" alt="MedGraph Nexus Logo" />
-      <h2>Hello, I am Doctor AI. How can I assist you?</h2>
-      <p>Ask clinical questions about medicines, why they are prescribed, prescription status, or matching symptoms in English, Telugu, or Hindi.</p>
-      <div class="chips">
-        <div class="chip" onclick="chip(this)">Why do we use Amoxicillin?</div>
-        <div class="chip" onclick="chip(this)">When should I take Ibuprocillin?</div>
-        <div class="chip" onclick="chip(this)">What medicines treat Fever and Pain?</div>
-        <div class="chip" onclick="chip(this)">మందుల లక్షణాలు మరియు మోతాదు వివరాలు (Telugu)</div>
-        <div class="chip" onclick="chip(this)">बुखार और दर्द की दवाएं (Hindi)</div>
+      <div>
+        <h1>MedGraph Nexus</h1>
+        <p>Doctor AI Clinical Knowledge Assistant</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <select id="lang-select" class="lang-select" title="Choose response language">
+        <option value="en">🌐 English</option>
+        <option value="te">🌐 తెలుగు (Telugu)</option>
+        <option value="hi">🌐 हिन्दी (Hindi)</option>
+      </select>
+      <div class="status-pill">
+        <div class="dot"></div>
+        <span>50,000 Medicine Records</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="chat-container">
+    <div id="log">
+      <div class="welcome" id="welcome">
+        <img src="/logo.png" alt="MedGraph Nexus Logo" />
+        <h2>Hello, I am Doctor AI. How can I assist you?</h2>
+        <p>Ask clinical questions about medicines, why they are prescribed, prescription status, or matching symptoms in
+          English, Telugu, or Hindi.</p>
+        <div class="chips">
+          <div class="chip" onclick="chip(this)">Why do we use Amoxicillin?</div>
+          <div class="chip" onclick="chip(this)">When should I take Ibuprocillin?</div>
+          <div class="chip" onclick="chip(this)">What medicines treat Fever and Pain?</div>
+          <div class="chip" onclick="chip(this)">మందుల లక్షణాలు మరియు మోతాదు వివరాలు (Telugu)</div>
+          <div class="chip" onclick="chip(this)">बुखार और दर्द की दवाएं (Hindi)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-zone">
+      <div class="input-wrap">
+        <textarea id="inp" rows="1" maxlength="500"
+          placeholder="Ask Doctor AI about any medicine, symptom, or treatment..." onkeydown="onKey(event)"
+          oninput="resize(this)"></textarea>
+        <button id="btn" onclick="send()" title="Send Message">➤</button>
+      </div>
+      <div class="foot-info">
+        MedGraph Knowledge Graph • Medical reference only. Consult a licensed physician.
       </div>
     </div>
   </div>
 
-  <div class="input-zone">
-    <div class="input-wrap">
-      <textarea id="inp" rows="1" maxlength="500"
-        placeholder="Ask Doctor AI about any medicine, symptom, or treatment..."
-        onkeydown="onKey(event)" oninput="resize(this)"></textarea>
-      <button id="btn" onclick="send()" title="Send Message">➤</button>
-    </div>
-    <div class="foot-info">
-      MedGraph Knowledge Graph • Medical reference only. Consult a licensed physician.
-    </div>
-  </div>
-</div>
+  <script>
+    const DEFAULT_BACKEND = 'https://medgraph-nexus.onrender.com';
 
-<script>
-  const DEFAULT_BACKEND = 'https://medgraph-nexus.onrender.com';
-
-  function getApiUrl() {
-    if (window.MEDGRAPH_BACKEND_URL) return window.MEDGRAPH_BACKEND_URL + '/ask';
-    const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
+    function getApiUrl() {
+      if (window.MEDGRAPH_BACKEND_URL) return window.MEDGRAPH_BACKEND_URL + '/ask';
+      const host = window.location.hostname;
+      if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
+        return '/ask';
+      }
+      if (host.endsWith('vercel.app') || host.endsWith('netlify.app') || host.endsWith('github.io') || window.location.protocol === 'file:') {
+        return DEFAULT_BACKEND + '/ask';
+      }
       return '/ask';
     }
-    if (host.endsWith('vercel.app') || host.endsWith('netlify.app') || host.endsWith('github.io') || window.location.protocol === 'file:') {
-      return DEFAULT_BACKEND + '/ask';
+
+    let busy = false;
+
+
+    function resize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 120) + 'px';
     }
-    return '/ask';
-  }
+    function onKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+    }
+    function chip(el) {
+      document.getElementById('inp').value = el.textContent;
+      send();
+    }
+    function removeWelcome() {
+      const w = document.getElementById('welcome');
+      if (w) w.remove();
+    }
 
-  let busy = false;
+    function addMsg(role, html, isError = false) {
+      removeWelcome();
+      const log = document.getElementById('log');
+      const wrap = document.createElement('div');
+      wrap.className = 'msg ' + role;
 
+      const av = document.createElement('div');
+      av.className = 'avatar ' + (role === 'user' ? 'user' : 'bot');
+      av.innerHTML = role === 'user' ? '👤' : '<img src="/logo.png" alt="Doctor AI Logo" />';
 
-  function resize(el) {
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-  }
-  function onKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
-  }
-  function chip(el) {
-    document.getElementById('inp').value = el.textContent;
-    send();
-  }
-  function removeWelcome() {
-    const w = document.getElementById('welcome');
-    if (w) w.remove();
-  }
+      const bub = document.createElement('div');
+      bub.className = 'bubble ' + (role === 'user' ? 'user' : 'bot') + (isError ? ' error' : '');
+      bub.innerHTML = html;
 
-  function addMsg(role, html, isError = false) {
-    removeWelcome();
-    const log = document.getElementById('log');
-    const wrap = document.createElement('div');
-    wrap.className = 'msg ' + role;
+      wrap.appendChild(av);
+      wrap.appendChild(bub);
+      log.appendChild(wrap);
+      log.scrollTop = log.scrollHeight;
+    }
 
-    const av = document.createElement('div');
-    av.className = 'avatar ' + (role === 'user' ? 'user' : 'bot');
-    av.innerHTML = role === 'user' ? '👤' : '<img src="/logo.png" alt="Doctor AI Logo" />';
+    function showDoctorThinking() {
+      removeWelcome();
+      const log = document.getElementById('log');
+      const wrap = document.createElement('div');
+      wrap.className = 'msg bot'; wrap.id = 'typing';
 
-    const bub = document.createElement('div');
-    bub.className = 'bubble ' + (role === 'user' ? 'user' : 'bot') + (isError ? ' error' : '');
-    bub.innerHTML = html;
+      const av = document.createElement('div');
+      av.className = 'avatar bot';
+      av.innerHTML = '<img src="/logo.png" alt="Doctor AI Logo" />';
 
-    wrap.appendChild(av);
-    wrap.appendChild(bub);
-    log.appendChild(wrap);
-    log.scrollTop = log.scrollHeight;
-  }
-
-  function showDoctorThinking() {
-    removeWelcome();
-    const log = document.getElementById('log');
-    const wrap = document.createElement('div');
-    wrap.className = 'msg bot'; wrap.id = 'typing';
-
-    const av = document.createElement('div');
-    av.className = 'avatar bot';
-    av.innerHTML = '<img src="/logo.png" alt="Doctor AI Logo" />';
-
-    const t = document.createElement('div');
-    t.className = 'doctor-thinking';
-    t.innerHTML = `
+      const t = document.createElement('div');
+      t.className = 'doctor-thinking';
+      t.innerHTML = `
       <div class="doctor-thinking-header">
         <div class="pulse-dot"></div>
         <span>👨‍⚕️ Doctor AI is reviewing case & taking clinical notes...</span>
@@ -385,68 +677,69 @@
       </div>
     `;
 
-    wrap.appendChild(av); wrap.appendChild(t);
-    log.appendChild(wrap);
-    log.scrollTop = log.scrollHeight;
+      wrap.appendChild(av); wrap.appendChild(t);
+      log.appendChild(wrap);
+      log.scrollTop = log.scrollHeight;
 
-    // Animate steps
-    setTimeout(() => { document.querySelector('.step2')?.classList.add('active'); }, 500);
-    setTimeout(() => { document.querySelector('.step3')?.classList.add('active'); }, 1000);
-    setTimeout(() => { document.querySelector('.step4')?.classList.add('active'); }, 1500);
-  }
-
-  function hideDoctorThinking() {
-    const t = document.getElementById('typing');
-    if (t) t.remove();
-  }
-
-  function lock(state) {
-    busy = state;
-    const btn = document.getElementById('btn');
-    const inp = document.getElementById('inp');
-    btn.disabled = inp.disabled = state;
-    btn.textContent = state ? '↻' : '➤';
-  }
-
-  async function send() {
-    if (busy) return;
-    const inp = document.getElementById('inp');
-    const langSelect = document.getElementById('lang-select');
-    const q = inp.value.trim();
-    if (!q) return;
-
-    const lang = langSelect.value || 'en';
-
-    addMsg('user', q);
-    inp.value = ''; inp.style.height = 'auto';
-    lock(true); showDoctorThinking();
-
-    try {
-      const res = await fetch(getApiUrl(), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: q, language: lang })
-      });
-
-      hideDoctorThinking();
-
-      if (!res.ok) {
-        let msg = 'Server error: ' + res.status;
-        try { const d = await res.json(); msg = d.detail || msg; } catch(_) {}
-        addMsg('bot', '⚠️ ' + msg, true);
-        return;
-      }
-
-      const data = await res.json();
-      addMsg('bot', data.answer ? marked.parse(data.answer) : '⚠️ Empty response.', !data.answer);
-
-    } catch(err) {
-      hideDoctorThinking();
-      addMsg('bot', '⚠️ Connection error: ' + err.message, true);
-    } finally {
-      lock(false);
+      // Animate steps
+      setTimeout(() => { document.querySelector('.step2')?.classList.add('active'); }, 500);
+      setTimeout(() => { document.querySelector('.step3')?.classList.add('active'); }, 1000);
+      setTimeout(() => { document.querySelector('.step4')?.classList.add('active'); }, 1500);
     }
-  }
-</script>
+
+    function hideDoctorThinking() {
+      const t = document.getElementById('typing');
+      if (t) t.remove();
+    }
+
+    function lock(state) {
+      busy = state;
+      const btn = document.getElementById('btn');
+      const inp = document.getElementById('inp');
+      btn.disabled = inp.disabled = state;
+      btn.textContent = state ? '↻' : '➤';
+    }
+
+    async function send() {
+      if (busy) return;
+      const inp = document.getElementById('inp');
+      const langSelect = document.getElementById('lang-select');
+      const q = inp.value.trim();
+      if (!q) return;
+
+      const lang = langSelect.value || 'en';
+
+      addMsg('user', q);
+      inp.value = ''; inp.style.height = 'auto';
+      lock(true); showDoctorThinking();
+
+      try {
+        const res = await fetch(getApiUrl(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: q, language: lang })
+        });
+
+        hideDoctorThinking();
+
+        if (!res.ok) {
+          let msg = 'Server error: ' + res.status;
+          try { const d = await res.json(); msg = d.detail || msg; } catch (_) { }
+          addMsg('bot', '⚠️ ' + msg, true);
+          return;
+        }
+
+        const data = await res.json();
+        addMsg('bot', data.answer ? marked.parse(data.answer) : '⚠️ Empty response.', !data.answer);
+
+      } catch (err) {
+        hideDoctorThinking();
+        addMsg('bot', '⚠️ Connection error: ' + err.message, true);
+      } finally {
+        lock(false);
+      }
+    }
+  </script>
 </body>
+
 </html>

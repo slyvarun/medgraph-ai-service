@@ -124,37 +124,37 @@ def validate_env() -> bool:
 
 
 def load_and_clean(filepath: str) -> list[dict]:
-    """Read CSV, rename columns, normalise strings, return list of dicts."""
+    """Read CSV using built-in csv module, normalise strings, return list of dicts."""
     log.info(f"Reading CSV dataset: {filepath}")
 
+    records = []
     try:
-        df = pd.read_csv(filepath, encoding="utf-8")
+        with open(filepath, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                records.append(row)
     except UnicodeDecodeError:
         log.warning("UTF-8 failed — retrying with latin-1")
-        df = pd.read_csv(filepath, encoding="latin-1")
+        with open(filepath, "r", encoding="latin-1") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                records.append(row)
 
-    log.info(f"Loaded {len(df):,} rows | columns: {df.columns.tolist()}")
+    log.info(f"Loaded {len(records):,} rows from CSV.")
 
-    existing_renames = {k: v for k, v in COLUMN_MAP.items() if k in df.columns}
-    df = df.rename(columns=existing_renames)
+    cleaned = []
+    for r in records:
+        rec = {}
+        for orig_col, target_col in COLUMN_MAP.items():
+            val = r.get(orig_col, "").strip()
+            if val.lower() in ["nan", "none", "null"]:
+                val = ""
+            rec[target_col] = val
+        if rec.get("name"):
+            cleaned.append(rec)
 
-    target_cols = list(COLUMN_MAP.values())
-    for col in target_cols:
-        if col not in df.columns:
-            df[col] = ""
-    df = df[target_cols].copy()
-
-    for col in df.columns:
-        df[col] = (
-            df[col]
-            .astype(str)
-            .str.strip()
-            .replace({"nan": "", "NaN": "", "None": "", "none": ""})
-        )
-
-    df = df[df["name"].str.len() > 0].reset_index(drop=True)
-    log.info(f"Clean records ready for graph ingestion: {len(df):,}")
-    return df.to_dict("records")
+    log.info(f"Clean records ready for graph ingestion: {len(cleaned):,}")
+    return cleaned
 
 
 def export_local_json_cache(records: list[dict], output_path: str = CACHE_JSON_PATH):
