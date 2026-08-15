@@ -307,8 +307,22 @@
 </div>
 
 <script>
-  const API = '/ask';
+  const DEFAULT_BACKEND = 'https://medgraph-nexus.onrender.com';
+
+  function getApiUrl() {
+    if (window.MEDGRAPH_BACKEND_URL) return window.MEDGRAPH_BACKEND_URL + '/ask';
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
+      return '/ask';
+    }
+    if (host.endsWith('vercel.app') || host.endsWith('netlify.app') || host.endsWith('github.io') || window.location.protocol === 'file:') {
+      return DEFAULT_BACKEND + '/ask';
+    }
+    return '/ask';
+  }
+
   let busy = false;
+
 
   function resize(el) {
     el.style.height = 'auto';
@@ -408,11 +422,12 @@
     lock(true); showDoctorThinking();
 
     try {
-      const res = await fetch(API, {
+      const res = await fetch(getApiUrl(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: q, language: lang })
       });
+
       hideDoctorThinking();
 
       if (!res.ok) {
