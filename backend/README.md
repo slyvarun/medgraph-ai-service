@@ -1,14 +1,12 @@
 <div align="center">
 
-  <img src="../frontend/logo.png" alt="MedGraph Nexus Logo" width="160" />
-
   # ⚕️ MedGraph Nexus Backend
   ### *Clinical Knowledge Graph & Multilingual GraphRAG Engine*
 
-  [![Neo4j](https://img.shields.io/badge/Neo4j-AuraDB_Cloud-008CC1?style=for-the-badge&logo=neo4j&logoColor=white)](https://neo4j.com/)
-  [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-  [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-  [![GraphRAG](https://img.shields.io/badge/GraphRAG-Neo4j_%2B_LLM-FF6F00?style=for-the-badge&logo=ai&logoColor=white)](https://github.com/)
+  [![Neo4j](https://img.shields.io/badge/Neo4j-AuraDB_Cloud-008CC1?style=for-the-badge)](https://neo4j.com/)
+  [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge)](https://fastapi.tiangolo.com/)
+  [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge)](https://www.python.org/)
+  [![GraphRAG](https://img.shields.io/badge/GraphRAG-Neo4j_%2B_LLM-FF6F00?style=for-the-badge)](https://github.com/)
 
 </div>
 

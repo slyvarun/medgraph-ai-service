@@ -72,12 +72,6 @@ async def root():
     return FileResponse(path)
 
 
-@app.get("/logo.png", response_class=FileResponse, include_in_schema=False)
-async def logo():
-    path = os.path.join(FRONTEND_DIR, "logo.png")
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="logo.png not found")
-    return FileResponse(path)
 
 
 

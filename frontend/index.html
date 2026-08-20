@@ -5,7 +5,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MedGraph Nexus — Doctor AI Assistant</title>
-  <link rel="icon" type="image/png" href="/logo.png" />
   <!-- Marked.js for clean markdown rendering -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -69,11 +68,6 @@
       gap: 14px;
     }
 
-    .logo img {
-      height: 38px;
-      width: auto;
-      object-fit: contain;
-    }
 
     .logo h1 {
       font-size: 18px;
@@ -181,12 +175,6 @@
       margin: auto 0;
     }
 
-    .welcome img {
-      width: 90px;
-      height: auto;
-      object-fit: contain;
-      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.06));
-    }
 
     .welcome h2 {
       font-size: 22px;
@@ -279,11 +267,6 @@
       box-shadow: var(--shadow);
     }
 
-    .avatar.bot img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
 
     .bubble {
       max-width: 82%;
@@ -549,7 +532,6 @@
 
   <header>
     <div class="logo">
-      <img src="/logo.png" alt="MedGraph Nexus Logo" />
       <div>
         <h1>MedGraph Nexus</h1>
         <p>Doctor AI Clinical Knowledge Assistant</p>
@@ -573,7 +555,6 @@
   <div class="chat-container">
     <div id="log">
       <div class="welcome" id="welcome">
-        <img src="/logo.png" alt="MedGraph Nexus Logo" />
         <h2>Hello, I am Doctor AI. How can I assist you?</h2>
         <p>Ask clinical questions about medicines, why they are prescribed, prescription status, or matching symptoms in
           English, Telugu, or Hindi.</p>
@@ -607,7 +588,7 @@
       const saved = localStorage.getItem('MEDGRAPH_BACKEND_URL');
       if (saved && saved.trim()) return saved.trim().replace(/\/$/, '');
       if (window.MEDGRAPH_BACKEND_URL) return window.MEDGRAPH_BACKEND_URL.replace(/\/$/, '');
-      
+
       const host = window.location.hostname;
       const proto = window.location.protocol;
 
@@ -650,7 +631,7 @@
 
       const av = document.createElement('div');
       av.className = 'avatar ' + (role === 'user' ? 'user' : 'bot');
-      av.innerHTML = role === 'user' ? '👤' : '<img src="/logo.png" alt="Doctor AI Logo" />';
+      av.innerHTML = role === 'user' ? '👤' : '👨‍⚕️';
 
       const bub = document.createElement('div');
       bub.className = 'bubble ' + (role === 'user' ? 'user' : 'bot') + (isError ? ' error' : '');
@@ -670,7 +651,7 @@
 
       const av = document.createElement('div');
       av.className = 'avatar bot';
-      av.innerHTML = '<img src="/logo.png" alt="Doctor AI Logo" />';
+      av.innerHTML = '👨‍⚕️';
 
       const t = document.createElement('div');
       t.className = 'doctor-thinking';
@@ -744,9 +725,9 @@
 
       } catch (err) {
         hideDoctorThinking();
-        addMsg('bot', 
+        addMsg('bot',
           `⚠️ **Connection Error**: Unable to reach Doctor AI engine at \`${getApiUrl()}\`.\n\n` +
-          `💡 *Note: If hosted on Render free tier, the backend server takes ~30 seconds to wake up from cold start.*`, 
+          `💡 *Note: If hosted on Render free tier, the backend server takes ~30 seconds to wake up from cold start.*`,
           true
         );
       } finally {
@@ -756,4 +737,4 @@
   </script>
 </body>
 
-</html>
+</html>
