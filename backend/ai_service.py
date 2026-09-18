@@ -78,9 +78,15 @@ async def root():
 
 
 # ── Pydantic Schemas ──────────────────────────────────────────────────────────
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
 class AskRequest(BaseModel):
     question: str
     language: Optional[str] = "en"
+    history: Optional[List[ChatMessage]] = []
 
     @field_validator("question")
     @classmethod
@@ -150,9 +156,10 @@ async def ask(body: AskRequest):
     Retrieves connected medicine and symptom subgraphs, generates clinical answer,
     and returns response with visualizer nodes & edges.
     """
-    log.info(f"Clinical question received: {body.question!r} | language: {body.language!r}")
+    log.info(f"Clinical question received: {body.question!r} | language: {body.language!r} | history items: {len(body.history or [])}")
     try:
-        answer = ask_agent(body.question, language=body.language or "en")
+        history_list = [h.model_dump() for h in body.history] if body.history else []
+        answer = ask_agent(body.question, language=body.language or "en", history=history_list)
         graph_data = get_graph_visualization(body.question)
         return AskResponse(answer=answer, graph=graph_data)
 

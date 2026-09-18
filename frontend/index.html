@@ -605,7 +605,7 @@
 
 
     let busy = false;
-
+    const chatHistory = [];
 
     function resize(el) {
       el.style.height = 'auto';
@@ -661,10 +661,10 @@
         <span>👨‍⚕️ Doctor AI is reviewing case & taking clinical notes...</span>
       </div>
       <div class="doctor-steps">
-        <div class="doctor-step step1 active">🔍 1. Extracting medical entities & symptom intent...</div>
-        <div class="doctor-step step2">🕸️ 2. Querying Neo4j Knowledge Graph for indications & dosage...</div>
-        <div class="doctor-step step3">📝 3. Taking clinical notes on treatment alternatives...</div>
-        <div class="doctor-step step4">⚕️ 4. Formulating medical assessment in selected language...</div>
+        <div class="doctor-step step1 active">🔍 1. Resolving conversational context & intent...</div>
+        <div class="doctor-step step2">🕸️ 2. Querying Knowledge Graph with schema guardrails...</div>
+        <div class="doctor-step step3">📝 3. Verifying therapeutic class alignment...</div>
+        <div class="doctor-step step4">⚕️ 4. Formulating clinical assessment...</div>
       </div>
     `;
 
@@ -705,10 +705,16 @@
       lock(true); showDoctorThinking();
 
       try {
+        const payload = {
+          question: q,
+          language: lang,
+          history: chatHistory.slice(-8)
+        };
+
         const res = await fetch(getApiUrl(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: q, language: lang })
+          body: JSON.stringify(payload)
         });
 
         hideDoctorThinking();
@@ -721,7 +727,14 @@
         }
 
         const data = await res.json();
-        addMsg('bot', data.answer ? marked.parse(data.answer) : '⚠️ Empty response.', !data.answer);
+        const botText = data.answer || '⚠️ Empty response.';
+        addMsg('bot', data.answer ? marked.parse(data.answer) : botText, !data.answer);
+
+        // Update history
+        chatHistory.push({ role: 'user', content: q });
+        if (data.answer) {
+          chatHistory.push({ role: 'assistant', content: data.answer });
+        }
 
       } catch (err) {
         hideDoctorThinking();

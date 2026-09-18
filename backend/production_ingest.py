@@ -19,6 +19,7 @@ import os
 import sys
 import time
 import json
+import csv
 import argparse
 import logging
 
@@ -160,62 +161,45 @@ def load_and_clean(filepath: str) -> list[dict]:
 def export_local_json_cache(records: list[dict], output_path: str = CACHE_JSON_PATH):
     """
     Build an embedded JSON Knowledge Graph cache so local RAG can run
-    even when Neo4j is offline.
+    even when Neo4j is offline. Stores all dataset records.
     """
     log.info(f"Building local Knowledge Graph cache at: {output_path}")
 
-    # Build unique nodes and indexed indices
-    medicines = {}
-    indications = {}
-    categories = {}
-    manufacturers = {}
-    dosage_forms = {}
+    medicines = set()
+    indications = set()
+    categories = set()
+    manufacturers = set()
+    dosage_forms = set()
 
     for r in records:
-        name = r["name"]
-        if name not in medicines:
-            medicines[name] = {
-                "name": name,
-                "classification": r.get("classification", ""),
-                "category": r.get("category", ""),
-                "indication": r.get("indication", ""),
-                "dosage_form": r.get("dosage_form", ""),
-                "strength": r.get("strength", ""),
-                "manufacturer": r.get("manufacturer", "")
-            }
-
-        ind = r.get("indication")
-        if ind and ind not in indications:
-            indications[ind] = {"name": ind, "type": "Indication"}
-
-        cat = r.get("category")
-        if cat and cat not in categories:
-            categories[cat] = {"name": cat, "type": "Category"}
-
-        mfg = r.get("manufacturer")
-        if mfg and mfg not in manufacturers:
-            manufacturers[mfg] = {"name": mfg, "type": "Manufacturer"}
-
-        df = r.get("dosage_form")
-        if df and df not in dosage_forms:
-            dosage_forms[df] = {"name": df, "type": "DosageForm"}
+        if r.get("name"):
+            medicines.add(r["name"])
+        if r.get("indication"):
+            indications.add(r["indication"])
+        if r.get("category"):
+            categories.add(r["category"])
+        if r.get("manufacturer"):
+            manufacturers.add(r["manufacturer"])
+        if r.get("dosage_form"):
+            dosage_forms.add(r["dosage_form"])
 
     cache_data = {
         "metadata": {
-            "total_medicines": len(medicines),
+            "total_records": len(records),
+            "unique_medicines": len(medicines),
             "unique_indications": len(indications),
             "unique_categories": len(categories),
             "unique_manufacturers": len(manufacturers),
             "unique_dosage_forms": len(dosage_forms),
             "updated_at": time.strftime("%Y-%m-%d %H:%M:%S")
         },
-        "records": list(medicines.values())
+        "records": records
     }
 
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(cache_data, f, indent=2)
 
-    log.info(f"✅ Embedded Knowledge Graph cache saved ({len(medicines):,} medicines, {len(indications):,} indications/symptoms)")
+    log.info(f"✅ Embedded Knowledge Graph cache saved ({len(records):,} records, {len(medicines)} unique drug names, {len(indications)} indications)")
 
 
 def run_ingest(driver, records: list[dict], batch_size: int,
