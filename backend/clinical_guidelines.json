@@ -1,0 +1,102 @@
+{
+  "guidelines": [
+    {
+      "id": "guide_food_drug_interactions",
+      "condition": "Food-Drug Interactions & Dietary Safety",
+      "category": "Pharmacokinetics & Dietary Safety",
+      "title": "Essential Dietary and Food-Drug Interactions Protocol",
+      "bullets": [
+        "Grapefruit Juice & Statins/Calcium Channel Blockers: Avoid grapefruit and grapefruit juice, as it inhibits CYP3A4 enzymes and significantly increases serum drug concentrations.",
+        "Alcohol & NSAIDs/Acetaminophen: Avoid alcohol consumption when taking acetaminophen (liver toxicity risk) or NSAIDs (gastrointestinal mucosal bleeding risk).",
+        "Dairy/Calcium & Antibiotics: Do not take calcium-rich foods or milk simultaneously with tetracyclines or fluoroquinolones (chelates the drug and prevents intestinal absorption). Space by at least 2 hours.",
+        "High-Potassium Foods & ACE Inhibitors: Limit excessive potassium-rich foods or potassium supplements when taking ACE inhibitors or ARBs to prevent hyperkalemia."
+      ]
+    },
+    {
+      "id": "guide_ddi_contraindications",
+      "condition": "Drug-Drug Interactions (DDI) & Contraindications",
+      "category": "Clinical Safety & Polypharmacy",
+      "title": "High-Risk Drug-Drug Interactions (DDI) and Safety Protocol",
+      "bullets": [
+        "Anticoagulants & NSAIDs: Combining blood thinners (Warfarin, Aspirin) with NSAIDs (Ibuprofen, Naproxen) exponentially increases major gastrointestinal hemorrhage risk.",
+        "Triple Whammy Danger: Simultaneous use of an ACE Inhibitor/ARB + Diuretic + NSAID severely compromises renal perfusion and can precipitate acute kidney injury.",
+        "Serotonin Syndrome Risk: Avoid combining multiple serotonergic agents (SSRIs, SNRIs, Tramadol, MAOIs) to prevent life-threatening central serotonin toxicity.",
+        "CNS Depressant Overlap: Avoid co-prescribing opioids and benzodiazepines due to additive respiratory depression and overdose risk."
+      ]
+    },
+    {
+      "id": "guide_special_populations",
+      "condition": "Special Populations: Pregnancy, Pediatrics & Geriatrics",
+      "category": "Special Population Pharmacotherapy",
+      "title": "Clinical Guidelines for Special Patient Populations",
+      "bullets": [
+        "Pregnancy & Lactation Safety: Avoid ACE inhibitors, ARBs, and NSAIDs during the 3rd trimester. Acetaminophen is generally the preferred first-line analgesic during pregnancy under medical guidance.",
+        "Geriatric Renal Monitoring: Elderly patients (>65 years) should have baseline eGFR and serum creatinine checked before starting long-term NSAIDs or renin-angiotensin blockers.",
+        "Pediatric Aspirin Avoidance: Never give aspirin to children or teenagers recovering from viral infections (chickenpox, flu) due to the risk of Reye's Syndrome.",
+        "Hepatic Impairment Dose Limits: Limit maximum daily acetaminophen dose to under 2,000 mg in patients with underlying chronic liver disease or alcohol dependency."
+      ]
+    },
+    {
+      "id": "guide_diabetic_neuropathy",
+      "condition": "Diabetic Neuropathy",
+      "category": "Endocrine & Neurological Care",
+      "title": "Long-Term Management Strategies for Diabetic Neuropathy",
+      "bullets": [
+        "Glycemic Control: Maintain strict blood glucose management (target HbA1c < 7.0%) to slow neuropathic progression.",
+        "Lifestyle & Physical Therapy: Regular low-impact aerobic exercise (swimming, walking) improves peripheral nerve perfusion.",
+        "Daily Foot Inspection & Care: Inspect feet daily for micro-trauma, blisters, or ulcers to prevent severe diabetic foot complications.",
+        "Multimodal Pharmacotherapy: First-line medications include SNRIs (Duloxetine) or Gabapentinoids (Pregabalin, Gabapentin).",
+        "Regular Clinical Screening: Perform annual monofilament and vibration perception testing to monitor nerve function."
+      ]
+    },
+    {
+      "id": "guide_hypertension_care",
+      "condition": "Hypertension",
+      "category": "Cardiovascular Health",
+      "title": "Lifestyle and Dietary Management of High Blood Pressure",
+      "bullets": [
+        "Dietary Interventions: Follow the DASH diet rich in fruits, vegetables, whole grains, and low-fat dairy. Limit sodium under 2,000 mg/day.",
+        "Physical Activity: Engage in at least 150 minutes per week of moderate-intensity aerobic exercise.",
+        "Home BP Monitoring: Maintain a log of morning and evening resting blood pressure readings.",
+        "Medication Compliance: Continue prescribed antihypertensives (e.g. ACE inhibitors, Calcium Channel Blockers) consistently.",
+        "Weight Management: Achieving 5-10% weight reduction significantly lowers systolic blood pressure."
+      ]
+    },
+    {
+      "id": "guide_infection_stewardship",
+      "condition": "Infection & Bacterial Care",
+      "category": "Infectious Diseases",
+      "title": "Antibiotic Stewardship and Infection Recovery",
+      "bullets": [
+        "Full Course Adherence: Complete the entire prescribed duration of antibiotics even if symptoms resolve early.",
+        "Hydration & Rest: Maintain optimal fluid intake and rest to support immune system clearance.",
+        "Probiotic & Gut Care: Consider probiotic support during prolonged antibiotic regimens to preserve gut microbiome balance.",
+        "Symptom Tracking: Monitor for secondary signs such as persistent fever, severe skin rashes, or allergic reactions."
+      ]
+    },
+    {
+      "id": "guide_chronic_pain",
+      "condition": "Pain & Inflammation",
+      "category": "Analgesia & Pain Care",
+      "title": "Multimodal Chronic Pain Management Protocol",
+      "bullets": [
+        "Non-Pharmacological Therapies: Incorporate physical therapy, targeted stretching, heat/cold application, and occupational ergonomics.",
+        "Analgesic Safety: Limit NSAID use in patients with chronic kidney disease or peptic ulcer disease. Use lowest effective dose.",
+        "Renal & Hepatic Monitoring: Monitor liver function when taking acetaminophen over 3g/day.",
+        "Integrative Care: Mindfulness, cognitive behavioral therapy (CBT), and hydrotherapy reduce central pain sensitization."
+      ]
+    },
+    {
+      "id": "guide_asthma_respiratory",
+      "condition": "Respiratory Distress & Asthma",
+      "category": "Pulmonology Care",
+      "title": "Long-Term Asthma Action Plan and Management",
+      "bullets": [
+        "Trigger Avoidance: Identify and minimize exposure to airborne allergens, tobacco smoke, cold dry air, and strong chemical odors.",
+        "Peak Flow Monitoring: Measure daily peak expiratory flow (PEF) to detect early airway narrowing.",
+        "Inhaler Technique: Verify proper technique for metered-dose inhalers (MDIs) with spacers to ensure optimal lung deposition.",
+        "Controller vs Rescue: Use inhaled corticosteroids (ICS) daily for controller therapy and SABA strictly for acute rescue."
+      ]
+    }
+  ]
+}
