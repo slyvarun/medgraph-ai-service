@@ -44,13 +44,16 @@ def shutdown_db_client():
     driver.close()
 
 def query_neo4j_for_context(user_query: str) -> str:
-    # Filter common conversational words to extract clinical search tokens
+    # Filter common conversational words and clinical field headers to isolate medicine/disease tokens
     stopwords = {
         "what", "is", "are", "the", "for", "with", "does", "which", "give", "me", "a", "an",
-        "tell", "about", "cure", "can", "treat", "used", "to", "in", "of", "and", "drug",
+        "tell", "about", "cure", "can", "treat", "used", "uses", "use", "usage", "to", "in", "of", "and", "drug",
         "drugs", "medicine", "medicines", "medication", "medications", "pill", "pills", "tablet",
         "tablets", "how", "class", "available", "there", "show", "list", "their", "any", "some",
-        "and", "or", "associated", "treats"
+        "and", "or", "associated", "treats", "side", "effect", "effects", "adverse", "reaction",
+        "reactions", "warning", "warnings", "precaution", "precautions", "contraindication",
+        "contraindications", "interaction", "interactions", "information", "info", "help",
+        "details", "detail", "take", "taking", "taken", "prescribed", "dose", "dosage"
     }
     tokens = [w.strip("?,.!:;\"'").lower() for w in user_query.split()]
     keywords = [w for w in tokens if len(w) > 2 and w not in stopwords]
@@ -62,11 +65,8 @@ def query_neo4j_for_context(user_query: str) -> str:
     MATCH (m:Medicine)
     WHERE any(kw IN $keywords WHERE toLower(m.brand_name) CONTAINS kw)
        OR any(kw IN $keywords WHERE toLower(m.generic_name) CONTAINS kw)
+       OR any(kw IN $keywords WHERE any(b IN coalesce(m.known_brands, []) WHERE toLower(b) CONTAINS kw))
        OR any(kw IN $keywords WHERE toLower(coalesce(m.category, '')) CONTAINS kw)
-       OR EXISTS {
-           MATCH (m)-[:TREATS_INDICATION]->(i:Indication)
-           WHERE any(kw IN $keywords WHERE toLower(i.description) CONTAINS kw)
-       }
        OR EXISTS {
            MATCH (m)-[:CONTAINS_SUBSTANCE]->(sub:ActiveSubstance)
            WHERE any(kw IN $keywords WHERE toLower(sub.name) CONTAINS kw)
@@ -75,6 +75,10 @@ def query_neo4j_for_context(user_query: str) -> str:
            MATCH (m)-[:BELONGS_TO_CLASS]->(cls:DrugClass)
            WHERE any(kw IN $keywords WHERE toLower(cls.name) CONTAINS kw)
        }
+       OR EXISTS {
+           MATCH (m)-[:TREATS_INDICATION]->(i:Indication)
+           WHERE any(kw IN $keywords WHERE toLower(i.description) CONTAINS kw)
+       }
     OPTIONAL MATCH (m)-[:TREATS_INDICATION]->(i:Indication)
     OPTIONAL MATCH (m)-[:CONTAINS_SUBSTANCE]->(sub:ActiveSubstance)
     OPTIONAL MATCH (m)-[:BELONGS_TO_CLASS]->(cls:DrugClass)
@@ -82,9 +86,23 @@ def query_neo4j_for_context(user_query: str) -> str:
     WITH m, i, man,
          collect(DISTINCT sub.name) AS substances,
          collect(DISTINCT cls.name) AS drug_classes
+    WITH m, i, man, substances, drug_classes,
+         reduce(score = 0, kw IN $keywords |
+            score + 
+            (CASE WHEN toLower(m.brand_name) CONTAINS kw THEN 15 ELSE 0 END) +
+            (CASE WHEN toLower(m.generic_name) CONTAINS kw THEN 15 ELSE 0 END) +
+            (CASE WHEN any(b IN coalesce(m.known_brands, []) WHERE toLower(b) CONTAINS kw) THEN 14 ELSE 0 END) +
+            (CASE WHEN any(s IN substances WHERE toLower(s) CONTAINS kw) THEN 12 ELSE 0 END) +
+            (CASE WHEN any(c IN drug_classes WHERE toLower(c) CONTAINS kw) THEN 8 ELSE 0 END) +
+            (CASE WHEN toLower(coalesce(m.category, '')) CONTAINS kw THEN 5 ELSE 0 END) +
+            (CASE WHEN toLower(coalesce(i.description, '')) CONTAINS kw THEN 2 ELSE 0 END)
+         ) AS relevance
+    ORDER BY relevance DESC
     RETURN 
         m.brand_name AS brand, 
         m.generic_name AS generic,
+        m.known_brands AS known_brands,
+        m.rxcui AS rxcui,
         m.category AS category,
         m.warnings AS warnings,
         m.adverse_reactions AS side_effects,
@@ -104,13 +122,20 @@ def query_neo4j_for_context(user_query: str) -> str:
             for record in result:
                 substances_str = ", ".join(record["substances"]) if record["substances"] else record["generic"]
                 classes_str = ", ".join(record["drug_classes"]) if record["drug_classes"] else "Not Classified"
+                rxcui_str = f" | RxCUI: {record['rxcui']}" if record.get("rxcui") else ""
+                brands = [b for b in record.get("known_brands", []) if b and b.lower() != record["brand"].lower()]
+                brands_line = f"  Also Marketed As: {', '.join(brands[:4])}" if brands else ""
                 med_info = [
-                    f"• Medicine: {record['brand']} (Generic: {record['generic']} | Category: {record.get('category', 'General')})",
+                    f"• Medicine: {record['brand']} (Generic: {record['generic']}{rxcui_str} | Category: {record.get('category', 'General')})"
+                ]
+                if brands_line:
+                    med_info.append(brands_line)
+                med_info.extend([
                     f"  Pharmacologic Class: {classes_str}",
                     f"  Active Substance(s): {substances_str}",
                     f"  Manufacturer: {record['manufacturer']}",
                     f"  Indication/Usage: {record['indication']}"
-                ]
+                ])
                 if record.get("side_effects") and record["side_effects"] != "None specified in label summary":
                     med_info.append(f"  Side Effects / Adverse Reactions: {record['side_effects']}")
                 if record.get("warnings") and record["warnings"] != "None specified in label summary":

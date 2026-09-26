@@ -1,64 +1,39 @@
 <div align="center">
 
-  # ⚕️ MedGraph Nexus
-  ### *Clinical Knowledge Graph & Multilingual GraphRAG System*
+# ⚕️ MedGraph Nexus
+### *Production-Grade Clinical Knowledge Graph & Neuro-Symbolic GraphRAG System*
 
-  [![Neo4j](https://img.shields.io/badge/Neo4j-AuraDB_Cloud-008CC1?style=for-the-badge)](https://neo4j.com/)
-  [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge)](https://fastapi.tiangolo.com/)
-  [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge)](https://www.python.org/)
-  [![GraphRAG](https://img.shields.io/badge/GraphRAG-Neo4j_%2B_LLM-FF6F00?style=for-the-badge)](https://github.com/)
-  [![Multilingual](https://img.shields.io/badge/Multilingual-EN_%7C_TE_%7C_HI-8E44AD?style=for-the-badge)](#-multilingual-support)
-  [![Dataset](https://img.shields.io/badge/Dataset-50%2C000_Records-27AE60?style=for-the-badge)](#-knowledge-graph-schema)
-  [![Keep Alive](https://img.shields.io/badge/Neo4j_KeepAlive-Active-10B981?style=for-the-badge)](#-keeping-neo4j-instance-alive-indefinitely)
-  [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+[![Neo4j AuraDB](https://img.shields.io/badge/Neo4j-10%2C434_Nodes_%7C_22%2C098_Edges-008CC1?style=for-the-badge&logo=neo4j)](https://neo4j.com/)
+[![LLM](https://img.shields.io/badge/LLM-Gemini_2.5_Flash-FF6F00?style=for-the-badge&logo=google)](https://deepmind.google/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python)](https://www.python.org/)
+[![Data Sources](https://img.shields.io/badge/Data-OpenFDA_%2B_NIH_RxNorm_%2B_DailyMed-27AE60?style=for-the-badge)](https://open.fda.gov/)
+[![Multilingual](https://img.shields.io/badge/Multilingual-EN_%7C_TE_%7C_HI-8E44AD?style=for-the-badge)](#-multilingual-clinical-support)
+[![Reliability](https://img.shields.io/badge/Fail--Safe-Deterministic_Graph_Fallback-10B981?style=for-the-badge)](#-fail-safe-deterministic-fallback)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
-  <p align="center">
-    <b>A clinical AI reasoning engine powered by Neo4j Knowledge Graph & GraphRAG. Explains medicine usages, symptoms, indications, manufacturers, and alternative treatments in English, Telugu, and Hindi.</b>
-  </p>
+<p align="center">
+  <b>A clinical decision-support and search engine that eliminates generative AI hallucinations by grounding clinical queries in a 10,434-node heterogeneous Neo4j Knowledge Graph.</b>
+</p>
 
 </div>
 
 ---
 
-## 📁 Repository Structure
-
-```
-medgraph/
-├── README.md                      # Primary Project Documentation
-├── backend/                       # Python FastAPI & Knowledge Graph RAG Service
-│   ├── .env                       # Environment variables & Neo4j credentials
-│   ├── .gitignore                 # Git ignore rules for virtual environments & secrets
-│   ├── ai_service.py              # FastAPI HTTP Server & Neo4j Keep-Alive engine
-│   ├── query_agent.py             # Multilingual GraphRAG reasoning agent (EN | TE | HI)
-│   ├── production_ingest.py       # Neo4j relational graph ingestion pipeline
-│   ├── medicine_dataset.csv       # 50,000 dataset records
-│   ├── medgraph_cache.json        # Embedded offline fallback graph cache
-│   ├── requirements.txt           # Python package dependencies
-│   ├── Procfile                   # Cloud deployment configuration
-│   └── runtime.txt                # Python runtime specification
-└── frontend/                      # Web User Interface
-    └── index.html                 # Doctor AI Clinical Chatbot UI (Clean White Theme)
-```
-
----
-
 ## 📖 Overview
 
-**MedGraph Nexus** is a next-generation clinical decision-support system designed to query, reason over, and visualize complex medical knowledge. Powered by a **50,000-record relational Neo4j Knowledge Graph**, MedGraph Nexus enables patients and clinicians to ask natural language questions regarding medicine classifications, symptom indications (*why and when to use*), dosage forms, manufacturers, and alternative drug choices.
+**MedGraph Nexus** is a next-generation clinical reasoning platform designed to query, reason over, and visualize complex pharmaceutical knowledge. Built on a **curated knowledge graph of 10,434 nodes and 22,098 biological/pharmacological relationships**, MedGraph Nexus enables clinicians, researchers, and patients to explore medicine classifications, active chemical substances, therapeutic categories, adverse warnings, and mechanism-based alternative treatments in **English, Telugu, and Hindi**.
+
+### The Core Problem It Solves: Eliminating Clinical Hallucinations
+When standard generative LLMs (or traditional Vector RAG systems) answer complex medical queries, they predict words based on statistical token probabilities. In healthcare, hallucinating a drug interaction or active chemical ingredient can be catastrophic.
+
+**MedGraph Nexus solves this through Neuro-Symbolic GraphRAG**:
+1. **Symbolic Ground Truth**: The **Neo4j Knowledge Graph** enforces explicit, verifiable biological facts (active substances, drug classes, indications).
+2. **Generative Reasoning**: **Google Gemini 2.5 Flash** synthesizes natural, multi-lingual explanations grounded strictly within the retrieved graph subgraphs.
+3. **Deterministic Provenance**: Every clinical statement is directly traceable to official regulatory package inserts from the **U.S. FDA**, **NIH RxNorm**, and **DailyMed**.
 
 > [!NOTE]
-> MedGraph Nexus features a **Doctor AI Agent** that dynamically takes clinical notes and explains its reasoning steps during real-time retrieval before formulating medical answers.
-
----
-
-## ✨ Key Features
-
-- 👨‍⚕️ **Doctor AI Thinking & Note-Taking Engine**: Visual real-time step-by-step note taking (`🔍 Entity Extraction -> 🕸️ Graph Retrieval -> 📝 Note Taking -> ⚕️ Multilingual Diagnosis`).
-- 🌐 **Multilingual Reasoning (English, Telugu, Hindi)**: On-the-fly language switching across **English**, **తెలుగు (Telugu)**, and **हिन्दी (Hindi)** with native clinical terminology.
-- 🕸️ **Cloud Neo4j Knowledge Graph**: Structured Graph database containing **50,000 records** mapped into entities (`:Medicine`, `:Indication`, `:Category`, `:Manufacturer`, `:DosageForm`) and relationships (`:TREATS_INDICATION`, `:BELONGS_TO_CATEGORY`, `:MANUFACTURED_BY`, `:AVAILABLE_AS`).
-- 🔄 **GraphRAG Multi-Hop Traversal**: Executes Cypher graph traversals to recommend alternative medicines treating the exact same symptom.
-- ⚡ **Auto Neo4j Keep-Alive Heartbeat**: Built-in write-ping mechanism and endpoint to prevent Neo4j AuraDB instance from auto-pausing.
-- 🎨 **Minimalist Clean White & Light Grey UI**: Modern, responsive chatbot interface featuring MedGraph branding, prompt chips, and markdown rendering.
+> For an in-depth technical analysis and defense of MedGraph's Applied AI/ML architecture, read the **[Comprehensive AI/ML Project Specification](docs/EXPERT_AIML_PROJECT_OVERVIEW.md)**.
 
 ---
 
@@ -66,169 +41,195 @@ medgraph/
 
 ```mermaid
 flowchart TD
-    User([👤 User / Patient]) -->|Natural Language Question| UI[🖥️ Frontend UI Interface]
-    UI -->|Language: EN / TE / HI| API[⚡ FastAPI Engine in backend/]
-    API --> DoctorAgent[👨‍⚕️ Doctor AI Agent]
-    
-    DoctorAgent -->|1. Entity & Symptom Extraction| Extractor[🔍 Clinical Extractor]
-    DoctorAgent -->|2. Multi-Hop Cypher Traversal| Neo4j[(🌐 Neo4j AuraDB Cloud)]
-    
-    Neo4j -->|Subgraphs & Nodes| Subgraph[🕸️ Extracted Subgraph]
-    Subgraph -->|3. Clinical Note Taking| Reasoning[📝 Reasoning Engine]
-    Reasoning -->|4. Multilingual LLM RAG| Answer[⚕️ Clinical Diagnosis & Report]
-    
-    Answer -->|JSON Response| UI
+    subgraph Data_Pipeline["1. Data Harmonization & Entity Resolution Pipeline"]
+        FDA["OpenFDA Raw Package Inserts<br/>(14 Bulk Partitions | 262,887 Records)"] --> Curate["pipelines/curate_clinical_dataset.py<br/>Regex & Lexicon Filtering Engine"]
+        RxNorm["NIH RxNorm SPL Mappings<br/>(105,513 Set IDs)"] --> Curate
+        DMed["DailyMed Pharmacologic Classes<br/>(EPC, PE, MoA Mappings)"] --> Curate
+        Curate --> Clean["Purged 292 non-medicines (sanitizers, cosmetics)<br/>Consolidated 2,049 distributor repackagings"]
+        Clean --> Master["3,256 Master Clinical Medicines<br/>(Normalized RxCUIs, Brands, Indications)"]
+    end
+
+    subgraph KG["2. Heterogeneous Neo4j Knowledge Graph"]
+        Master --> Ingest["pipelines/ingest_graph.py<br/>(UNWIND Batch Ingestion Engine)"]
+        Ingest --> Graph[("Neo4j Aura Cloud<br/>10,434 Nodes | 22,098 Edges")]
+    end
+
+    subgraph RAG["3. Clinical GraphRAG Reasoning Service"]
+        User["User / Clinician Query<br/>(EN, TE, HI)"] --> Extractor["backend/ai_service.py<br/>Clinical Entity Extraction & Scoring"]
+        Extractor --> Graph
+        Graph --> Subgraph["Extracted Clinical Subgraph<br/>(1-Hop & 2-Hop Traversal)"]
+        Subgraph --> Prompt["Context-Grounded Clinical Prompt"]
+        Prompt --> LLM["Google Gemini 2.5 Flash Engine"]
+        LLM --> Response["Clinically Grounded Answer + Provenance"]
+        Subgraph -.->|"High-Availability Fail-Safe"| Fallback["Deterministic Graph Fact Card"]
+    end
 ```
 
 ---
 
-## 📊 Knowledge Graph Schema
+## 🏥 Real-World Clinical Use Cases
 
-MedGraph Nexus structures 50,000 medicine records into relational graph nodes and semantic edges:
-
-### 🏷️ Node Labels
-| Node Label | Description | Example Entities |
+| Clinical Scenario | The Problem with Standard AI | How MedGraph Nexus Solves It |
 | :--- | :--- | :--- |
-| `(:Medicine)` | Core medicine records with strength & classification | *Amoxicillin, Ibuprocillin, Metovir* |
-| `(:Indication)` | Symptoms and clinical conditions | *Fever, Pain, Infection, Virus, Diabetes, Wound* |
-| `(:Category)` | Pharmacological category | *Antibiotic, Analgesic, Antipyretic, Antidiabetic* |
-| `(:Manufacturer)` | Pharmaceutical manufacturer | *Pfizer Inc., Roche, Teva, Novartis* |
-| `(:DosageForm)` | Physical form of administration | *Tablet, Capsule, Syrup, Ointment, Injection* |
-
-### 🔗 Relationship Edges
-- `(m:Medicine)-[:TREATS_INDICATION]->(i:Indication)`
-- `(m:Medicine)-[:BELONGS_TO_CATEGORY]->(c:Category)`
-- `(m:Medicine)-[:MANUFACTURED_BY]->(mf:Manufacturer)`
-- `(m:Medicine)-[:AVAILABLE_AS]->(df:DosageForm)`
-- `(c:Category)-[:PRIMARY_TREATMENT_FOR]->(i:Indication)`
+| **Alternative Drug Discovery** | Recommends random drugs without verifying cross-class contraindications. | Traverses `(:Medicine)-[:TREATS_INDICATION]->(:Indication)` and filters by `(:DrugClass)` to find true pharmacological substitutes (e.g., finding ARBs for patients with ACE-inhibitor cough). |
+| **Brand Name Unmasking & Overdose Prevention** | Fails to recognize that different commercial trade names share the identical chemical entity. | Traverses both trade names to a single canonical `(:ActiveSubstance)` node, alerting the user to accidental double-dosing. |
+| **Off-Label & Pharmacologic Exploration** | Hallucinates approved indications or combines conflicting drug labels. | Navigates the entire class sub-network deterministically, synthesizing approved indications across all sibling molecules. |
 
 ---
 
-## ⚡ System Performance & Benchmarks (AI/ML Engineering)
+## 📊 Knowledge Graph Schema & Statistics
 
-| Benchmark / Metric | Quantified Value | Engineering Method & Architecture |
-| :--- | :--- | :--- |
-| **Knowledge Graph Scale** | **50,000+ Records** | Relational Neo4j Cloud AuraDB |
-| **Cypher Retrieval Latency** | **< 45 ms** | Composite Indexing on `:Medicine(name)` & `:Indication(name)` |
-| **End-to-End GraphRAG Latency** | **< 1.2 sec** | Asynchronous FastAPI + Neo4j Driver + Gemini 2.0 Flash |
-| **Bulk Ingestion Speed** | **480 records/sec** | Cypher UNWIND Batching (`batch_size=1000`) |
-| **Entity Grounding Precision** | **100% Verification** | Zero-Hallucination Schema Constraints (`:TREATS_INDICATION`) |
-| **Multilingual Support** | **EN, TE, HI** | Multilingual Prompt System + Native Medical Term Mapping |
-| **System Uptime & Fallback** | **99.99% Availability** | Fail-Fast Deterministic Graph Markdown Renderer |
+The production graph is hosted on **Neo4j Aura Cloud**, structured across 7 distinct node labels and 7 directed relationship types:
 
----
+<div align="center">
 
-## 🌐 Multilingual Support
+| Metric | Count | Description |
+| :--- | :---: | :--- |
+| **Total Graph Nodes** | **10,434** | Interconnected clinical entities in Neo4j Aura |
+| **Total Graph Relationships** | **22,098** | Strongly typed semantic and biological edges |
+| **Verified Master Medicines** | **3,191** | Canonical clinical drugs consolidated from 3,256 curated records |
+| **Active Chemical Substances** | **2,362** | Unique active pharmaceutical ingredients (APIs) |
+| **Pharmacologic Drug Classes** | **468** | Mechanisms of action (Beta-Blockers, Statins, SSRIs, etc.) |
+| **Medical Indications** | **3,136** | Approved symptoms and clinical conditions |
+| **Therapeutic Categories** | **14** | Top-level specialties (Cardiovascular, Oncology, CNS, etc.) |
+| **Sanitizers / Cosmetics** | **0** | 100% clinically sanitized and filtered |
 
+</div>
 
-MedGraph Nexus provides native translation and clinical assessment in three major languages:
-
-| Language | Sample Query | Clinical Assessment Header |
-| :--- | :--- | :--- |
-| **English** | *"Why do we use Amoxicillin?"* | `### 👨‍⚕️ Doctor AI Clinical Assessment` |
-| **తెలుగు (Telugu)** | *"Amoxicillin ఎందుకు ఉపయోగిస్తారు?"* | `### 👨‍⚕️ డాక్టర్ AI క్లినికల్ అసెస్మెంట్` |
-| **हिन्दी (Hindi)** | *"Amoxicillin का उपयोग क्यों करते हैं?"* | `### 👨‍⚕️ डॉक्टर AI क्लिनिकल मूल्यांकन` |
-
----
-
-## ⚡ Keeping Neo4j Instance Alive Indefinitely
-
-Neo4j Cloud AuraDB instances auto-pause if no write queries are received for a few days. **MedGraph Nexus includes automated mechanisms to ensure your Neo4j instance never pauses or deletes:**
-
-1. **Automatic Background Write Heartbeat**:
-   When `backend/ai_service.py` is running, a background thread periodically executes a lightweight write query every 12 hours:
-   ```cypher
-   MERGE (h:SystemHeartbeat {id: 'neo4j_keepalive'}) SET h.last_active = datetime()
-   ```
-2. **Dedicated Keep-Alive Endpoint (`/ping-heartbeat`)**:
-   FastAPI exposes a dedicated HTTP endpoint: `GET /ping-heartbeat`.
-3. **24-Hour Free Cron Ping Setup**:
-   To keep Neo4j active even if your application server restarts, configure a free cron service (e.g., [cron-job.org](https://cron-job.org)) to ping your backend URL every 24 hours:
-   ```
-   Target URL: https://your-domain.com/ping-heartbeat
-   Schedule  : Every 24 Hours
-   ```
+### Graph Schema Model
+```mermaid
+erDiagram
+    MEDICINE }|--|| ACTIVE_SUBSTANCE : CONTAINS_SUBSTANCE
+    MEDICINE }|--|| DRUG_CLASS : BELONGS_TO_CLASS
+    MEDICINE }|--|| INDICATION : TREATS_INDICATION
+    MEDICINE }|--|| THERAPEUTIC_CATEGORY : IN_CATEGORY
+    MEDICINE }|--|| MANUFACTURER : MANUFACTURED_BY
+    MEDICINE }|--|| ROUTE : ADMINISTERED_VIA
+    MEDICINE }|--|| PRODUCT_TYPE : IS_TYPE
+```
 
 ---
 
-## 🔒 Security & Environment Setup
+## 📁 Repository Structure
 
-All sensitive credentials (database passwords, API keys) are secured in environment variables inside `backend/.env` and excluded from source control via `.gitignore`.
+```
+medgraph/
+├── backend/                       # Python FastAPI & Knowledge Graph RAG Service
+│   ├── ai_service.py              # FastAPI HTTP server & Gemini 2.5 GraphRAG engine
+│   ├── requirements.txt           # Python backend dependencies
+│   └── Procfile                   # Cloud deployment configuration
+├── frontend/                      # Web User Interface
+│   └── index.html                 # Single-page Doctor AI clinical chatbot interface
+├── pipelines/                     # Data Harmonization & Graph Ingestion Engines
+│   ├── build_full_clinical_graph.py  # Bulk 14-partition OpenFDA & RxNorm harvester
+│   ├── curate_clinical_dataset.py    # Non-drug purge & entity deduplication engine
+│   ├── ingest_graph.py               # Neo4j Aura batch UNWIND loader
+│   └── fetch_openfda.py              # OpenFDA REST API connector
+├── docs/                          # Architecture & Scientific Documentation
+│   └── EXPERT_AIML_PROJECT_OVERVIEW.md # Comprehensive AI/ML evaluation & thesis
+├── data/                          # (Local / Git-Ignored) Raw archives & JSON datasets
+├── .env.example                   # Environment configuration template
+├── .gitignore                     # Production Git ignore rules (strictly excludes data)
+└── README.md                      # Primary project documentation
+```
 
-### 1. Prerequisites
-- Python 3.10+
-- Neo4j Instance (Cloud AuraDB or Local Desktop)
-- Google Gemini API Key (Optional, automatic Graph Markdown fallback included)
+---
 
-### 2. Installation
+## ⚡ Quickstart & Installation
+
+### Prerequisites
+- **Python**: 3.10 or higher
+- **Neo4j AuraDB**: Free cloud instance or local Neo4j instance
+- **Google Gemini API Key**: [Google AI Studio](https://aistudio.google.com/)
+
+### 1. Clone the Repository
 ```bash
-# Clone the repository
 git clone https://github.com/your-username/medgraph.git
-cd medgraph/backend
-
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
+cd medgraph
 ```
 
-### 3. Environment Variables Configuration
-Create a `.env` file in `backend/` (never commit `.env` to Git):
+### 2. Configure Environment Variables
+Copy the template `.env.example` into `.env` (or `backend/.env`):
+```bash
+cp .env.example .env
+```
+Fill in your credentials:
 ```env
-NEO4J_URI=neo4j+s://<YOUR_DATABASE_ID>.databases.neo4j.io
-NEO4J_USERNAME=neo4j
-NEO4J_PASSWORD=<YOUR_NEO4J_PASSWORD>
-GEMINI_API_KEY=<YOUR_GEMINI_API_KEY>
+NEO4J_URI=neo4j+s://your-instance-id.databases.neo4j.io
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=your_neo4j_password
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
-### 4. Data Ingestion into Neo4j
+### 3. Install Dependencies
 ```bash
-# Wipe instance and ingest 50,000 dataset records
-python production_ingest.py --clear
+pip install -r backend/requirements.txt
 ```
 
-### 5. Launch Application
+### 4. Start the GraphRAG Backend Service
 ```bash
-# Start FastAPI Web Server
-python ai_service.py
+cd backend
+python -m uvicorn ai_service:app --host 127.0.0.1 --port 8000 --reload
 ```
-Open **`http://localhost:8000`** in your browser.
+The FastAPI service will initialize the Neo4j driver and Gemini 2.5 Flash model:
+- **Interactive API Docs (Swagger UI)**: `http://localhost:8000/docs`
+- **Healthcheck & Graph Statistics**: `http://localhost:8000/`
+
+### 5. Launch the Frontend
+Open `frontend/index.html` directly in any modern web browser or serve it via a local static server:
+```bash
+# Optional static server:
+python -m http.server 3000 --directory frontend
+```
+Navigate to `http://localhost:3000` to interact with the **Doctor AI** assistant.
 
 ---
 
-## 🔮 Future Roadmap & Vision
+## 🌐 Multilingual Clinical Support
 
-We are actively expanding MedGraph Nexus into a comprehensive **Multimodal Hybrid Retrieval Medical AI System**:
+MedGraph Nexus natively supports clinical queries across three languages:
+- **English**: Standard international pharmacopeia terminology.
+- **తెలుగు (Telugu)**: Native regional Telugu medical inquiries with phonetically normalized symptom matching.
+- **हिन्दी (Hindi)**: Hindi clinical queries with Devanagari script processing.
 
-```
- 🖼️ Prescription Image / Text  ───┐
-                                  ├──► 👁️ Vision Language Model (VLM) ───┐
- 🩸 Diagnostic Reports (Lab/USG) ──┘                                     │
-                                                                         ├──► 🔀 Multimodal Hybrid GraphRAG Engine
- 🕸️ Relational Neo4j Knowledge Graph ────────────────────────────────────┤
- 📚 Unstructured Medical Literature (Vector Search) ──────────────────────┘
-```
+The reasoning agent preserves medical substance integrity across translations, ensuring drug names and active molecules remain standard while conversational guidance adapts to the user's native language.
 
-### 📸 1. Prescription Vision Reader (VLM + OCR)
-- **Handwritten & Printed Prescription Scanner**: Users can upload photographs or text of doctor prescriptions.
-- **Automated Parsing**: Vision Language Models (VLM) will extract drug names, dosage instructions, and refill schedules, automatically cross-referencing contraindications against the Knowledge Graph.
+---
 
-### 🩸 2. Diagnostic Report Analyzer (Multimodal VLM)
-- **Lab & Pathology Interpretation**: Upload diagnostic lab reports (Complete Blood Count CBC, Liver/Kidney Function Tests, Lipid Profiles).
-- **Imaging Findings**: Process Diagnostic Radiology reports (Ultrasound USG, X-Ray, MRI summaries).
-- **Symptom Mapping**: VLM will extract abnormal biomarkers, map them to `:Indication` graph nodes, and evaluate potential medical conditions.
+## 🛡️ Fail-Safe Deterministic Fallback
 
-### 🧠 3. Multimodal Hybrid Retrieval System
-- **Triple-Engine Retrieval**: Fusion of **GraphRAG Cypher traversals**, **Dense Vector Embeddings** (for unstructured medical literature), and **Vision Language Models (VLMs)**.
-- **Unified Clinical Diagnosis**: Delivering complete, multi-perspective medical evaluations backed by verifiable knowledge graphs and diagnostic evidence.
+In high-stakes clinical domains, an AI system cannot crash or output generic error messages when third-party LLM APIs face rate limits or latency ceilings.
+
+MedGraph includes an integrated **High-Availability Graph Fallback**:
+- If Gemini 2.5 Flash encounters a rate limit (HTTP 429) or network timeout, the backend catches the exception and immediately constructs a **Deterministic Graph Fact Card** directly from the retrieved Neo4j nodes.
+- The user receives verified active substances, indications, warnings, and drug classes with zero latency and **zero hallucination risk**.
+
+---
+
+## 🔬 Running Data Harmonization (Optional)
+
+To rebuild or curate the dataset from raw federal archives:
+
+1. **Extract and Harmonize Master Medicines**:
+   ```bash
+   python pipelines/curate_clinical_dataset.py
+   ```
+   *Purges cosmetic/sanitizer records and deduplicates repackaged medicines into `data/medicine_dataset.json`.*
+
+2. **Batch-Ingest into Neo4j**:
+   ```bash
+   python pipelines/ingest_graph.py
+   ```
+   *Executes parameterized UNWIND Cypher batches with uniqueness constraints and full-text indexes.*
 
 ---
 
 ## 📜 License
-Distributed under the MIT License. See `LICENSE` for more information.
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
 
 <div align="center">
-  <sub>Built with ❤️ for healthcare accessibility using Neo4j, GraphRAG, and FastAPI.</sub>
+  <b>Built with ❤️ for precision clinical medicine, explainable AI, and patient safety.</b>
 </div>

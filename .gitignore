@@ -1,29 +1,61 @@
+# ==============================================================================
 # Environment variables & secrets (CRITICAL)
+# ==============================================================================
 .env
 .env.*
 *.env
+!.env.example
 
-# Python Virtual Environments
+# ==============================================================================
+# Datasets, Raw Dumps & Large Data Archives (DO NOT PUSH)
+# ==============================================================================
+data/
+*.zip
+*.tar
+*.tar.gz
+*.gz
+*.json
+!package.json
+!tsconfig.json
+!backend/runtime.txt
+*.csv
+*.tsv
+*.parquet
+*.feather
+medicine_dataset.*
+medgraph_cache.json
+
+# ==============================================================================
+# Python Virtual Environments & Packages
+# ==============================================================================
 .venv/
 venv/
 ENV/
 env/
+build/
+dist/
+*.egg-info/
 
-# Logs & Cache
+# ==============================================================================
+# Logs, Bytecode & Temporary Caches
+# ==============================================================================
 *.log
 __pycache__/
 *.py[cod]
 *$py.class
+.pytest_cache/
+.coverage
+htmlcov/
 
-# IDE & Tooling
+# ==============================================================================
+# IDE, Editors & OS Files
+# ==============================================================================
 .vscode/
 .idea/
 .gemini/
 scratch/
 *.swp
 *.swo
-
-# OS files
 .DS_Store
 Thumbs.db
 ehthumbs.db

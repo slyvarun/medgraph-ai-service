@@ -134,7 +134,7 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      max-width: 840px;
+      max-width: 1060px;
       width: 100%;
       margin: 0 auto;
       height: 100%;
@@ -145,7 +145,7 @@
     #log {
       flex: 1;
       overflow-y: auto;
-      padding: 28px 20px;
+      padding: 24px 20px;
       display: flex;
       flex-direction: column;
       gap: 20px;
@@ -162,48 +162,160 @@
       border-radius: 4px;
     }
 
-    /* ── WELCOME SCREEN ───────────────────────── */
+    /* ── WELCOME SCREEN & FLASHCARDS ──────────── */
     .welcome {
-      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 16px;
+      gap: 18px;
       text-align: center;
-      padding: 40px 20px;
-      margin: auto 0;
+      padding: 20px 10px 30px;
+      margin: 0 auto;
+      width: 100%;
     }
 
+    .welcome-header {
+      max-width: 720px;
+    }
 
     .welcome h2 {
-      font-size: 22px;
-      font-weight: 700;
+      font-size: 24px;
+      font-weight: 800;
       color: var(--text);
-      letter-spacing: -0.4px;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
     }
 
     .welcome p {
       font-size: 14px;
       color: var(--muted);
-      max-width: 480px;
-      line-height: 1.6;
+      line-height: 1.5;
+    }
+
+    /* Flashcards 3-Column Responsive Grid */
+    .flashcards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      width: 100%;
+      margin: 6px 0 12px;
+      text-align: left;
+    }
+
+    .flashcard {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: var(--shadow);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+
+    .flashcard:hover {
+      border-color: var(--border-hover);
+      box-shadow: 0 10px 22px -4px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+      transform: translateY(-2px);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .card-tag {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .tag-blue {
+      background: #eff6ff;
+      color: #2563eb;
+    }
+
+    .tag-purple {
+      background: #faf5ff;
+      color: #9333ea;
+    }
+
+    .tag-emerald {
+      background: #ecfdf5;
+      color: #059669;
+    }
+
+    .card-icon {
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .card-title {
+      font-size: 15.5px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+
+    .card-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+
+    .card-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+    }
+
+    .card-list li strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .prompt-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .prompt-label {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: -0.2px;
     }
 
     .chips {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 8px;
       justify-content: center;
-      margin-top: 8px;
     }
 
     .chip {
-      padding: 9px 16px;
+      padding: 8px 15px;
       background: #ffffff;
       border: 1px solid var(--border);
-      border-radius: 24px;
-      font-size: 13px;
+      border-radius: 20px;
+      font-size: 12.5px;
       font-weight: 500;
       color: var(--text);
       cursor: pointer;
@@ -216,6 +328,94 @@
       color: var(--primary);
       background: var(--primary-soft);
       transform: translateY(-1px);
+    }
+
+    /* Modal for Guide */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(4px);
+      z-index: 999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #ffffff;
+      border-radius: 20px;
+      max-width: 980px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 28px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 18px;
+      right: 20px;
+      background: #f1f5f9;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      transition: all .2s;
+    }
+
+    .modal-close:hover {
+      background: #e2e8f0;
+      color: var(--text);
+    }
+
+    .btn-guide {
+      padding: 7px 12px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all .2s;
+    }
+
+    .btn-guide:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    @media (max-width: 860px) {
+      .flashcards-grid {
+        grid-template-columns: 1fr;
+      }
+      header {
+        padding: 12px 16px;
+      }
+      .logo p {
+        display: none;
+      }
     }
 
     /* ── MESSAGES ─────────────────────────────── */
@@ -538,32 +738,87 @@
       </div>
     </div>
     <div class="header-actions">
+      <button class="btn-guide" onclick="toggleModal(true)" title="View System & Clinical Guide">
+        ℹ️ <span>System Guide</span>
+      </button>
       <select id="lang-select" class="lang-select" title="Choose response language">
         <option value="en">🌐 English</option>
         <option value="te">🌐 తెలుగు (Telugu)</option>
         <option value="hi">🌐 हिन्दी (Hindi)</option>
       </select>
-      <div class="status-pill">
+      <div class="status-pill" title="Neo4j Knowledge Graph live in Aura Cloud">
         <div class="dot"></div>
-        <span>50,000 Medicine Records</span>
+        <span>10,434 Nodes • 22,098 Edges</span>
       </div>
     </div>
   </header>
 
-
-
   <div class="chat-container">
     <div id="log">
       <div class="welcome" id="welcome">
-        <h2>Hello, I am Doctor AI. How can I assist you?</h2>
-        <p>Ask clinical questions about medicines, why they are prescribed, prescription status, or matching symptoms in
-          English, Telugu, or Hindi.</p>
-        <div class="chips">
-          <div class="chip" onclick="chip(this)">Why do we use Amoxicillin?</div>
-          <div class="chip" onclick="chip(this)">When should I take Ibuprocillin?</div>
-          <div class="chip" onclick="chip(this)">What medicines treat Fever and Pain?</div>
-          <div class="chip" onclick="chip(this)">మందుల లక్షణాలు మరియు మోతాదు వివరాలు (Telugu)</div>
-          <div class="chip" onclick="chip(this)">बुखार और दर्द की दवाएं (Hindi)</div>
+        <div class="welcome-header">
+          <h2>⚕️ MedGraph Nexus</h2>
+          <p>Clinical Knowledge Graph & Neuro-Symbolic GraphRAG reasoning engine. Grounded in FDA package labels, NIH RxNorm, and DailyMed.</p>
+        </div>
+
+        <!-- 3 Interactive Flashcards Grid -->
+        <div class="flashcards-grid">
+          <!-- Card 1: Who Can Use This -->
+          <div class="flashcard">
+            <div class="card-top">
+              <span class="card-tag tag-blue">Target Users</span>
+              <span class="card-icon">👥</span>
+            </div>
+            <div class="card-title">Who Can Use This?</div>
+            <ul class="card-list">
+              <li><span>🩺</span> <div><strong>Clinicians & Doctors:</strong> Verify mechanism of action, active molecules, and therapeutic classes.</div></li>
+              <li><span>💊</span> <div><strong>Pharmacists:</strong> Prevent accidental overdosing, trace brand names, and check cross-reactivity.</div></li>
+              <li><span>🔬</span> <div><strong>Researchers & Students:</strong> Explore NIH RxNorm ontologies, indication clusters, and clinical classes.</div></li>
+              <li><span>🧑‍⚕️</span> <div><strong>Patients & Caregivers:</strong> Understand prescribed medications and safety warnings in simple terms.</div></li>
+            </ul>
+          </div>
+
+          <!-- Card 2: For What Purpose -->
+          <div class="flashcard">
+            <div class="card-top">
+              <span class="card-tag tag-purple">Clinical Purpose</span>
+              <span class="card-icon">🎯</span>
+            </div>
+            <div class="card-title">For What Purpose?</div>
+            <ul class="card-list">
+              <li><span>🔄</span> <div><strong>Cross-Class Alternatives:</strong> Discover substitute medicines treating the same condition (e.g. ARBs for ACE cough).</div></li>
+              <li><span>🔍</span> <div><strong>Brand Name Unmasking:</strong> Identify when commercial brands share identical chemicals (e.g. Advil vs Motrin &rarr; Ibuprofen).</div></li>
+              <li><span>🛡️</span> <div><strong>Zero-Hallucination Safety:</strong> All claims are anchored to verified FDA labels, preventing AI medical errors.</div></li>
+              <li><span>🌐</span> <div><strong>Multilingual Care:</strong> Interactive clinical reasoning in English, తెలుగు (Telugu), and हिन्दी (Hindi).</div></li>
+            </ul>
+          </div>
+
+          <!-- Card 3: What Does This Contain -->
+          <div class="flashcard">
+            <div class="card-top">
+              <span class="card-tag tag-emerald">Knowledge Base</span>
+              <span class="card-icon">📦</span>
+            </div>
+            <div class="card-title">What Does It Contain?</div>
+            <ul class="card-list">
+              <li><span>🕸️</span> <div><strong>10,434 Graph Nodes:</strong> 3,191 Master Medicines, 2,362 Active Substances, 468 Drug Classes.</div></li>
+              <li><span>🔗</span> <div><strong>22,098 Biological Edges:</strong> Indications, active ingredients, manufacturers, routes, and categories.</div></li>
+              <li><span>🏛️</span> <div><strong>Curated Federal Data:</strong> Harmonized across 262k+ FDA records; 292 non-drugs purged, 2,049 repackagings merged.</div></li>
+              <li><span>⚡</span> <div><strong>Neuro-Symbolic GraphRAG:</strong> Powered by Gemini 2.5 Flash with deterministic fail-safe fallback.</div></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="prompt-section">
+          <div class="prompt-label">💡 Click a clinical query to start:</div>
+          <div class="chips">
+            <div class="chip" onclick="chip(this)">Why do we use Amoxicillin?</div>
+            <div class="chip" onclick="chip(this)">Find alternatives for Lisinopril for hypertension</div>
+            <div class="chip" onclick="chip(this)">Are Advil and Motrin the same drug?</div>
+            <div class="chip" onclick="chip(this)">What medicines belong to Biguanide class?</div>
+            <div class="chip" onclick="chip(this)">మందుల లక్షణాలు మరియు మోతాదు వివరాలు (Telugu)</div>
+            <div class="chip" onclick="chip(this)">बुखार और दर्द की दवाएं (Hindi)</div>
+          </div>
         </div>
       </div>
     </div>
@@ -747,7 +1002,73 @@
         lock(false);
       }
     }
+
+    function toggleModal(show) {
+      const m = document.getElementById('guide-modal');
+      if (m) {
+        if (show) m.classList.add('open');
+        else m.classList.remove('open');
+      }
+    }
   </script>
+
+  <!-- Modal for Re-viewing Guide Anytime -->
+  <div id="guide-modal" class="modal-overlay" onclick="if(event.target===this) toggleModal(false)">
+    <div class="modal-box">
+      <button class="modal-close" onclick="toggleModal(false)" title="Close modal">✕</button>
+      <div style="margin-bottom: 16px;">
+        <h2 style="font-size: 20px; font-weight: 800; color: var(--text); letter-spacing: -0.4px;">⚕️ MedGraph Nexus — Clinical Knowledge System</h2>
+        <p style="font-size: 13.5px; color: var(--muted); margin-top: 4px;">Neuro-Symbolic GraphRAG platform powered by Neo4j Aura Cloud & Google Gemini 2.5 Flash.</p>
+      </div>
+
+      <div class="flashcards-grid">
+        <!-- Card 1 -->
+        <div class="flashcard">
+          <div class="card-top">
+            <span class="card-tag tag-blue">Target Users</span>
+            <span class="card-icon">👥</span>
+          </div>
+          <div class="card-title">Who Can Use This?</div>
+          <ul class="card-list">
+            <li><span>🩺</span> <div><strong>Clinicians & Doctors:</strong> Verify mechanism of action, active molecules, and therapeutic classes.</div></li>
+            <li><span>💊</span> <div><strong>Pharmacists:</strong> Prevent accidental overdosing, trace brand names, and check cross-reactivity.</div></li>
+            <li><span>🔬</span> <div><strong>Researchers & Students:</strong> Explore NIH RxNorm ontologies, indication clusters, and clinical classes.</div></li>
+            <li><span>🧑‍⚕️</span> <div><strong>Patients & Caregivers:</strong> Understand prescribed medications and safety warnings in simple terms.</div></li>
+          </ul>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="flashcard">
+          <div class="card-top">
+            <span class="card-tag tag-purple">Clinical Purpose</span>
+            <span class="card-icon">🎯</span>
+          </div>
+          <div class="card-title">For What Purpose?</div>
+          <ul class="card-list">
+            <li><span>🔄</span> <div><strong>Cross-Class Alternatives:</strong> Discover substitute medicines treating the same condition (e.g. ARBs for ACE cough).</div></li>
+            <li><span>🔍</span> <div><strong>Brand Name Unmasking:</strong> Identify when commercial brands share identical chemicals (e.g. Advil vs Motrin &rarr; Ibuprofen).</div></li>
+            <li><span>🛡️</span> <div><strong>Zero-Hallucination Safety:</strong> All claims are anchored to verified FDA labels, preventing AI medical errors.</div></li>
+            <li><span>🌐</span> <div><strong>Multilingual Care:</strong> Interactive clinical reasoning in English, తెలుగు (Telugu), and हिन्दी (Hindi).</div></li>
+          </ul>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="flashcard">
+          <div class="card-top">
+            <span class="card-tag tag-emerald">Knowledge Base</span>
+            <span class="card-icon">📦</span>
+          </div>
+          <div class="card-title">What Does It Contain?</div>
+          <ul class="card-list">
+            <li><span>🕸️</span> <div><strong>10,434 Graph Nodes:</strong> 3,191 Master Medicines, 2,362 Active Substances, 468 Drug Classes.</div></li>
+            <li><span>🔗</span> <div><strong>22,098 Biological Edges:</strong> Indications, active ingredients, manufacturers, routes, and categories.</div></li>
+            <li><span>🏛️</span> <div><strong>Curated Federal Data:</strong> Harmonized across 262k+ FDA records; 292 non-drugs purged, 2,049 repackagings merged.</div></li>
+            <li><span>⚡</span> <div><strong>Neuro-Symbolic GraphRAG:</strong> Powered by Gemini 2.5 Flash with deterministic fail-safe fallback.</div></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 
 </html>

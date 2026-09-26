@@ -4,6 +4,12 @@ import time
 from neo4j import GraphDatabase
 from dotenv import load_dotenv
 
+base_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(base_dir)
+
+# Load environment variables from repo root or backend or local
+load_dotenv(os.path.join(parent_dir, ".env"))
+load_dotenv(os.path.join(parent_dir, "backend", ".env"))
 load_dotenv()
 
 # Database Connection Setup
@@ -64,11 +70,13 @@ class KnowledgeGraphIngestor:
         // 1. Medicine Node
         MERGE (m:Medicine {brand_name: med.brand_name})
         SET m.generic_name = med.generic_name,
+            m.known_brands = coalesce(med.known_brands, [med.brand_name]),
             m.category = coalesce(med.category, 'General'),
             m.warnings = med.warnings,
             m.adverse_reactions = med.adverse_reactions,
             m.contraindications = med.contraindications,
-            m.drug_interactions = med.drug_interactions
+            m.drug_interactions = med.drug_interactions,
+            m.rxcui = coalesce(med.rxcui, '')
             
         // 2. Peripheral Nodes
         MERGE (man:Manufacturer {name: coalesce(med.manufacturer, 'Unknown')})
@@ -118,11 +126,19 @@ class KnowledgeGraphIngestor:
         # 2. Setup Constraints
         self.create_constraints_and_indexes()
 
-        # 3. Ingest in Batches
+        # 3. Ingest in Batches with Retry Resilience
         with self.driver.session() as session:
             for start_idx in range(0, total, batch_size):
                 batch = medicines[start_idx : start_idx + batch_size]
-                session.execute_write(self._ingest_batch, batch)
+                for attempt in range(4):
+                    try:
+                        session.execute_write(self._ingest_batch, batch)
+                        break
+                    except Exception as e:
+                        if attempt == 3:
+                            print(f"Warning on batch {start_idx}: {e}")
+                        else:
+                            time.sleep(2 * (attempt + 1))
                 print(f"Ingested records {min(start_idx + batch_size, total)}/{total}...")
 
         elapsed = round(time.time() - start_time, 2)
@@ -150,9 +166,23 @@ class KnowledgeGraphIngestor:
             print("-----------------------------------------------\n")
 
 if __name__ == "__main__":
+    candidates = [
+        os.path.join(parent_dir, "data", "medicine_dataset.json"),
+        os.path.join(base_dir, "data", "medicine_dataset.json"),
+        os.path.join(parent_dir, "medicine_dataset.json"),
+        os.path.join(base_dir, "medicine_dataset.json"),
+        "data/medicine_dataset.json",
+        "medicine_dataset.json"
+    ]
+    target_path = next((p for p in candidates if os.path.exists(p)), None)
+    if not target_path:
+        print("Error: Could not locate medicine_dataset.json in data/ or root directory.")
+        exit(1)
+
+    print(f"Loading verified clinical dataset from: {target_path}")
     ingestor = KnowledgeGraphIngestor(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
     try:
-        ingestor.ingest_data("medicine_dataset.json", batch_size=200, clean_first=True)
+        ingestor.ingest_data(target_path, batch_size=200, clean_first=True)
         ingestor.verify_graph_counts()
     finally:
         ingestor.close()
