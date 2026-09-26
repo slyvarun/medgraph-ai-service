@@ -1,13 +1,65 @@
 import requests
 import json
 import os
+import re
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 API_KEY = os.getenv("OPENFDA_API_KEY", "8IV5urlxZUbtNRQs1lR8tLr1yBodJZOoogO7zphh")
 
+SPECIALTIES = [
+    {
+        "name": "Cardiology & Vascular",
+        "query": 'indications_and_usage:("hypertension" OR "cardiovascular" OR "arrhythmia" OR "angina" OR "heart failure" OR "statin" OR "beta blocker")'
+    },
+    {
+        "name": "Endocrinology & Diabetes",
+        "query": 'indications_and_usage:("diabetes" OR "glycemic" OR "insulin" OR "metformin" OR "thyroid" OR "osteoporosis")'
+    },
+    {
+        "name": "Oncology & Hematology",
+        "query": 'indications_and_usage:("cancer" OR "oncology" OR "neoplasm" OR "chemotherapy" OR "lymphoma" OR "leukemia" OR "melanoma")'
+    },
+    {
+        "name": "Antibiotics & Anti-Infectives",
+        "query": 'indications_and_usage:("antibiotic" OR "antibacterial" OR "antiviral" OR "antifungal" OR "infection" OR "pneumonia")'
+    },
+    {
+        "name": "Neurology & Pain",
+        "query": 'indications_and_usage:("migraine" OR "epilepsy" OR "seizure" OR "parkinson" OR "neuropathy" OR "analgesic" OR "pain")'
+    },
+    {
+        "name": "Psychiatry & Mental Health",
+        "query": 'indications_and_usage:("antidepressant" OR "depression" OR "anxiety" OR "bipolar" OR "schizophrenia" OR "antipsychotic")'
+    },
+    {
+        "name": "Pulmonology & Respiratory",
+        "query": 'indications_and_usage:("asthma" OR "copd" OR "bronchodilator" OR "bronchospasm" OR "cough" OR "antihistamine")'
+    },
+    {
+        "name": "Gastroenterology & GI",
+        "query": 'indications_and_usage:("acid reflux" OR "proton pump" OR "ulcer" OR "nausea" OR "vomiting" OR "diarrhea" OR "crohn")'
+    },
+    {
+        "name": "Rheumatology & Autoimmune",
+        "query": 'indications_and_usage:("arthritis" OR "anti-inflammatory" OR "nsaid" OR "immunosuppressive" OR "lupus" OR "gout")'
+    },
+    {
+        "name": "Dermatology & Allergy",
+        "query": 'indications_and_usage:("dermatitis" OR "eczema" OR "psoriasis" OR "acne" OR "topical" OR "allergic")'
+    },
+    {
+        "name": "Nephrology & Urology",
+        "query": 'indications_and_usage:("diuretic" OR "kidney disease" OR "overactive bladder" OR "prostate" OR "urinary")'
+    },
+    {
+        "name": "General & Emergency Medicine",
+        "query": 'indications_and_usage:("anesthetic" OR "antidote" OR "emergency" OR "resuscitation" OR "fever" OR "ophthalmic")'
+    }
+]
+
 def clean_text(text: str, max_length: int = 400) -> str:
-    """Normalize whitespace and truncate narrative text."""
+    """Normalize whitespace and truncate text."""
     if not text:
         return ""
     cleaned = " ".join(text.replace("\n", " ").replace("\r", " ").split())
@@ -15,43 +67,50 @@ def clean_text(text: str, max_length: int = 400) -> str:
         return cleaned[:max_length].rstrip() + "..."
     return cleaned
 
-CATEGORIES = [
-    {
-        "name": "Cardiology",
-        "query": 'indications_and_usage:("hypertension" OR "cardiovascular" OR "cardiac" OR "arrhythmia" OR "angina" OR "heart failure")'
-    },
-    {
-        "name": "Diabetes",
-        "query": 'indications_and_usage:("diabetes" OR "glycemic" OR "insulin" OR "metformin" OR "glucose" OR "hypoglycemia")'
-    },
-    {
-        "name": "Oncology",
-        "query": 'indications_and_usage:("cancer" OR "oncology" OR "neoplasm" OR "chemotherapy" OR "tumor" OR "leukemia" OR "lymphoma")'
-    },
-    {
-        "name": "Antibiotics & Anti-Infectives",
-        "query": 'indications_and_usage:("antibacterial" OR "antibiotic" OR "antiviral" OR "antifungal" OR "infection" OR "pneumonia")'
-    },
-    {
-        "name": "General High-Demand Rx & OTC",
-        "query": '_exists_:openfda.brand_name AND _exists_:indications_and_usage'
-    }
-]
+def get_canonical_key(brand_name: str, generic_name: str, substances: list) -> str:
+    """
+    Generate a canonical key for compound-level deduplication.
+    Strips dosage strengths, forms, packaging, and distributor noise.
+    """
+    sub_key = substances[0].lower() if substances else ""
+    gen_key = generic_name.lower() if generic_name and generic_name != "not specified" else ""
+    brand_key = brand_name.lower()
+
+    # Prioritize active chemical substance or generic name
+    target = gen_key or sub_key or brand_key
+
+    # Strip dosage forms, strengths, numbers
+    cleaned = re.sub(r'\b\d+(\.\d+)?\s*(mg|mcg|ml|g|%|iu|meq)\b', '', target)
+    cleaned = re.sub(
+        r'\b(tablet|tablets|capsule|capsules|injection|injections|solution|solutions|oral|topical|cream|ointment|suspension|syrup|spray|patch|gel|drop|drops|powder|extended release|delayed release|chewable|film coated|usp|hydrochloride|hcl|sodium|potassium)\b',
+        '',
+        cleaned
+    )
+    cleaned = re.sub(r'[^a-z0-9\s]', ' ', cleaned)
+    cleaned = " ".join(cleaned.split())
+    
+    # If generic key stripped too much, fallback to cleaned brand
+    if len(cleaned) < 3:
+        clean_brand = re.sub(r'\b\d+(\.\d+)?\s*(mg|mcg|ml|g|%)\b', '', brand_key)
+        clean_brand = " ".join(re.sub(r'[^a-z0-9\s]', ' ', clean_brand).split())
+        return clean_brand or brand_key
+        
+    return cleaned
 
 def fetch_category_batch(category_name, search_query, skip, limit=100):
-    """Fetch a single paginated batch for a given medical query."""
+    """Fetch paginated batch from OpenFDA."""
     base_url = "https://api.fda.gov/drug/label.json"
     url = f"{base_url}?api_key={API_KEY}&search=_exists_:openfda.brand_name+AND+({search_query})&limit={limit}&skip={skip}"
     try:
-        resp = requests.get(url, timeout=20)
+        resp = requests.get(url, timeout=15)
         if resp.status_code == 200:
             return resp.json().get("results", [])
         return []
-    except Exception as e:
+    except Exception:
         return []
 
-def extract_medicine_record(item, default_category="General"):
-    """Parse raw OpenFDA label into clean clinical medicine record."""
+def extract_record(item, default_category):
+    """Extract clean medicine entity."""
     openfda = item.get("openfda", {})
     brand_names = openfda.get("brand_name", [])
     generic_names = openfda.get("generic_name", [])
@@ -65,17 +124,14 @@ def extract_medicine_record(item, default_category="General"):
     if not brand_name:
         return None
 
-    # Indications
     indications_raw = item.get("indications_and_usage", [""])[0]
     indications = clean_text(indications_raw, max_length=500)
     if not indications:
         return None
 
-    # Clean active substances
     clean_substances = [s.strip().title() for s in substances if s.strip()][:5]
     clean_classes = [c.replace("[EPC]", "").strip().title() for c in pharm_classes if c.strip()][:4]
 
-    # Clinical safety narratives
     adverse = clean_text(item.get("adverse_reactions", [""])[0], max_length=350)
     warnings = clean_text(item.get("warnings", [""])[0] or item.get("boxed_warning", [""])[0], max_length=350)
     contra = clean_text(item.get("contraindications", [""])[0], max_length=350)
@@ -99,66 +155,81 @@ def extract_medicine_record(item, default_category="General"):
         "drug_interactions": interactions or "None specified in label summary"
     }
 
-def fetch_ultrascale_dataset(target_total=10000, output_file="medicine_dataset.json"):
-    """
-    Ultrascale data acquisition across Cardiology, Diabetes, Oncology,
-    Antibiotics, and General medicines up to target_total records.
-    """
-    print(f"=== Starting Ultrascale Acquisition (Target: {target_total} medicines) ===")
+def harvest_variety_dataset(target_total=5000, per_specialty=450, output_file="medicine_dataset.json"):
+    """Harvest across 12 specialties with strict canonical zero-duplication."""
+    print(f"=== Harvesting 12-Specialty Dataset (Target: ~{target_total} Zero-Duplicate Varieties) ===")
     start_time = time.time()
     
-    unique_medicines = {}
+    canonical_store = {}  # canonical_key -> medicine_record
     
-    # 1. Fetch targeted medical domains first to ensure top clinical representation
-    for cat in CATEGORIES:
-        if len(unique_medicines) >= target_total:
-            break
-            
-        cat_name = cat["name"]
-        cat_query = cat["query"]
-        print(f"\n--- Harvesting Domain: {cat_name} ---")
+    for spec in SPECIALTIES:
+        spec_name = spec["name"]
+        spec_query = spec["query"]
+        print(f"\n--- Harvesting Specialty: {spec_name} ---")
         
-        cat_quota = 2000 if cat_name != "General High-Demand Rx & OTC" else (target_total - len(unique_medicines))
-        cat_harvested = 0
+        harvested_in_spec = 0
         skip = 0
+        consecutive_empty = 0
         
-        while cat_harvested < cat_quota and skip < 15000 and len(unique_medicines) < target_total:
-            # Batch fetch with threads
-            offsets = [skip + (i * 100) for i in range(5)]
-            with ThreadPoolExecutor(max_workers=5) as executor:
-                futures = {executor.submit(fetch_category_batch, cat_name, cat_query, off): off for off in offsets}
+        while harvested_in_spec < per_specialty and skip < 8000:
+            offsets = [skip + (i * 100) for i in range(4)]
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                futures = {executor.submit(fetch_category_batch, spec_name, spec_query, off): off for off in offsets}
+                batch_items = []
                 for f in as_completed(futures):
-                    results = f.result()
-                    for item in results:
-                        rec = extract_medicine_record(item, default_category=cat_name)
-                        if rec:
-                            key = rec["brand_name"].lower()
-                            if key not in unique_medicines:
-                                unique_medicines[key] = rec
-                                cat_harvested += 1
-                                if len(unique_medicines) >= target_total:
-                                    break
-            skip += 500
-            print(f"[{cat_name}] Collected {cat_harvested} medicines (Total unique so far: {len(unique_medicines)}/{target_total})")
-            time.sleep(0.3)  # Respect rate limit
+                    batch_items.extend(f.result())
+                    
+            if not batch_items:
+                consecutive_empty += 1
+                if consecutive_empty >= 2:
+                    break
+                skip += 400
+                continue
+                
+            consecutive_empty = 0
+            
+            for item in batch_items:
+                rec = extract_record(item, default_category=spec_name)
+                if not rec:
+                    continue
+                    
+                canon_key = get_canonical_key(rec["brand_name"], rec["generic_name"], rec["substances"])
+                
+                # Check for duplicate compound
+                if canon_key not in canonical_store:
+                    canonical_store[canon_key] = rec
+                    harvested_in_spec += 1
+                    if harvested_in_spec >= per_specialty:
+                        break
+                else:
+                    # Update existing record if new label has richer clinical info
+                    existing = canonical_store[canon_key]
+                    if len(rec["indications"]) > len(existing["indications"]):
+                        canonical_store[canon_key] = rec
+                        
+            skip += 400
+            print(f"  [{spec_name}] Harvested {harvested_in_spec}/{per_specialty} (Total unique varieties: {len(canonical_store)})")
+            time.sleep(0.2)
 
-    dataset = list(unique_medicines.values())
+    dataset = list(canonical_store.values())
     elapsed = round(time.time() - start_time, 1)
-    print(f"\n=== Finished Ultrascale Extraction: {len(dataset)} unique medicines in {elapsed}s ===")
     
-    # Breakdown by category
-    breakdown = {}
+    print(f"\n=== Completed 12-Specialty Extraction ===")
+    print(f"Total Unique Canonical Varieties: {len(dataset)} in {elapsed} seconds")
+    
+    # Specialty breakdown
+    counts = {}
     for d in dataset:
-        c = d.get("category", "General")
-        breakdown[c] = breakdown.get(c, 0) + 1
-    for c, cnt in breakdown.items():
-        print(f" - {c}: {cnt} medicines")
-
+        c = d["category"]
+        counts[c] = counts.get(c, 0) + 1
+    for c, cnt in counts.items():
+        print(f"  • {c}: {cnt} medicines")
+        
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(dataset, f, indent=2, ensure_ascii=False)
         
-    print(f"Saved {len(dataset)} records to {output_file}")
+    print(f"Successfully saved {len(dataset)} zero-duplicate records to {output_file}")
     return dataset
 
 if __name__ == "__main__":
-    fetch_ultrascale_dataset(target_total=10000)
+    harvest_variety_dataset(target_total=5000, per_specialty=450)

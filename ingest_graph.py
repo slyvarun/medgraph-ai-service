@@ -18,9 +18,16 @@ class KnowledgeGraphIngestor:
     def close(self):
         self.driver.close()
 
+    def clear_database(self):
+        """Clean all old nodes and relationships for a zero-duplicate re-seed."""
+        print("Clearing database of previous records for clean re-seeding...")
+        with self.driver.session() as session:
+            session.run("MATCH (n) DETACH DELETE n")
+        print("Database cleared successfully!")
+
     def create_constraints_and_indexes(self):
-        """Create schema constraints and indexes for high performance querying."""
-        print("Ensuring constraints and indexes exist in Neo4j...")
+        """Create schema constraints and text indexes for maximum query performance."""
+        print("Ensuring constraints and text indexes exist in Neo4j...")
         constraints = [
             "CREATE CONSTRAINT medicine_brand_unique IF NOT EXISTS FOR (m:Medicine) REQUIRE m.brand_name IS UNIQUE",
             "CREATE CONSTRAINT manufacturer_name_unique IF NOT EXISTS FOR (m:Manufacturer) REQUIRE m.name IS UNIQUE",
@@ -32,13 +39,21 @@ class KnowledgeGraphIngestor:
             "CREATE INDEX medicine_generic_idx IF NOT EXISTS FOR (m:Medicine) ON (m.generic_name)"
         ]
         
+        indexes = [
+            "CREATE TEXT INDEX medicine_brand_text_idx IF NOT EXISTS FOR (m:Medicine) ON (m.brand_name)",
+            "CREATE TEXT INDEX medicine_generic_text_idx IF NOT EXISTS FOR (m:Medicine) ON (m.generic_name)",
+            "CREATE TEXT INDEX substance_name_text_idx IF NOT EXISTS FOR (s:ActiveSubstance) ON (s.name)",
+            "CREATE TEXT INDEX drug_class_text_idx IF NOT EXISTS FOR (c:DrugClass) ON (c.name)",
+            "CREATE TEXT INDEX indication_desc_text_idx IF NOT EXISTS FOR (i:Indication) ON (i.description)"
+        ]
+        
         with self.driver.session() as session:
-            for c in constraints:
+            for c in constraints + indexes:
                 try:
                     session.run(c)
-                except Exception as e:
+                except Exception:
                     pass
-        print("Schema constraints and indexes verified!")
+        print("Schema constraints and indexes active!")
 
     @staticmethod
     def _ingest_batch(tx, batch):
@@ -83,7 +98,7 @@ class KnowledgeGraphIngestor:
         """
         tx.run(cypher, batch=batch)
 
-    def ingest_data(self, json_filepath, batch_size=200):
+    def ingest_data(self, json_filepath, batch_size=200, clean_first=True):
         """Read JSON dataset and ingest into Neo4j in high-speed batches."""
         if not os.path.exists(json_filepath):
             print(f"Error: File {json_filepath} not found.")
@@ -93,13 +108,17 @@ class KnowledgeGraphIngestor:
             medicines = json.load(f)
 
         total = len(medicines)
-        print(f"\n=== Starting High-Speed Batch Ingestion of {total} Medicines ===")
+        print(f"\n=== Starting Zero-Duplicate Batch Ingestion of {total} Medicines ===")
         start_time = time.time()
         
-        # 1. Setup Constraints
+        # 1. Clean Database if requested
+        if clean_first:
+            self.clear_database()
+
+        # 2. Setup Constraints
         self.create_constraints_and_indexes()
 
-        # 2. Ingest in Batches
+        # 3. Ingest in Batches
         with self.driver.session() as session:
             for start_idx in range(0, total, batch_size):
                 batch = medicines[start_idx : start_idx + batch_size]
@@ -120,7 +139,7 @@ class KnowledgeGraphIngestor:
             cat_count = session.run("MATCH (cat:TherapeuticCategory) RETURN count(cat) AS cnt").single()["cnt"]
             ind_count = session.run("MATCH (i:Indication) RETURN count(i) AS cnt").single()["cnt"]
             
-            print("\n--- Knowledge Graph Ultrascale Summary ---")
+            print("\n--- Zero-Duplicate Knowledge Graph Summary ---")
             print(f"Total Nodes: {total_nodes}")
             print(f"Total Relationships: {total_rels}")
             print(f"Medicines: {med_count}")
@@ -128,12 +147,12 @@ class KnowledgeGraphIngestor:
             print(f"Pharmacologic Drug Classes: {cls_count}")
             print(f"Therapeutic Categories: {cat_count}")
             print(f"Indications: {ind_count}")
-            print("-------------------------------------------\n")
+            print("-----------------------------------------------\n")
 
 if __name__ == "__main__":
     ingestor = KnowledgeGraphIngestor(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
     try:
-        ingestor.ingest_data("medicine_dataset.json", batch_size=200)
+        ingestor.ingest_data("medicine_dataset.json", batch_size=200, clean_first=True)
         ingestor.verify_graph_counts()
     finally:
         ingestor.close()

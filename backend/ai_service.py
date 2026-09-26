@@ -150,12 +150,22 @@ async def ask_medgraph(request: QueryRequest):
     - Format your response nicely with markdown or bullet points if appropriate.
     """
 
-    # 3. Call the LLM
+    # 3. Call the LLM with Graceful Graph Fallback
     try:
         response = model.generate_content(prompt)
         return {"answer": response.text, "context_used": graph_context}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating AI response: {str(e)}")
+        error_msg = str(e)
+        if "429" in error_msg or "ResourceExhausted" in error_msg or "quota" in error_msg.lower():
+            # Graceful fallback: return the structured knowledge graph context directly
+            fallback_answer = (
+                f"### Clinical Knowledge Graph Results\n\n"
+                f"Here are the matched medical records retrieved directly from MedGraph Nexus:\n\n"
+                f"{graph_context}\n\n"
+                f"---\n*Note: High API traffic reached temporary Gemini free-tier rate limits. Clinical graph context served directly.*"
+            )
+            return {"answer": fallback_answer, "context_used": graph_context}
+        raise HTTPException(status_code=500, detail=f"Error generating AI response: {error_msg}")
 
 @app.get("/api/keepalive")
 async def keepalive():
