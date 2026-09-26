@@ -1,0 +1,778 @@
+[
+    {
+        "brand_name": "SILICEA",
+        "generic_name": "SILICEA",
+        "manufacturer": "Rxhomeo Private Limited d.b.a. Rxhomeo, Inc",
+        "route": "ORAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "INDICATIONS Condition listed above or as directed by the physician"
+    },
+    {
+        "brand_name": "Betadine",
+        "generic_name": "POVIDONE-IODINE",
+        "manufacturer": "Atlantis Consumer Healthcare, Inc.",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses First aid to help prevent infection in minor cuts scrapes burns"
+    },
+    {
+        "brand_name": "Naproxen",
+        "generic_name": "NAPROXEN",
+        "manufacturer": "A-S Medication Solutions",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE Naproxen tablets and naproxen sodium tablets are indicated for: the relief of the signs and symptoms of: \u2022 rheumatoid arthritis \u2022 osteoarthritis \u2022 ankylosing spondylitis \u2022 Polyarticular Juvenile Idiopathic Arthritis Naproxen tablets and naproxen sodium tablets are also indicated for: the relief of signs and symptoms of: \u2022 tendonitis \u2022 bursitis \u2022 acute gout the management of: \u2022 pain \u2022 primary dysmenorrhea Naproxen tablets and naproxen sodium tablets are non-steroidal anti-..."
+    },
+    {
+        "brand_name": "Moisturizing Antibacterial",
+        "generic_name": "BENZALKONIUM CHLORIDE",
+        "manufacturer": "Walmart Inc.",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Use For handwashing to decrease bacteria on the skin"
+    },
+    {
+        "brand_name": "Quick Action",
+        "generic_name": "SALICYLIC ACID",
+        "manufacturer": "Walmart Inc.",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Use for the treatment of acne"
+    },
+    {
+        "brand_name": "Mekinist",
+        "generic_name": "TRAMETINIB",
+        "manufacturer": "Novartis Pharmaceuticals Corporation",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE MEKINIST is a kinase inhibitor indicated as a single agent for the treatment of BRAF-inhibitor treatment-na\u00efve patients with unresectable or metastatic melanoma with BRAF V600E or V600K mutations as detected by an FDA-approved test. ( 1.1 , 2.1 ) MEKINIST is indicated, in combination with dabrafenib, for: the treatment of patients with unresectable or metastatic melanoma with BRAF V600E or V600K mutations as detected by an FDA-approved test. ( 1.1 , 2.1 ) the adjuvant tre..."
+    },
+    {
+        "brand_name": "Glimepiride",
+        "generic_name": "GLIMEPIRIDE",
+        "manufacturer": "American Health Packaging",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE Glimepiride tablets are indicated as an adjunct to diet and exercise to improve glycemic control in adults with type 2 diabetes mellitus [see Clinical Studies (14.1) ]. Limitations of Use Glimepiride tablets should not be used for the treatment of type 1 diabetes mellitus or diabetic ketoacidosis, as it would not be effective in these settings. Glimepiride tablets are a sulfonylurea indicated as an adjunct to diet and exercise to improve glycemic control in adults with ty..."
+    },
+    {
+        "brand_name": "Methocarbamol",
+        "generic_name": "METHOCARBAMOL",
+        "manufacturer": "Proficient Rx LP",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "INDICATIONS AND USAGE Methocarbamol tablets, USP are indicated as an adjunct to rest, physical therapy, and other measures for the relief of discomfort associated with acute, painful musculoskeletal conditions. The mode of action of methocarbamol has not been clearly identified, but may be related to its sedative properties. Methocarbamol does not directly relax tense skeletal muscles in man."
+    },
+    {
+        "brand_name": "anti itch",
+        "generic_name": "HYDROCORTISONE",
+        "manufacturer": "Meijer, Inc.",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses \u2022 temporarily relieves itching associated with minor skin irritations, inflammation, and rashes due to: \u2022 eczema \u2022 psoriasis \u2022 poison ivy, oak, sumac \u2022 insect bites \u2022 detergents \u2022 jewelry \u2022 cosmetics \u2022 soaps \u2022 seborrheic dermatitis \u2022 temporarily relieves external anal and genital itching \u2022 other uses of this product should only be under the advice and supervision of a doctor"
+    },
+    {
+        "brand_name": "Varenicline",
+        "generic_name": "VARENICLINE",
+        "manufacturer": "Aurobindo Pharma Limited",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE Varenicline tablets are indicated for use as an aid to smoking cessation treatment. Varenicline tablets are a nicotinic receptor partial agonist indicated for use as an aid to smoking cessation treatment. ( 1 and 2.1 )"
+    },
+    {
+        "brand_name": "Rescue Sleep",
+        "generic_name": "HELIANTHEMUM NUMMULARIUM FLOWER, CLEMATIS VITALBA FLOWER, IMPATIENS GLANDULIFERA FLOWER, PRUNUS CERASIFERA FLOWER, ORNITHOGALUM UMBELLATUM, AND AESCULUS HIPPOCASTANUM FLOWER",
+        "manufacturer": "Nelson Bach USA, Ltd.",
+        "route": "ORAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Use for relief of occasional sleeplessness caused by stress and repetitive thoughts"
+    },
+    {
+        "brand_name": "Pain Reliever Extra Strength",
+        "generic_name": "ACETAMINOPHEN",
+        "manufacturer": "Valu Merchandisers Company",
+        "route": "ORAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses temporarily relieves minor aches and pains due to: headache the common cold backache minor pain of arthritis toothache muscular aches premenstrual and menstrual cramps temporarily reduces fever"
+    },
+    {
+        "brand_name": "OASIS Tears Lubricant Eye",
+        "generic_name": "GLYCERIN",
+        "manufacturer": "OASIS Medical, Inc.",
+        "route": "OPHTHALMIC",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses For the temporary relief of burning and irritation due to dryness of the eye For the temporary relief of discomfort due to minor irritations of the eye or to exposure to wind or sun For use as a protectant against further irritation or to relieve dryness of the eye"
+    },
+    {
+        "brand_name": "Thera Plus Maximum Strength Feminine Anti-Itch",
+        "generic_name": "BENZOCAINE, RESORCINOL",
+        "manufacturer": "FOURSTAR GROUP USA, INC.",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses temporarily relieves itching"
+    },
+    {
+        "brand_name": "tamsulosin hydrochloride",
+        "generic_name": "TAMSULOSIN HYDROCHLORIDE",
+        "manufacturer": "XLCare Pharmaceuticals, Inc.",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE Tamsulosin hydrochloride capsules are indicated for the treatment of the signs and symptoms of benign prostatic hyperplasia (BPH) [see Clinical Studies (14)]. Tamsulosin hydrochloride capsules are not indicated for the treatment of hypertension. Tamsulosin hydrochloride capsules are an alpha 1 adrenoceptor antagonist indicated for treatment of the signs and symptoms of benign prostatic hyperplasia (1) Tamsulosin hydrochloride capsules are not indicated for the treatment o..."
+    },
+    {
+        "brand_name": "Sure Complete Confidence Antiperspirant Deodorant Aerosol, Unscented",
+        "generic_name": "ALUMINUM CHLOROHYDRATE",
+        "manufacturer": "Sodalis USA, LLC",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Use reduces underarm wetness"
+    },
+    {
+        "brand_name": "Betamethasone Dipropionate",
+        "generic_name": "BETAMETHASONE DIPROPIONATE",
+        "manufacturer": "Sun Pharmaceutical Industries, Inc.",
+        "route": "TOPICAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE Betamethasone dipropionate cream (augmented) is a corticosteroid indicated for the relief of the inflammatory and pruritic manifestations of corticosteroid-responsive dermatoses in patients 13 years of age or older. Betamethasone dipropionate cream (augmented), 0.05% is a corticosteroid indicated for the relief of the inflammatory and pruritic manifestations of corticosteroid-responsive dermatoses in patients 13 years of age and older. ( 1 )"
+    },
+    {
+        "brand_name": "Lights Povindone Iodine Scrub",
+        "generic_name": "POVIDONE-IODINE",
+        "manufacturer": "Lights Medical Manufacture Co., Ltd.",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Use: Antiseptic skin preparation"
+    },
+    {
+        "brand_name": "Calcium Acetate",
+        "generic_name": "CALCIUM ACETATE",
+        "manufacturer": "Cipla USA Inc.,",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE Calcium acetate is a phosphate binder indicated to reduce serum phosphorus in patients with end stage renal disease (ESRD). Calcium acetate is a phosphate binder indicated for the reduction of serum phosphorus in patients with end stage renal disease. ( 1 )"
+    },
+    {
+        "brand_name": "ENTRESTO",
+        "generic_name": "SACUBITRIL AND VALSARTAN",
+        "manufacturer": "Novartis Pharmaceuticals Corporation",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE ENTRESTO is a combination of sacubitril, a neprilisin inhibitor, and valsartan, an angiotensin II receptor blocker, and is indicated: to reduce the risk of cardiovascular death and hospitalization for heart failure in adult patients with chronic heart failure. Benefits are most clearly evident in patients with left ventricular ejection fraction (LVEF) below normal. ( 1.1 ) for the treatment of symptomatic heart failure with systemic left ventricular systolic dysfunction i..."
+    },
+    {
+        "brand_name": "VERADEX-E",
+        "generic_name": "PETROLATUM AND LANOLIN",
+        "manufacturer": "ABBE Laboratories, Inc.",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Indications: Temporarily relieves minor burns, dry, chapped, fissured and macerated skin and lips, also relieves Psoriais, Eczema, mild sunburn, abrasions and contusions, diaper dermatitis, hemorrhoids, and prickly heat."
+    },
+    {
+        "brand_name": "Etodolac",
+        "generic_name": "ETODOLAC",
+        "manufacturer": "A-S Medication Solutions",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "INDICATIONS AND USAGE Carefully consider the potential benefits and risks of etodolac tablets and other treatment options before deciding to use etodolac tablets. Use the lowest effective dose for the shortest duration consistent with individual patient treatment goals (see WARNINGS ). Etodolac tablets are indicated: For acute and long-term use in the management of signs and symptoms of the following: Osteoarthritis Rheumatoid arthritis For the management of acute pain"
+    },
+    {
+        "brand_name": "basic care acetaminophen",
+        "generic_name": "ACETAMINOPHEN",
+        "manufacturer": "Amazon.com Services LLC",
+        "route": "ORAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses \u2022 temporarily relieves minor aches and pains due to: \u2022 headache \u2022 muscular aches \u2022 backache \u2022 minor pain of arthritis \u2022 the common cold \u2022 toothache \u2022 premenstrual and menstrual cramps \u2022 temporarily reduces fever"
+    },
+    {
+        "brand_name": "Anticavity Rinse",
+        "generic_name": "SODIUM FLUORIDE",
+        "manufacturer": "Meijer, Inc.",
+        "route": "ORAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Use aids in the prevention of dental cavities"
+    },
+    {
+        "brand_name": "Sertraline Hydrochloride",
+        "generic_name": "SERTRALINE HYDROCHLORIDE",
+        "manufacturer": "Proficient Rx LP",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "INDICATIONS AND USAGE Major Depressive Disorder \u2013 Sertraline hydrochloride is indicated for the treatment of major depressive disorder in adults. The efficacy of Sertraline hydrochloride in the treatment of a major depressive episode was established in six to eight week controlled trials of adult outpatients whose diagnoses corresponded most closely to the DSM-III category of major depressive disorder (see Clinical Trials under CLINICAL PHARMACOLOGY ). A major depressive episode implies a promin..."
+    },
+    {
+        "brand_name": "Antibacterial 2X",
+        "generic_name": "BENZALKONIUM CHLORIDE",
+        "manufacturer": "Sante Manufacturing Inc",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses for handwashing or decrease bacteria to the skin"
+    },
+    {
+        "brand_name": "Acid Reducer",
+        "generic_name": "ESOMEPRAZOLE MAGNESIUM",
+        "manufacturer": "CVS Pharmacy",
+        "route": "ORAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses treats frequent heartburn (occurs 2 or more days a week) not intended for immediate relief of heartburn; this drug may take 1 to 4 days for full effect"
+    },
+    {
+        "brand_name": "FOREVER SKIN GLOW 24h wear radiant foundation Perfection and hydration Concentrated floral skincare with suncreen Broad spectrum SPF 15 00",
+        "generic_name": "OCTISALATE, TITANIUM DIOXIDE",
+        "manufacturer": "Parfums Christian Dior",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses Helps prevent sunburn. If used as directed with other sun protection measures ( ), decreases the risk of skin cancer and early skin aging caused by the sun. see Directions"
+    },
+    {
+        "brand_name": "Foster and Thrive Dry Eye Relief",
+        "generic_name": "POLYETHYLENE GLYCOL 400",
+        "manufacturer": "Strategic Sourcing Services LLC",
+        "route": "OPHTHALMIC",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses for protection against further irritation for temporary relief of burning and irritation due to dryness of the eye"
+    },
+    {
+        "brand_name": "Foster and Thrive Advanced Relief Eye Drops",
+        "generic_name": "POLYETHYLENE GLYCOL 400, TETRAHYDROZOLINE HCL",
+        "manufacturer": "Strategic Sourcing Services LLC",
+        "route": "OPHTHALMIC",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses relieves redness of the eye due to minor eye irritations as a lubricant to prevent further irritation or to relieve dryness of the eye"
+    },
+    {
+        "brand_name": "Isopropyl Alcohol",
+        "generic_name": "ISOPROPYL ALCOHOL",
+        "manufacturer": "Cariba International",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Use first aid to help prevent the risk of infection in: minor cuts scrapes burns"
+    },
+    {
+        "brand_name": "Fludrocortisone Acetate",
+        "generic_name": "FLUDROCORTISONE ACETATE",
+        "manufacturer": "American Health Packaging",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "INDICATIONS AND USAGE Fludrocortisone acetate tablets, 0.1 mg are indicated as partial replacement therapy for primary and secondary adrenocortical insufficiency in Addison's disease and for the treatment of salt-losing adrenogenital syndrome."
+    },
+    {
+        "brand_name": "LACOSAMIDE",
+        "generic_name": "LACOSAMIDE",
+        "manufacturer": "Somerset Therapeutics, LLC",
+        "route": "INTRAVENOUS",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE Lacosamide injection is indicated for: Treatment of partial-onset seizures in patients 4 years of age and older (1.1) Adjunctive therapy in the treatment of primary generalized tonic-clonic seizures in patients 4 years of age and older (1.2) 1.1 Partial-Onset Seizures Lacosamide injection is indicated for the treatment of partial-onset seizures in patients 4 years of age and older. Pediatric use information is approved for UCB, Inc.'s VIMPAT\u00ae (lacosamide) injection. Howev..."
+    },
+    {
+        "brand_name": "CeraVe Developed with Dermatologists Acne Control Cleanser",
+        "generic_name": "SALICYLIC ACID",
+        "manufacturer": "L'Oreal USA Products Inc",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses clears acne blemishes and allows skin to heal helps prevent new acne blemishes from forming"
+    },
+    {
+        "brand_name": "Naproxen Sodium 220mg",
+        "generic_name": "NAPROXEN SODIUM 220MG",
+        "manufacturer": "Command Brands, LLC",
+        "route": "ORAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses temporarily relieves minor aches and pains due to: minor pain of arthritis muscular aches backache menstrual cramps headache toothache the common cold temporarily reduces fever"
+    },
+    {
+        "brand_name": "Suds High Foaming Antiseptic Hand and Body Wash",
+        "generic_name": "CHLOROXYLENOL",
+        "manufacturer": "Pro chem, Inc.",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Drug Facts Box OTC-Indications & Usage Section for hand-washing to decrease bacteria on the skin"
+    },
+    {
+        "brand_name": "Leader Earwax Removal Drops Earwax Removal Aid",
+        "generic_name": "CARBAMIDE PEROXIDE",
+        "manufacturer": "Cardinal Health, Inc.",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses for occasional use as an aid to soften, loosen, and remove excessive earwax"
+    },
+    {
+        "brand_name": "Amphetamine Sulfate",
+        "generic_name": "AMPHETAMINE SULFATE",
+        "manufacturer": "SpecGx LLC",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "INDICATIONS AND USAGE Amphetamine sulfate tablets are indicated for: Narcolepsy Attention Deficit Disorder with Hyperactivity as an integral part of a total treatment program which typically includes other remedial measures (psychological, educational, social) for a stabilizing effect in children with behavioral syndrome characterized by the following group of developmentally inappropriate symptoms: moderate to severe distractibility, short attention span, hyperactivity, emotional lability, and ..."
+    },
+    {
+        "brand_name": "Dove",
+        "generic_name": "EVEN TONE PLUS NIACINAMIDE APPLE BLOSSOM AND MANGO BUTTER DRY SPRAY 72H ANTIPERSPIRANT DEODORANT",
+        "manufacturer": "Conopco, Inc. d/b/a Unilever",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses \u2022 reduces underarm wetness"
+    },
+    {
+        "brand_name": "Dove",
+        "generic_name": "EVEN TONE PLUS NIACINAMIDE PEACH BLOSSOM AND RICE MILK DRY SPRAY 72H ANTIPERSPIRANT DEODORANT",
+        "manufacturer": "Conopco, Inc. d/b/a Unilever",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses \u2022 reduces underarm wetness"
+    },
+    {
+        "brand_name": "Dove",
+        "generic_name": "EVEN TONE PLUS NIACINAMIDE SHEA BUTTER AND VANILLA DRY SPRAY 72H ANTIPERSPIRANT DEODORANT",
+        "manufacturer": "Conopco, Inc. d/b/a Unilever",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses \u2022 reduces underarm wetness"
+    },
+    {
+        "brand_name": "Sports For Trauma Gel",
+        "generic_name": "BELLIS PERENNIS, HYPERICUM PERFOMATUM,TOXICODENDRON PUBSCENS LEAF, RUTA GRAVEOLENS FLOWERING TOP",
+        "manufacturer": "Schwabe Mexico, S.A. de C.V.",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Indications & Usage Temporarily relieves deep muscle and back pain, stiffness, and swelling associated with overexertion, sprains, falls, blows, and minor sports injuries. Relieves joint and tendon pain and inflammation."
+    },
+    {
+        "brand_name": "Olay Regenerist Regenerating with Sunscreen Broad Spectrum SPF 15",
+        "generic_name": "AVOBENZONE, HOMOSALATE, OCTISALATE, AND OCTOCRYLENE",
+        "manufacturer": "The Procter & Gamble Manufacturing Company",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses helps prevent sunburn if used as directed with other sun protection measures (see Directions ), decreases the risk of skin cancer and early skin aging caused by the sun"
+    },
+    {
+        "brand_name": "Roll On Anti-Perspirant (Alcohol Free)",
+        "generic_name": "ALUMINUM CHLOROHYDRATE",
+        "manufacturer": "Cardinal Health",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Use Reduces underarm wetness."
+    },
+    {
+        "brand_name": "Attitude Diaper Cream Zinc Unscented",
+        "generic_name": "ZINC OXIDE",
+        "manufacturer": "9055-7588 Quebec Inc. (Attitude)",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Helps prevent diaper rash. Protects chafed irritated skin due to diaper rash. Helps protect from wetness that causes diaper rash. Temporarily protects and helps relieve minor skin irritation due to diaper rash. Helps treat/heal diaper rash."
+    },
+    {
+        "brand_name": "Famotidine",
+        "generic_name": "FAMOTIDINE",
+        "manufacturer": "PD-Rx Pharmaceuticals, Inc.",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE Famotidine tablets are indicated in adult and pediatric patients 40 kg and greater for the treatment of: \u2022 active duodenal ulcer (DU). \u2022 active gastric ulcer (GU). \u2022 symptomatic nonerosive gastroesophageal reflux disease (GERD). \u2022 erosive esophagitis due to GERD, diagnosed by biopsy. Famotidine tablets are indicated in adults for the: \u2022 treatment of pathological hypersecretory conditions (e.g., Zollinger-Ellison syndrome, multiple endocrine neoplasias). \u2022 reduction of the..."
+    },
+    {
+        "brand_name": "Equate Honey Lemon Cough Drops",
+        "generic_name": "MENTHOL",
+        "manufacturer": "WalMart",
+        "route": "ORAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses temporarily relieves: cough as may occur with a cold occasional minor irritation and sore throat"
+    },
+    {
+        "brand_name": "Prime Tooth Care Hami Melon",
+        "generic_name": "SODIUM FLUORIDE",
+        "manufacturer": "Prime Tooth Care LLC",
+        "route": "DENTAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Use helps protect against cavities"
+    },
+    {
+        "brand_name": "Dragon Pain Relieving Balm",
+        "generic_name": "CAMPHOR, MENTHOL",
+        "manufacturer": "Americanna Wellness, Inc.",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses For the temporary relief of minor aches and pains of muscles and joints associated with simple backache arthritis strains bruises sprains"
+    },
+    {
+        "brand_name": "Eminence Radiant Protection SPF Fluid",
+        "generic_name": "ZINC OXIDE",
+        "manufacturer": "Eminence Organic Skin Care",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses helps prevent sunburn if used as directed with other sun protection measures (see Directions), decreases the risk of skin cancer and early skin aging caused by the sun"
+    },
+    {
+        "brand_name": "Foster and Thrive Original Formula Eye Drops",
+        "generic_name": "TETRAHYDROZOLINE HCL",
+        "manufacturer": "Strategic Sourcing Services LLC",
+        "route": "OPHTHALMIC",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Use relieves redness of the eye due to minor eye irritations"
+    },
+    {
+        "brand_name": "Dragon Pain Relieving Balm",
+        "generic_name": "CAMPHOR, MENTHOL",
+        "manufacturer": "Americanna Wellness, Inc.",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses For the temporary relief of minor aches and pains of muscles and joints associated with simple backache arthritis strains bruises sprains"
+    },
+    {
+        "brand_name": "Olanzapine",
+        "generic_name": "OLANZAPINE",
+        "manufacturer": "Lannett Company, Inc.",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE Olanzapine is an atypical antipsychotic indicated: As oral formulation for the: Treatment of schizophrenia. ( 1.1 ) Adults: Efficacy was established in three clinical trials in patients with schizophrenia: two 6-week trials and one maintenance trial. ( 14.1 ) Adolescents (ages 13-17): Efficacy was established in one 6-week trial in patients with schizophrenia ( 14.1 ). The increased potential (in adolescents compared with adults) for weight gain and dyslipidemia may lead ..."
+    },
+    {
+        "brand_name": "BKEMV",
+        "generic_name": "ECULIZUMAB-AEEB",
+        "manufacturer": "Amgen Inc",
+        "route": "INTRAVENOUS",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE BKEMV is a complement inhibitor indicated for: The treatment of patients with paroxysmal nocturnal hemoglobinuria (PNH) to reduce hemolysis. ( 1.1 ) The treatment of patients with atypical hemolytic uremic syndrome (aHUS) to inhibit complement-mediated thrombotic microangiopathy. ( 1.2 ) Limitation of Use BKEMV is not indicated for the treatment of patients with Shiga toxin E. coli related hemolytic uremic syndrome (STEC-HUS). The treatment of generalized myasthenia gravi..."
+    },
+    {
+        "brand_name": "PETITCOCHON TONE UP BODY SUN",
+        "generic_name": "ADENOSINE, NIACINAMIDE",
+        "manufacturer": "LAON COMMERCE co ltd",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "How to use; At the last stage of basic care, apply an appropriate amount to the face, neck, arms, and legs that are easily exposed to UV rays."
+    },
+    {
+        "brand_name": "ORFADIN",
+        "generic_name": "NITISINONE",
+        "manufacturer": "Swedish Orphan Biovitrum AB (publ)",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE ORFADIN \u00ae is indicated for the treatment of adult and pediatric patients with hereditary tyrosinemia type 1 (HT-1) in combination with dietary restriction of tyrosine and phenylalanine. ORFADIN is a hydroxy-phenylpyruvate dioxygenase inhibitor indicated for the treatment of adult and pediatric patients with hereditary tyrosinemia type 1 (HT-1) in combination with dietary restriction of tyrosine and phenylalanine. ( 1 )"
+    },
+    {
+        "brand_name": "Calm Mood",
+        "generic_name": "GARLIC, AVENA SATIVA FLOWERING TOP, ANGELICA ARCHANGELICA ROOT, ARABICA COFFEE BEAN, HOLY BASIL LEAF, PASSIFLORA EDULIS FLOWER, SCUTELLARIA LATERIFLORA WHOLE, VERBENA HASTATA TOP, AND MACROPIPER METHYSTICUM ROOT",
+        "manufacturer": "Forces of Nature",
+        "route": "SUBLINGUAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses for the temporary relief of nervousness and tension associated with stress or occasional anxiety."
+    },
+    {
+        "brand_name": "ropinirole",
+        "generic_name": "ROPINIROLE",
+        "manufacturer": "Preferred Pharmaceuticals Inc.",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE Ropinirole tablets are a non-ergoline dopamine agonist indicated for the treatment of Parkinson\u2019s disease (PD) and moderate-to-severe primary Restless Legs Syndrome (RLS). ( 1.1 , 1.2 ) 1.1 Parkinson's Disease Ropinirole tablets are indicated for the treatment of Parkinson\u2019s disease. 1.2 Restless Legs Syndrome Ropinirole tablets are indicated for the treatment of moderate-to-severe primary Restless Legs Syndrome (RLS)."
+    },
+    {
+        "brand_name": "Neutrogena Mineral Invisible Daily Defense Face Sunscreen Broad Spectrum SPF 30",
+        "generic_name": "TITANIUM DIOXIDE, ZINC OXIDE",
+        "manufacturer": "Kenvue Brands LLC",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses helps prevent sunburn if used as directed with other sun protection measures (see Directions ), decreases the risk of skin cancer and early skin aging caused by the sun"
+    },
+    {
+        "brand_name": "Tri-Vite Drops with Fluoride",
+        "generic_name": "ASCORBIC ACID, SODIUM FLUORIDE, VITAMIN A AND VITAMIN D",
+        "manufacturer": "Method Pharmaceuticals, LLC",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "INDICATIONS AND USAGE Supplementation of the diet with vitamins A, C and D. Tri-Vite Drops with Fluoride 0.25 mg also provides fluoride for caries prophylaxis. The American Academy of Pediatrics recommends that children up to age 16, in areas where drinking water contains less than optimal levels of fluoride, receive daily fluoride supplementation. The American Academy of Pediatrics recommend that infants and young children 6 months to 3 years of age, in areas where the drinking water contains l..."
+    },
+    {
+        "brand_name": "ondansetron hydrochloride",
+        "generic_name": "ONDANSETRON HYDROCHLORIDE",
+        "manufacturer": "NCS HealthCare of KY, LLC dba Vangard Labs",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE Ondansetron tablets are indicated for the prevention of nausea and vomiting associated with: highly emetogenic cancer chemotherapy, including cisplatin greater than or equal to 50 mg/m 2 . initial and repeat courses of moderately emetogenic cancer chemotherapy. radiotherapy in patients receiving either total body irradiation, single high-dose fraction to the abdomen, or daily fractions to the abdomen Ondansetron tablets are also indicated for the prevention of postoperati..."
+    },
+    {
+        "brand_name": "MediChoice Moisturizing Lip Balm SPF15",
+        "generic_name": "AVOBENZONE, OCTINOXATE, OCTISALATE, OCTOCRYLENE",
+        "manufacturer": "O&M HALYARD, INC.",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses Helps prevent sunburn"
+    },
+    {
+        "brand_name": "Azithromycin",
+        "generic_name": "AZITHROMYCIN",
+        "manufacturer": "Preferred Pharmaceuticals Inc.",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE Azithromycin is a macrolide antibacterial drug indicated for the treatment of patients with mild to moderate infections caused by susceptible strains of the designated microorganisms in the specific conditions listed below. Recommended dosages and durations of therapy in adult and pediatric patient populations vary in these indications. [see Dosage and Administration (2) ] Azithromycin is a macrolide antibacterial drug indicated for mild to moderate infections caused by d..."
+    },
+    {
+        "brand_name": "Metoclopramide",
+        "generic_name": "METOCLOPRAMIDE",
+        "manufacturer": "American Health Packaging",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "INDICATIONS AND USAGE The use of Metoclopramide Oral Solution is recommended for adults only. Therapy should not exceed 12 weeks in duration. Symptomatic Gastroesophageal Reflux Metoclopramide Oral Solution is indicated as short-term (4 to 12 weeks) therapy for adults with symptomatic, documented gastroesophageal reflux who fail to respond to conventional therapy. The principal effect of metoclopramide is on symptoms of post-prandial and daytime heartburn with less observed effect on nocturnal s..."
+    },
+    {
+        "brand_name": "Dove",
+        "generic_name": "EVEN TONE PLUS NIACINAMIDE PEACH BLOSSOM AND RICE MILK ANTIPERSPIRANT DEODORANT",
+        "manufacturer": "Conopco Inc. d/b/a/ Unilever",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses \u2022 reduces underarm wetness"
+    },
+    {
+        "brand_name": "Dove",
+        "generic_name": "EVEN TONE PLUS NIACINAMIDE APPLE BLOSSOM AND MANGO BUTTER ANTIPERSPIRANT DEODORANT",
+        "manufacturer": "Conopco Inc. d/b/a/ Unilever",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses \u2022 reduces underarm wetness"
+    },
+    {
+        "brand_name": "Dove",
+        "generic_name": "EVEN TONE PLUS NIACINAMIDE SHEA BUTTER AND VANILLA ANTIPERSPIRANT DEODORANT",
+        "manufacturer": "Conopco Inc. d/b/a/ Unilever",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses \u2022 reduces underarm wetness"
+    },
+    {
+        "brand_name": "Acetaminophen",
+        "generic_name": "ACETAMINOPHEN",
+        "manufacturer": "WALMART INC.",
+        "route": "ORAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses temporarily relieves minor aches and pains due to: minor pain of arthritis muscular aches backache premenstrual and menstrual cramp toothache the common cold headache toothache temporarily reduces fever"
+    },
+    {
+        "brand_name": "Dove",
+        "generic_name": "EVEN TONE PLUS NIACINAMIDE ROSEWOOD AND POWDER ANTIPERSPIRANT DEODORANT",
+        "manufacturer": "Conopco Inc. d/b/a/ Unilever",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses \u2022 reduces underarm wetness"
+    },
+    {
+        "brand_name": "Childrens Allergy Relief",
+        "generic_name": "DIPHENHYDRAMINE HCL",
+        "manufacturer": "Best Choice",
+        "route": "ORAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses temporarily relieves these symptoms due to hay fever or other respiratory allergies: \u25a0 sneezing \u25a0 itching of the nose or throat \u25a0 runny nose \u25a0 itchy watery eyes \u25a0temporarily relieves these symptoms due to the common cold: \u25a0 sneezing \u25a0 runny nose"
+    },
+    {
+        "brand_name": "Lamotrigine",
+        "generic_name": "LAMOTRIGINE",
+        "manufacturer": "Par Health USA, LLC",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE Lamotrigine orally disintegrating tablets are indicated for: Epilepsy\u2014adjunctive therapy in patients aged 2 years and older : partial-onset seizures. primary generalized tonic-clonic (PGTC) seizures. generalized seizures of Lennox-Gastaut syndrome. ( 1.1 ) Epilepsy\u2014monotherapy in patients aged 16 years and older : Conversion to monotherapy in patients with partial-onset seizures who are receiving treatment with carbamazepine, phenytoin, phenobarbital, primidone, or valpro..."
+    },
+    {
+        "brand_name": "First Aid Burn Cream",
+        "generic_name": "FIRST AID BURN CREAM",
+        "manufacturer": "ProStat First Aid LLC",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Use(s) For the temporary relief of pain and itching associated with: \u2022 Sunburn \u2022 Minor burns \u2022 Insect bites \u2022 Cuts \u2022 Scrapes"
+    },
+    {
+        "brand_name": "allergy relief",
+        "generic_name": "LORATADINE",
+        "manufacturer": "CVS Pharmacy",
+        "route": "ORAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses temporarily relieves these symptoms due to hay fever or other upper respiratory allergies: \u2022 runny nose \u2022 itchy, watery eyes \u2022 sneezing \u2022 itching of the nose or throat"
+    },
+    {
+        "brand_name": "Cisplatin",
+        "generic_name": "CISPLATIN",
+        "manufacturer": "Sagent Pharmaceuticals",
+        "route": "INTRAVENOUS",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "INDICATIONS AND USAGE Cisplatin Injection is indicated as therapy to be employed as follows: Metastatic Testicular Tumors In established combination therapy with other approved chemotherapeutic agents in patients with metastatic testicular tumors who have already received appropriate surgical and/or radio therapeutic procedures. Metastatic Ovarian Tumors In established combination therapy with other approved chemotherapeutic agents in patients with metastatic ovarian tumors who have already rece..."
+    },
+    {
+        "brand_name": "Artistry Youth Xtend Lifting Smoothing Foundation Shade Chiffon L2C1",
+        "generic_name": "OCTINOXATE, OXYBENZONE",
+        "manufacturer": "Amway Corp",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses Helps prevent sunburn"
+    },
+    {
+        "brand_name": "Equate SF Menthol Cough Drops",
+        "generic_name": "MENTHOL",
+        "manufacturer": "WalMart",
+        "route": "ORAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses temporarily relieves: cough as may occur with a cold occasional minor irritation and sore throat"
+    },
+    {
+        "brand_name": "MILK OF MAGNESIA",
+        "generic_name": "MAGNESIUM HYDROXIDE",
+        "manufacturer": "Strategic Sourcing Services LLC",
+        "route": "ORAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses relieves occasional constipation (irregularity) generally produces bowel movement in 1/2 to 6 hours"
+    },
+    {
+        "brand_name": "Nicotine Polacrilex",
+        "generic_name": "NICOTINE POLACRILEX",
+        "manufacturer": "Dr. Reddy's Laboratories Inc.",
+        "route": "ORAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Use reduces withdrawal symptoms, including nicotine craving, associated with quitting smoking"
+    },
+    {
+        "brand_name": "Head and Shoulders Bare Minimal Ingredients",
+        "generic_name": "PYRITHIONE ZINC",
+        "manufacturer": "The Procter & Gamble Manufacturing Company",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses fights recurrence of the symptoms of dandruff."
+    },
+    {
+        "brand_name": "Head and Shoulders Bare Minimal Ingredients Soothing Hydration",
+        "generic_name": "PYRITHIONE ZINC",
+        "manufacturer": "The Procter & Gamble Manufacturing Company",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses fights recurrence of the symptoms of dandruff."
+    },
+    {
+        "brand_name": "Amlodipine Besylate",
+        "generic_name": "AMLODIPINE BESYLATE",
+        "manufacturer": "Lupin Pharmaceuticals, Inc.",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE Amlodipine besylate tablets are calcium channel blocker and may be used alone or in combination with other antihypertensive and antianginal agents for the treatment of: \u2022Hypertension ( 1.1 ) \u043e Amlodipine besylate tablets are indicated for the treatment of hypertension, to lower blood pressure. Lowering blood pressure reduces the risk of fatal and nonfatal cardiovascular events, primarily strokes and myocardial infarctions. \u2022Coronary Artery Disease ( 1.2 ) \u043e Chronic Stable..."
+    },
+    {
+        "brand_name": "Private Label Moisturizing Oil Free Paraben Free SPF43",
+        "generic_name": "SUNSCREEN",
+        "manufacturer": "Swiss-American CDMO, LLC",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses Helps prevent sunbrun an dphoto damage caused by UVA/UVB exposure. If used as directed with other sun protection measures (see directions) , decreases the risk of skin cancer and early skin aging caused by the sun."
+    },
+    {
+        "brand_name": "perphenazine",
+        "generic_name": "PERPHENAZINE",
+        "manufacturer": "Zydus Lifesciences Limited",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "INDICATIONS AND USAGE Perphenazine tablets, USP are indicated for use in the treatment of schizophrenia and for the control of severe nausea and vomiting in adults. Perphenazine tablets, USP have not been shown effective for the management of behavioral complications in patients with mental retardation."
+    },
+    {
+        "brand_name": "Naproxen",
+        "generic_name": "NAPROXEN",
+        "manufacturer": "Bryant Ranch Prepack",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE Naproxen tablets and naproxen sodium tablets are indicated for: the relief of the signs and symptoms of: \u2022 rheumatoid arthritis \u2022 osteoarthritis \u2022 ankylosing spondylitis \u2022 Polyarticular Juvenile Idiopathic Arthritis Naproxen tablets and naproxen sodium tablets are also indicated for: the relief of signs and symptoms of: \u2022 tendonitis \u2022 bursitis \u2022 acute gout the management of: \u2022 pain \u2022 primary dysmenorrhea Naproxen tablets and naproxen sodium tablets are non-steroidal anti-..."
+    },
+    {
+        "brand_name": "Foster and Thrive Lubricating Tears Lubricant Eye Drops",
+        "generic_name": "POLYETHYLENE GLYCOL 400, PROPYLENE GLYCOL",
+        "manufacturer": "Strategic Sourcing Services LLC",
+        "route": "OPHTHALMIC",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses for temporary relief of burning and irritation due to dryness of the eye"
+    },
+    {
+        "brand_name": "Foster and Thrive Redness Relief Eye Drops",
+        "generic_name": "GLYCERIN, NAPHAZOLINE HCL",
+        "manufacturer": "Strategic Sourcing Services LLC",
+        "route": "OPHTHALMIC",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses relieves redness of the eye due to minor eye irritations for use as a protectant against further irritation or to relieve dryness of the eye for the temporary relief of burning and irritation due to dryness of the eye"
+    },
+    {
+        "brand_name": "Ashley Belle Moisturizing Hand Sanitizer Sunset Amber",
+        "generic_name": "ALCOHOL",
+        "manufacturer": "My Imports Usa, LLC",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses \u2022 Hand sanitizer to help reduce bacteria on the skin that could cause disease \u2022 Recommended for repeated use."
+    },
+    {
+        "brand_name": "Daytime Cold and Flu",
+        "generic_name": "ACETAMINOPHEN, DEXTROMETHORPHAN HBR, PHENYLEPHRINE HCL",
+        "manufacturer": "Family Dollar (FAMILY WELLNESS)",
+        "route": "ORAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses temporarily relieves these symptoms due to a cold minor aches and pains headache nasal and sinus congestion sore throat cough due to minor throat and bronchial irritation temporarily reduces fever"
+    },
+    {
+        "brand_name": "Rivastigmine Tartrate",
+        "generic_name": "RIVASTIGMINE TARTRATE",
+        "manufacturer": "Alembic Pharmaceuticals Inc.",
+        "route": "ORAL",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "1 INDICATIONS AND USAGE Rivastigmine tartrate capsules are an acetylcholinesterase inhibitor indicated for treatment of: Mild-to-moderate dementia of the Alzheimer\u2019s type (AD) (1.1) Mild-to-moderate dementia associated with Parkinson\u2019s disease (PD) (1.2) 1.1 Alzheimer\u2019s Disease Rivastigmine tartrate capsules are indicated for the treatment of mild-to-moderate dementia of the Alzheimer's type (AD). 1.2 Parkinson\u2019s Disease Dementia Rivastigmine tartrate capsules are indicated for the treatment of ..."
+    },
+    {
+        "brand_name": "Ketorolac Tromethamine",
+        "generic_name": "KETOROLAC TROMETHAMINE",
+        "manufacturer": "Asclemed USA, Inc.",
+        "route": "INTRAMUSCULAR",
+        "product_type": "HUMAN PRESCRIPTION DRUG",
+        "indications": "INDICATIONS AND USAGE Carefully consider the potential benefits and risks of ketorolac tromethamine and other treatment options before deciding to use ketorolac. Use the lowest effective dose for the shortest duration consistent with individual patient treatment goals (see WARNINGS ). Acute Pain in Adult Patients Ketorolac tromethamine is indicated for the short-term (\u22645 days) management of moderately severe acute pain that requires analgesia at the opioid level, usually in a postoperative setti..."
+    },
+    {
+        "brand_name": "Sinusitis Drops 2060",
+        "generic_name": "SINUSITIS DROPS",
+        "manufacturer": "Professional Complementary Health Formulas",
+        "route": "ORAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "INDICATIONS For the temporary relief of runny nose, nasal congestion, headache, or mild facial or ear pain due to a cold, hay fever, or other upper respiratory allergies.*"
+    },
+    {
+        "brand_name": "Histastat Pollen",
+        "generic_name": "BAPTISIA TINCTORIA, ECHINACEA (ANGUSTIFOLIA), ADRENALINUM, ALLIUM CEPA, AMBROSIA ARTEMISIAEFOLIA, ARSENICUM ALBUM, EUPHRASIA OFFICINALIS, HISTAMINUM HYDROCHLORICUM, NATRUM MURIATICUM, NATRUM SULPHURICUM, NUX VOMICA, PHOSPHORUS, PULSATILLA (PRATENSIS), SABADILLA, SINAPIS NIGRA, SOLIDAGO VIRGAUREA, SULPHUR, WYETHIA HELENIOIDES",
+        "manufacturer": "Energique, Inc.",
+        "route": "ORAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "INDICATIONS: May temporarily relieve sinus congestion, runny nose, and sneezing.** **Claims based on traditional homeopathic practice, not accepted medical evidence. Not FDA evaluated."
+    },
+    {
+        "brand_name": "Baby XtraCare Oatmeal",
+        "generic_name": "DIMETHICONE",
+        "manufacturer": "Rejoice International",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Baby XtraCare\u00ae Oatmeal Daily Moisturizing Lotion Lightly Scented Dimethicon Skin Protectant with Natural Oat Extract Helps Soothe & Soften Baby's Skin 12 FL OZ (354 mL)"
+    },
+    {
+        "brand_name": "Dove",
+        "generic_name": "TEENS STRAWBERRY SPARKLE 48H ANTIPERSPIRANT",
+        "manufacturer": "Conopco, Inc. d/b/a Unilever",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses \u2022 reduces underarm wetness"
+    },
+    {
+        "brand_name": "Dove",
+        "generic_name": "ADVANCED COCONUT WATER AND LIME DRY SPRAY 72H ANTIPERSPIRANT DEODORANT",
+        "manufacturer": "Conopco, Inc. d/b/a Unilever",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Uses \u2022 reduces underarm wetness"
+    },
+    {
+        "brand_name": "Burn Ease, 3.5g",
+        "generic_name": "BURN EASE, 3.5G",
+        "manufacturer": "ProStat First Aid LLC",
+        "route": "TOPICAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "Use(s) For the temporary relief of pain associated with \u2022 Minor burns \u2022 Sunburn"
+    },
+    {
+        "brand_name": "DNA Pancreas Formula",
+        "generic_name": "LYCOPODIUM CLAVATUM, PANCREAS SUIS, DNA, INSULINUM (HUMAN), PHOSPHORICUM ACIDUM, RADIUM BROMATUM, URANIUM NITRICUM",
+        "manufacturer": "Nutritional Specialties, Inc.",
+        "route": "ORAL",
+        "product_type": "HUMAN OTC DRUG",
+        "indications": "USES: Assists in support of the pancreas.\u2020 \u2020Claims based on traditional homeopathic practice, not accepted medical evidence. Not FDA evaluated."
+    }
+]
