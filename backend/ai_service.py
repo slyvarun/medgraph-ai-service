@@ -30,7 +30,7 @@ driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-2.5-flash')
+    model = genai.GenerativeModel('gemini-3.5-flash')
 else:
     model = None
 
@@ -43,23 +43,46 @@ class QueryRequest(BaseModel):
 def shutdown_db_client():
     driver.close()
 
-def query_neo4j_for_context(user_query: str) -> str:
-    # Filter common conversational words and clinical field headers to isolate medicine/disease tokens
-    stopwords = {
-        "what", "is", "are", "the", "for", "with", "does", "which", "give", "me", "a", "an",
-        "tell", "about", "cure", "can", "treat", "used", "uses", "use", "usage", "to", "in", "of", "and", "drug",
-        "drugs", "medicine", "medicines", "medication", "medications", "pill", "pills", "tablet",
-        "tablets", "how", "class", "available", "there", "show", "list", "their", "any", "some",
-        "and", "or", "associated", "treats", "side", "effect", "effects", "adverse", "reaction",
-        "reactions", "warning", "warnings", "precaution", "precautions", "contraindication",
-        "contraindications", "interaction", "interactions", "information", "info", "help",
-        "details", "detail", "take", "taking", "taken", "prescribed", "dose", "dosage"
-    }
+STOPWORDS = {
+    "what", "is", "are", "the", "for", "with", "does", "which", "give", "me", "a", "an",
+    "tell", "about", "cure", "can", "treat", "used", "uses", "use", "usage", "to", "in", "of", "and", "drug",
+    "drugs", "medicine", "medicines", "medication", "medications", "pill", "pills", "tablet",
+    "tablets", "how", "class", "available", "there", "show", "list", "their", "any", "some",
+    "and", "or", "associated", "treats", "side", "effect", "effects", "adverse", "reaction",
+    "reactions", "warning", "warnings", "precaution", "precautions", "contraindication",
+    "contraindications", "interaction", "interactions", "information", "info", "help",
+    "details", "detail", "take", "taking", "taken", "prescribed", "dose", "dosage",
+    "it", "its", "this", "that", "these", "them", "same", "also", "other", "another",
+    "hello", "hi", "hey", "doctor", "dr", "please", "thanks", "thank"
+}
+
+PRONOUNS_OR_FOLLOWUPS = {
+    "it", "its", "this", "that", "these", "them", "same", "also", 
+    "other", "another", "alternative", "alternatives", "instead", "such", "similar"
+}
+
+def extract_clinical_keywords(user_query: str, history: list = None) -> list:
+    """Extract clinical target entities from query, resolving pronouns and follow-ups from history."""
     tokens = [w.strip("?,.!:;\"'").lower() for w in user_query.split()]
-    keywords = [w for w in tokens if len(w) > 2 and w not in stopwords]
-    
-    if not keywords:
-        keywords = [user_query.strip().lower()]
+    raw_keywords = [w for w in tokens if len(w) > 2 and w not in STOPWORDS]
+
+    # Check if the query is an anaphoric follow-up (e.g. "what are its side effects?", "are there alternatives?")
+    has_followup = any(t in PRONOUNS_OR_FOLLOWUPS for t in tokens) or len(raw_keywords) == 0
+
+    if has_followup and history:
+        # Search backwards through user messages first to isolate the clean subject medicine
+        for turn in reversed(history):
+            if turn.get("role") == "user":
+                prev_tokens = [w.strip("?,.!:;\"'()[]").lower() for w in turn.get("content", "").split()]
+                prev_candidates = [w for w in prev_tokens if len(w) > 2 and w not in STOPWORDS]
+                if prev_candidates:
+                    combined = prev_candidates[:2] + raw_keywords
+                    return list(dict.fromkeys(combined))
+
+    return raw_keywords if raw_keywords else [user_query.strip().lower()]
+
+def query_neo4j_for_context(user_query: str, history: list = None) -> str:
+    keywords = extract_clinical_keywords(user_query, history)
 
     cypher = """
     MATCH (m:Medicine)
@@ -118,34 +141,39 @@ def query_neo4j_for_context(user_query: str) -> str:
     try:
         with driver.session() as session:
             result = session.run(cypher, keywords=keywords)
-            context = []
-            for record in result:
-                substances_str = ", ".join(record["substances"]) if record["substances"] else record["generic"]
-                classes_str = ", ".join(record["drug_classes"]) if record["drug_classes"] else "Not Classified"
-                rxcui_str = f" | RxCUI: {record['rxcui']}" if record.get("rxcui") else ""
-                brands = [b for b in record.get("known_brands", []) if b and b.lower() != record["brand"].lower()]
-                brands_line = f"  Also Marketed As: {', '.join(brands[:4])}" if brands else ""
-                med_info = [
-                    f"• Medicine: {record['brand']} (Generic: {record['generic']}{rxcui_str} | Category: {record.get('category', 'General')})"
+            records = list(result)
+            if not records:
+                return "No relevant clinical records found in the Knowledge Graph for this inquiry."
+
+            context_blocks = []
+            for r in records:
+                substances_str = ", ".join(r["substances"]) if r["substances"] else r["generic"]
+                classes_str = ", ".join(r["drug_classes"]) if r["drug_classes"] else "Not Classified"
+                rxcui_str = f" (RxCUI: {r['rxcui']})" if r.get("rxcui") else ""
+                brands = [b for b in r.get("known_brands", []) if b and b.lower() != r["brand"].lower()]
+                brands_str = f"Also Marketed As: {', '.join(brands[:4])}" if brands else ""
+
+                block = [
+                    f"Clinical Medicine: {r['brand']} [Generic: {r['generic']}{rxcui_str}]",
+                    f"Therapeutic Category: {r.get('category', 'General Medicine')}",
+                    f"Pharmacological Class: {classes_str}",
+                    f"Active Chemical Substance: {substances_str}",
+                    f"Licensed Manufacturer: {r['manufacturer']}",
+                    f"Approved Indication/Usage: {r['indication']}"
                 ]
-                if brands_line:
-                    med_info.append(brands_line)
-                med_info.extend([
-                    f"  Pharmacologic Class: {classes_str}",
-                    f"  Active Substance(s): {substances_str}",
-                    f"  Manufacturer: {record['manufacturer']}",
-                    f"  Indication/Usage: {record['indication']}"
-                ])
-                if record.get("side_effects") and record["side_effects"] != "None specified in label summary":
-                    med_info.append(f"  Side Effects / Adverse Reactions: {record['side_effects']}")
-                if record.get("warnings") and record["warnings"] != "None specified in label summary":
-                    med_info.append(f"  Warnings & Precautions: {record['warnings']}")
-                if record.get("contraindications") and record["contraindications"] != "None specified in label summary":
-                    med_info.append(f"  Contraindications: {record['contraindications']}")
-                if record.get("drug_interactions") and record["drug_interactions"] != "None specified in label summary":
-                    med_info.append(f"  Drug-Drug Interactions: {record['drug_interactions']}")
-                context.append("\n".join(med_info))
-            return "\n\n".join(context) if context else "No relevant medical context found in the graph."
+                if brands_str:
+                    block.append(brands_str)
+                if r.get("side_effects") and r["side_effects"] != "None specified in label summary":
+                    block.append(f"Adverse Reactions & Side Effects: {r['side_effects']}")
+                if r.get("warnings") and r["warnings"] != "None specified in label summary":
+                    block.append(f"Black Box Warnings & Precautions: {r['warnings']}")
+                if r.get("contraindications") and r["contraindications"] != "None specified in label summary":
+                    block.append(f"Contraindications: {r['contraindications']}")
+                if r.get("drug_interactions") and r["drug_interactions"] != "None specified in label summary":
+                    block.append(f"Drug-Drug Interactions: {r['drug_interactions']}")
+
+                context_blocks.append("\n".join(block))
+            return "\n\n---\n\n".join(context_blocks)
     except Exception as e:
         return f"Error retrieving from Knowledge Graph: {str(e)}"
 
@@ -154,40 +182,79 @@ async def ask_medgraph(request: QueryRequest):
     if not model:
         raise HTTPException(status_code=500, detail="GEMINI_API_KEY not configured in .env")
 
-    # 1. Retrieve Context from Neo4j
-    graph_context = query_neo4j_for_context(request.question)
+    # 1. Retrieve Context from Neo4j with Conversational Coreference Resolution
+    graph_context = query_neo4j_for_context(request.question, request.history)
 
-    # 2. Build the Prompt for GraphRAG
+    # 2. Format Conversational History for Multi-Turn Continuity
+    formatted_history = "No previous context (Initial inquiry)."
+    if request.history:
+        turns = []
+        for msg in request.history[-6:]:
+            role = "Patient" if msg.get("role") == "user" else "Doctor AI"
+            content = msg.get("content", "").strip()
+            if content:
+                # Truncate large previous blocks for optimal prompt token efficiency
+                snippet = content[:280] + "..." if len(content) > 280 else content
+                turns.append(f"{role}: {snippet}")
+        if turns:
+            formatted_history = "\n".join(turns)
+
+    # 3. Construct Doctor AI Persona Prompt with Fluid Medical Prose
     prompt = f"""
-    You are MedGraph Nexus, a highly knowledgeable and friendly clinical AI assistant.
-    You answer medical queries based ONLY on the provided Knowledge Graph context.
-    
-    User Question: {request.question}
-    Target Language Code: {request.language}
-    
-    Knowledge Graph Context:
-    {graph_context}
-    
-    Instructions:
-    - Answer the question accurately using only the provided context.
-    - If the context doesn't contain the answer, politely state that you do not have that information in the database.
-    - Respond strictly in the language specified by the Target Language Code (e.g. 'en' for English, 'hi' for Hindi, 'te' for Telugu).
-    - Format your response nicely with markdown or bullet points if appropriate.
-    """
+You are Dr. Nexus, a compassionate, articulate, senior clinical physician and pharmacology specialist.
+Your role is to explain clinical findings to the patient in fluent, empathetic, and beautifully structured medical language.
 
-    # 3. Call the LLM with Graceful Graph Fallback
+PATIENT CONSULTATION HISTORY:
+{formatted_history}
+
+CURRENT PATIENT QUESTION:
+"{request.question}"
+
+TARGET RESPONSE LANGUAGE:
+{request.language} (en = English, te = Telugu, hi = Hindi)
+
+VERIFIED KNOWLEDGE GRAPH GROUND-TRUTH:
+{graph_context}
+
+CRITICAL INSTRUCTIONS FOR SENTENCE FORMATION & PRESENTATION:
+1. CONVERSATIONAL CONTINUITY & CONTEXT:
+   - If the patient is asking a follow-up question (e.g. asking about "its side effects", "can I take it with food", or "alternatives"), maintain natural continuity! Acknowledge the medicine previously discussed (e.g., "Continuing from our discussion on Amoxicillin...").
+   - Never sound like an amnesiac or a disjointed database.
+
+2. NEVER DUMP RAW DATABASE FIELDS:
+   - DO NOT copy-paste raw database lines (such as "• Medicine: X | Category: Y | Manufacturer: Z"). That is unacceptable.
+   - Synthesize the facts into cohesive, elegant clinical prose. Write as an expert doctor speaks to an attentive patient.
+
+3. STRUCTURED & READABLE CLINICAL PRESENTATION:
+   - Organize your response into clear, inviting sections:
+     • **Direct Answer & Clinical Overview**: Answer the patient's immediate question directly in warm, complete sentences.
+     • **Mechanism of Action & Pharmacology**: Seamlessly explain the active chemical substance and pharmacologic drug class in accessible terms.
+     • **Clinical Indications or Safety Precautions**: Use readable bullet points ONLY when listing distinct indications, adverse reactions, or warning points.
+     • **Practical Physician Advice**: Emphasize safe administration, consulting their prescribing physician, or monitoring for adverse symptoms.
+
+4. ACCURACY & ZERO HALLUCINATION:
+   - Base all clinical claims (active substances, drug classes, indications, contraindications) STRICTLY on the Knowledge Graph ground truth above.
+   - If a specific inquiry (e.g., exact pediatric dose for a rare condition) is not present in the graph data, explain transparently and advise professional medical evaluation.
+
+5. NATIVE MULTILINGUAL ELOQUENCE:
+   - If Target Language is Telugu ('te'): Respond in fluent, respectful Telugu, keeping key pharmaceutical drug names in parentheses for clarity.
+   - If Target Language is Hindi ('hi'): Respond in fluent, professional Hindi, keeping key pharmaceutical drug names in parentheses.
+   - If Target Language is English ('en'): Respond in polished, reassuring clinical English.
+"""
+
+    # 4. Generate Response with Graceful Clinical Fallback
     try:
         response = model.generate_content(prompt)
         return {"answer": response.text, "context_used": graph_context}
     except Exception as e:
         error_msg = str(e)
         if "429" in error_msg or "ResourceExhausted" in error_msg or "quota" in error_msg.lower():
-            # Graceful fallback: return the structured knowledge graph context directly
+            # Graceful structured physician fallback
             fallback_answer = (
-                f"### Clinical Knowledge Graph Results\n\n"
-                f"Here are the matched medical records retrieved directly from MedGraph Nexus:\n\n"
+                f"### ⚕️ Clinical Consultation Summary\n\n"
+                f"**Clinical Note**: Here are the verified pharmacological facts retrieved directly from MedGraph Nexus for your inquiry:\n\n"
                 f"{graph_context}\n\n"
-                f"---\n*Note: High API traffic reached temporary Gemini free-tier rate limits. Clinical graph context served directly.*"
+                f"---\n*Note: High traffic reached temporary Gemini free-tier rate limits. Ground-truth clinical facts served directly.*"
             )
             return {"answer": fallback_answer, "context_used": graph_context}
         raise HTTPException(status_code=500, detail=f"Error generating AI response: {error_msg}")
