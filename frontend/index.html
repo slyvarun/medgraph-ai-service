@@ -848,7 +848,7 @@
       const proto = window.location.protocol;
 
       if (proto === 'file:' || host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
-        return 'http://localhost:8000';
+        return window.location.port ? `${window.location.protocol}//${window.location.hostname}:${window.location.port}` : 'http://localhost:8008';
       }
       return DEFAULT_BACKEND;
     }
