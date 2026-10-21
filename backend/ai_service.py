@@ -12,6 +12,7 @@ Implements:
 
 import os
 import json
+import requests
 from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, HTTPException, Path, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,6 +21,7 @@ from pydantic import BaseModel, Field
 from neo4j import GraphDatabase, Driver
 from dotenv import load_dotenv
 import google.generativeai as genai
+
 
 # Load environment configuration
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -48,6 +50,8 @@ NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", os.getenv("NEO4J_USERNAME", "neo4j"))
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
 
 try:
     driver: Optional[Driver] = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
@@ -55,10 +59,14 @@ except Exception:
     driver = None
 
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-    gemini_model = genai.GenerativeModel("gemini-1.5-pro")
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        gemini_model = genai.GenerativeModel("gemini-1.5-pro")
+    except Exception:
+        gemini_model = None
 else:
     gemini_model = None
+
 
 
 @app.on_event("shutdown")
@@ -153,24 +161,115 @@ class AlternativesResponse(BaseModel):
 # Medical Guardrails & Strict Clinical System Prompt
 # ---------------------------------------------------------------------------
 CLINICAL_SYSTEM_GUARDRAIL = """
-You are MedGraph Nexus, an AI clinical pharmacotherapy engine adhering to strict medical guardrails.
+You are Doctor AI for MedGraph Nexus, an empathetic, highly knowledgeable clinical pharmacotherapist and physician consultant.
 
-STRICT OPERATIONAL RULES:
-1. ABSOLUTE GROUNDING: You MUST formulate answers based EXCLUSIVELY on the verified Knowledge Graph records provided below.
-2. ZERO HALLUCINATION / UNKNOWN QUERIES:
-   - If the Knowledge Graph context contains NO matching clinical records or is empty, DO NOT attempt to answer from external memory or extrapolate.
-   - You MUST respond with this exact statement:
-     "I cannot find verified pharmaceutical records in MedGraph Nexus for the requested symptoms. Please consult a qualified healthcare provider or medical professional."
-3. STRICT FOOTNOTE CITATIONS:
-   - Every factual claim about an indication, active ingredient, brand alternative, or contraindication MUST include bracketed citations like [1], [2] corresponding to the Evidence ID.
-   - Example: "Acetaminophen is an analgesic indicated for minor aches and headaches [1], with known brand alternatives including Panadol and Tylenol [2]."
-4. STRUCTURED REPORTING:
-   - State the identified Symptom(s).
-   - Clearly identify the active chemical composition / active ingredient.
-   - List the alternative brand formulations found in the graph.
-   - Note critical contraindications, black box warnings, or adverse reactions if available in the context.
-5. MEDICAL DISCLAIMER: Maintain clinical precision without prescribing or dispensing unverified medical directives.
+YOUR TONE & PERSONA:
+Communicate warmly, naturally, and conversationally—like an experienced, compassionate clinician speaking directly with a patient or healthcare colleague. Avoid rigid, robotic bullet dumps or mechanical templates. Explain insights fluidly with clear headings, empathetic phrasing, and intuitive reasoning while maintaining the highest medical precision.
+
+CRITICAL CITATION DISCIPLINE (REVIEWABLE EVIDENCE):
+Every time you mention an active chemical substance, indication, brand alternative, or safety warning from the Knowledge Graph context, you MUST immediately append a bracketed footnote citation (e.g., [1], [2]) corresponding to the Evidence Record number.
+- Example: "If you're seeking alternatives with the same active compound Acetaminophen [1], well-known formulations include Mapap [1], Panadol [1], and Feverall [1]."
+- Example: "Keep in mind that excessive doses of acetaminophen can lead to severe hepatic injury, so do not exceed the 4,000 mg 24-hour ceiling [1]."
+
+GROUNDING & REFUSAL RULES:
+1. Ground your clinical statements exclusively in the verified Knowledge Graph records provided below.
+2. If the Knowledge Graph context contains NO matching clinical records or is empty, DO NOT extrapolate or speculate. Respond with genuine warmth and empathy:
+   "I cannot find verified pharmaceutical records in MedGraph Nexus for the requested symptoms. Please consult a qualified healthcare provider or medical professional."
+3. Always encourage users to consult their attending healthcare provider for individualized dosing and care.
 """
+
+
+def generate_conversational_response(
+    query: str,
+    raw_context: str,
+    history: Optional[List[Dict[str, str]]] = None,
+    language: str = "en",
+    retrieved_summary: Optional[Dict[str, Any]] = None
+) -> str:
+    """
+    Generates humanly conversational, clinically grounded responses using OpenRouter
+    with fallback to Google Gemini or deterministic graph summaries.
+    """
+    history = history or []
+
+    # 1. Primary Engine: OpenRouter API (OpenAI GPT-4o-mini / Meta Llama 3.3)
+    if OPENROUTER_API_KEY:
+        try:
+            messages = [{"role": "system", "content": CLINICAL_SYSTEM_GUARDRAIL.strip()}]
+
+            # Multi-turn conversational continuity (last 4 dialogue turns)
+            for h in history[-4:]:
+                r = "user" if h.get("role") in ["user", "human"] else "assistant"
+                c = (h.get("content") or "").strip()
+                if c:
+                    messages.append({"role": r, "content": c})
+
+            user_prompt = (
+                f"VERIFIED KNOWLEDGE GRAPH & OPENFDA CONTEXT:\n"
+                f"{raw_context}\n\n"
+                f"USER CLINICAL INQUIRY:\n"
+                f"\"{query}\"\n\n"
+                f"TARGET LANGUAGE: {language}\n\n"
+                f"Please formulate a warm, humanly conversational, yet clinically grounded response. "
+                f"Make sure to embed bracketed footnote citations like [1], [2] for all active ingredients, "
+                f"brand alternatives, approved indications, and safety warnings present in the context above."
+            )
+            messages.append({"role": "user", "content": user_prompt})
+
+            headers = {
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://medgraph.nexus",
+                "X-Title": "MedGraph Nexus Clinical Engine"
+            }
+            payload = {
+                "model": OPENROUTER_MODEL,
+                "messages": messages,
+                "temperature": 0.4,
+                "max_tokens": 1200
+            }
+
+            resp = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=25
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                content = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+                if content:
+                    return content
+        except Exception:
+            pass
+
+    # 2. Secondary Fallback: Google Gemini
+    if gemini_model:
+        try:
+            fallback_prompt = (
+                f"{CLINICAL_SYSTEM_GUARDRAIL}\n\n"
+                f"VERIFIED KNOWLEDGE GRAPH CONTEXT:\n{raw_context}\n\n"
+                f"USER INQUIRY: {query}\n"
+                f"TARGET LANGUAGE: {language}"
+            )
+            gem_res = gemini_model.generate_content(fallback_prompt)
+            if gem_res and gem_res.text:
+                return gem_res.text.strip()
+        except Exception:
+            pass
+
+    # 3. Tertiary Deterministic Fallback
+    syms = ', '.join(retrieved_summary.get('symptoms', [])) if retrieved_summary else 'General Indication'
+    comps = ', '.join(retrieved_summary.get('compositions', [])) if retrieved_summary else 'Active Substance'
+    alts = ', '.join(retrieved_summary.get('alternative_medicines', [])[:8]) if retrieved_summary else 'Documented Brands'
+    return (
+        f"### Clinical Graph Findings\n\n"
+        f"- **Symptom(s) Identified**: {syms}\n"
+        f"- **Active Composition(s)**: {comps}\n"
+        f"- **Alternative Brand Formulations**: {alts}\n\n"
+        f"*Data retrieved directly from MedGraph Nexus knowledge graph.*"
+    )
+
 
 STOPWORDS = {
     "what", "is", "are", "the", "for", "with", "does", "which", "give", "me", "a", "an",
@@ -436,41 +535,13 @@ async def search_symptoms(request: SearchRequest):
             graph=GraphData(nodes=[], edges=[])
         )
 
-    # Prepare prompt with verified graph ground truth
-    user_prompt = f"""
-{CLINICAL_SYSTEM_GUARDRAIL}
-
-VERIFIED KNOWLEDGE GRAPH CONTEXT:
-{retrieved['raw_context']}
-
-USER CLINICAL INQUIRY:
-"{request.query}"
-
-TARGET LANGUAGE: {request.language}
-
-Provide a structured clinical answer synthesizing the symptom mapping, active ingredient composition, and alternative brand formulations found in the graph.
-"""
-
-    if gemini_model:
-        try:
-            llm_res = gemini_model.generate_content(user_prompt)
-            answer_text = llm_res.text.strip()
-        except Exception as e:
-            # Deterministic fallback response grounded directly in retrieved data
-            answer_text = (
-                f"### Clinical Graph Findings\n\n"
-                f"- **Symptom(s) Identified**: {', '.join(retrieved['symptoms'])}\n"
-                f"- **Active Composition(s)**: {', '.join(retrieved['compositions'])}\n"
-                f"- **Alternative Brand Formulations**: {', '.join(retrieved['alternative_medicines'][:8])}\n\n"
-                f"*Data retrieved directly from MedGraph Nexus knowledge graph.*"
-            )
-    else:
-        answer_text = (
-            f"### Verified Graph Findings\n\n"
-            f"- **Symptom**: {', '.join(retrieved['symptoms'])}\n"
-            f"- **Active Composition**: {', '.join(retrieved['compositions'])}\n"
-            f"- **Alternative Brands**: {', '.join(retrieved['alternative_medicines'][:8])}"
-        )
+    answer_text = generate_conversational_response(
+        query=request.query,
+        raw_context=retrieved["raw_context"],
+        history=request.history,
+        language=request.language,
+        retrieved_summary=retrieved
+    )
 
     return SearchResponse(
         query=request.query,
