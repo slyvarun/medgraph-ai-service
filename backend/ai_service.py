@@ -158,25 +158,28 @@ class AlternativesResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Medical Guardrails & Strict Clinical System Prompt
+# Medical Guardrails & Direct Clinical System Prompt
 # ---------------------------------------------------------------------------
 CLINICAL_SYSTEM_GUARDRAIL = """
-You are Doctor AI for MedGraph Nexus, an empathetic, highly knowledgeable clinical pharmacotherapist and physician consultant.
+You are Doctor AI for MedGraph Nexus, a clinical pharmacotherapy engine.
 
-YOUR TONE & PERSONA:
-Communicate warmly, naturally, and conversationally—like an experienced, compassionate clinician speaking directly with a patient or healthcare colleague. Avoid rigid, robotic bullet dumps or mechanical templates. Explain insights fluidly with clear headings, empathetic phrasing, and intuitive reasoning while maintaining the highest medical precision.
+COMMUNICATION STYLE:
+- Be direct, concise, and clinically clear.
+- Do NOT use unnecessary pleasantries, emotional filler, or flowery conversational padding (avoid "I understand your concern...", "I am really sorry to hear...", "Your health is paramount").
+- State the clinical findings, active compositions, brand alternatives, and safety warnings directly.
+- Organize answers with clean headings and concise bullet points.
 
 CRITICAL CITATION DISCIPLINE (REVIEWABLE EVIDENCE):
-Every time you mention an active chemical substance, indication, brand alternative, or safety warning from the Knowledge Graph context, you MUST immediately append a bracketed footnote citation (e.g., [1], [2]) corresponding to the Evidence Record number.
-- Example: "If you're seeking alternatives with the same active compound Acetaminophen [1], well-known formulations include Mapap [1], Panadol [1], and Feverall [1]."
-- Example: "Keep in mind that excessive doses of acetaminophen can lead to severe hepatic injury, so do not exceed the 4,000 mg 24-hour ceiling [1]."
+Every time you mention an active chemical substance, indication, brand alternative, or safety warning from the Knowledge Graph context, you MUST append a bracketed footnote citation (e.g., [1], [2]) corresponding to the Evidence Record number.
+- Example: "Acetaminophen [1] is an analgesic and antipyretic. Alternative formulations sharing this active substance include Mapap [1] and Panadol [1]."
+- Example: "Do not exceed 4,000 mg in 24 hours due to risk of severe hepatotoxicity [1]."
 
 GROUNDING & REFUSAL RULES:
-1. Ground your clinical statements exclusively in the verified Knowledge Graph records provided below.
-2. If the Knowledge Graph context contains NO matching clinical records or is empty, DO NOT extrapolate or speculate. Respond with genuine warmth and empathy:
-   "I cannot find verified pharmaceutical records in MedGraph Nexus for the requested symptoms. Please consult a qualified healthcare provider or medical professional."
-3. Always encourage users to consult their attending healthcare provider for individualized dosing and care.
+1. Formulate statements strictly based on the verified Knowledge Graph records provided below.
+2. If no verified records exist in the context, state directly:
+   "No verified pharmaceutical records were found in MedGraph Nexus for the requested query. Please consult a qualified healthcare provider."
 """
+
 
 
 def generate_conversational_response(
@@ -279,16 +282,45 @@ STOPWORDS = {
     "where", "when", "replace", "replacing", "replacement", "fix", "repair", "rules", "rule",
     "ignore", "lethal", "dose", "doses", "taking", "taken", "take", "make", "made", "car",
     "honda", "civic", "spark", "plug", "plugs", "tire", "tires", "engine", "code", "run",
-    "chronic", "hyper", "severe", "mild", "acute", "treats"
+    "chronic", "hyper", "severe", "mild", "acute", "treats", "high", "blood", "pressure", "good", "need",
+    "alternative", "alternatives", "brand", "brands"
+}
+
+PHRASE_NORMALIZATIONS = {
+    "high blood pressure": "hypertension",
+    "blood pressure": "hypertension",
+    "high bp": "hypertension",
+    "headache": "headache",
+    "head pounding": "headache",
+    "pounding head": "headache",
+    "throbbing head": "headache",
+    "heart attack": "myocardial infarction",
+    "chest pain": "angina",
+    "sore throat": "sore throat"
+}
+
+COMMON_BRAND_ALIASES = {
+    "lipitor": "atorvastatin",
+    "tylenol": "acetaminophen",
+    "advil": "ibuprofen",
+    "motrin": "ibuprofen",
+    "aleve": "naproxen",
+    "norvasc": "amlodipine",
+    "cozaar": "losartan",
+    "zocor": "simvastatin",
+    "plavix": "clopidogrel",
+    "glucophage": "metformin",
+    "lasix": "furosemide"
 }
 
 # ---------------------------------------------------------------------------
-# Graph Retrieval & Local Curated Cache Fallback
+# Graph Retrieval & Multi-Entity Resolution
 # ---------------------------------------------------------------------------
 def retrieve_graph_subgraph(query_text: str) -> Dict[str, Any]:
     """
     Executes graph traversal across Neo4j or uses curated clinical cache
     to extract Symptoms, Ingredients, and Alternative Brands.
+    Supports both direct Brand/Ingredient searches and Symptom searches.
     """
     # Safety Guardrail: Intercept lethal/adversarial hazard keywords immediately
     ADVERSARIAL_HAZARDS = {"lethal", "suicide", "overdose", "poison", "toxic dose", "kill"}
@@ -301,11 +333,34 @@ def retrieve_graph_subgraph(query_text: str) -> Dict[str, Any]:
             "raw_context": ""
         }
 
-    tokens = [w.strip("?,.!:;\"'").lower() for w in query_text.split() if len(w) > 2]
-    keywords = [w for w in tokens if w not in STOPWORDS]
+    clean_text = query_text.lower().replace("&", " and ")
 
-    # If no valid clinical keywords remain, return empty context (triggers guardrail refusal)
-    if not keywords:
+    # Priority multi-word phrase matching (e.g. "high blood pressure" -> "hypertension")
+    resolved_search_terms = []
+    for phrase, term in PHRASE_NORMALIZATIONS.items():
+        if phrase in clean_text:
+            if term not in resolved_search_terms:
+                resolved_search_terms.append(term)
+
+    raw_tokens = [w.strip("?,.!:;\"'&/()").lower() for w in clean_text.split() if len(w) > 2]
+    keywords = [w for w in raw_tokens if w not in STOPWORDS]
+
+    # Resolve common trade brand aliases if user queried a commercial name like Lipitor
+    for w in raw_tokens:
+        if w in COMMON_BRAND_ALIASES:
+            if COMMON_BRAND_ALIASES[w] not in resolved_search_terms:
+                resolved_search_terms.append(COMMON_BRAND_ALIASES[w])
+
+    for k in keywords:
+        if k not in resolved_search_terms:
+            resolved_search_terms.append(k)
+
+    if not resolved_search_terms:
+        # If words were all filtered (e.g. "blood pressure"), keep meaningful tokens
+        resolved_search_terms = [w for w in raw_tokens if w not in {"what", "is", "are", "the", "for", "and"}]
+
+
+    if not resolved_search_terms:
         return {
             "symptoms": [],
             "compositions": [],
@@ -324,18 +379,19 @@ def retrieve_graph_subgraph(query_text: str) -> Dict[str, Any]:
     raw_context = []
     evidence_counter = 1
 
-    # 1. Attempt Live Neo4j Query
+    # 1. Attempt Live Neo4j Query (Dual Search: Direct Brand/Ingredient + Symptom Indication)
     db_success = False
     if driver:
         try:
             with driver.session() as session:
-                cypher = """
-                MATCH (s:Symptom)
-                WHERE any(kw IN $keywords WHERE toLower(s.name) CONTAINS kw)
-                MATCH (s)<-[:TREATS]-(i:Ingredient)
+                # Step A: Check if query targets a Brand or Ingredient directly
+                cypher_brand_ing = """
+                MATCH (i:Ingredient)
+                WHERE any(kw IN $terms WHERE toLower(i.name) CONTAINS kw)
                 OPTIONAL MATCH (b:Brand)-[:CONTAINS]->(i)
+                OPTIONAL MATCH (i)-[:TREATS]->(s:Symptom)
                 OPTIONAL MATCH (m:Medicine) WHERE toLower(m.brand_name) = toLower(b.name)
-                RETURN s.name AS symptom,
+                RETURN coalesce(s.name, 'Clinical Indication') AS symptom,
                        i.name AS ingredient,
                        i.rxcui AS ingredient_rxcui,
                        collect(DISTINCT b.name) AS brands,
@@ -352,7 +408,35 @@ def retrieve_graph_subgraph(query_text: str) -> Dict[str, Any]:
                        }) AS med_details
                 LIMIT 8
                 """
-                res = list(session.run(cypher, keywords=keywords))
+                res = list(session.run(cypher_brand_ing, terms=resolved_search_terms))
+
+                # Step B: If no direct ingredient/brand hit, query Symptom Indications
+                if not res or len(res) == 0:
+                    cypher_symptom = """
+                    MATCH (s:Symptom)
+                    WHERE any(kw IN $terms WHERE toLower(s.name) CONTAINS kw)
+                    MATCH (s)<-[:TREATS]-(i:Ingredient)
+                    OPTIONAL MATCH (b:Brand)-[:CONTAINS]->(i)
+                    OPTIONAL MATCH (m:Medicine) WHERE toLower(m.brand_name) = toLower(b.name)
+                    RETURN s.name AS symptom,
+                           i.name AS ingredient,
+                           i.rxcui AS ingredient_rxcui,
+                           collect(DISTINCT b.name) AS brands,
+                           collect(DISTINCT {
+                               brand: m.brand_name,
+                               generic: m.generic_name,
+                               rxcui: m.rxcui,
+                               category: m.category,
+                               indications: m.indications,
+                               warnings: m.warnings,
+                               contraindications: m.contraindications,
+                               adverse_reactions: m.adverse_reactions,
+                               drug_interactions: m.drug_interactions
+                           }) AS med_details
+                    LIMIT 8
+                    """
+                    res = list(session.run(cypher_symptom, terms=resolved_search_terms))
+
 
                 for row in res:
                     sym = row["symptom"][:70]
