@@ -4,20 +4,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MedGraph Nexus — Doctor AI Assistant</title>
-  <!-- Marked.js for clean markdown rendering -->
+  <title>MedGraph Nexus — Clinical Knowledge & GraphRAG System</title>
+
+  <!-- Marked.js for Markdown rendering -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Vis-network for Interactive Graph Traversal Visualization -->
+  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
     rel="stylesheet" />
+
   <style>
     :root {
       --bg: #f8fafc;
       --header-bg: #ffffff;
       --card-bg: #ffffff;
-      --user-bg: #0f172a;
-      --user-text: #ffffff;
       --border: #e2e8f0;
       --border-hover: #cbd5e1;
       --primary: #2563eb;
@@ -25,15 +29,19 @@
       --text: #0f172a;
       --muted: #64748b;
       --faint: #94a3b8;
+      --success: #10b981;
+      --warning: #f59e0b;
       --error: #ef4444;
+      --symptom: #ef4444;
+      --ingredient: #2563eb;
+      --brand: #10b981;
+      --alt-brand: #8b5cf6;
       --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
-      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-      --radius: 16px;
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --radius: 14px;
     }
 
-    *,
-    *::before,
-    *::after {
+    *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
@@ -50,12 +58,54 @@
       -webkit-font-smoothing: antialiased;
     }
 
+    /* ── 1. PERSISTENT REGULATORY DISCLAIMER BANNER (FDA CDS GUIDANCE) ── */
+    .fda-banner {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 7px 24px;
+      font-size: 11.5px;
+      line-height: 1.4;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #1e293b;
+      flex-shrink: 0;
+      z-index: 50;
+    }
+
+    .fda-banner-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .fda-tag {
+      background: #1e293b;
+      color: #38bdf8;
+      border: 1px solid #334155;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .fda-text {
+      color: #94a3b8;
+    }
+
+    .fda-text strong {
+      color: #f1f5f9;
+    }
+
     /* ── HEADER ───────────────────────────────── */
     header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 32px;
+      padding: 12px 28px;
       background: var(--header-bg);
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
@@ -65,58 +115,81 @@
     .logo {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
     }
 
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 18px;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+    }
 
     .logo h1 {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 700;
       color: var(--text);
       letter-spacing: -0.3px;
-      line-height: 1.2;
     }
 
     .logo p {
-      font-size: 11.5px;
+      font-size: 11px;
       color: var(--muted);
-      font-weight: 400;
     }
 
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
     .lang-select {
-      padding: 7px 14px;
+      padding: 6px 12px;
       background: #f1f5f9;
       border: 1px solid var(--border);
-      border-radius: 12px;
-      font-size: 13px;
+      border-radius: 10px;
+      font-size: 12.5px;
       font-weight: 600;
       color: var(--text);
       outline: none;
       cursor: pointer;
-      transition: all .2s ease;
-      font-family: 'Inter', sans-serif;
     }
 
-    .lang-select:hover {
-      border-color: var(--primary);
-      background: #ffffff;
+    .btn-guide {
+      padding: 6px 12px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all .2s;
+    }
+
+    .btn-guide:hover {
+      background: #f1f5f9;
+      color: var(--text);
     }
 
     .status-pill {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 6px 14px;
+      gap: 7px;
+      padding: 5px 12px;
       background: #f1f5f9;
       border: 1px solid var(--border);
       border-radius: 20px;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 500;
       color: var(--muted);
     }
@@ -129,270 +202,63 @@
       box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
     }
 
-    /* ── MAIN CHAT LAYOUT ─────────────────────── */
-    .chat-container {
+    /* ── SPLIT-SCREEN WORKSPACE ─────────────────── */
+    .split-workspace {
       flex: 1;
       display: flex;
-      flex-direction: column;
-      max-width: 1060px;
+      overflow: hidden;
       width: 100%;
-      margin: 0 auto;
+      height: calc(100vh - 88px);
+    }
+
+    /* Left Panel: Conversational AI Assistant */
+    .panel-chat {
+      flex: 1;
+      min-width: 380px;
+      max-width: 50%;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+      background: #ffffff;
       height: 100%;
       overflow: hidden;
     }
 
-    /* ── MESSAGES LOG ─────────────────────────── */
-    #log {
+    /* Right Panel: Structured Reviewable Grounding & Graph */
+    .panel-grounding {
       flex: 1;
-      overflow-y: auto;
-      padding: 24px 20px;
+      min-width: 420px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
-      scrollbar-width: thin;
-      scrollbar-color: var(--border) transparent;
+      background: #f8fafc;
+      height: 100%;
+      overflow: hidden;
     }
 
-    #log::-webkit-scrollbar {
-      width: 5px;
-    }
-
-    #log::-webkit-scrollbar-thumb {
-      background: var(--border);
-      border-radius: 4px;
-    }
-
-    /* ── WELCOME SCREEN & FLASHCARDS ──────────── */
-    .welcome {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 18px;
-      text-align: center;
-      padding: 20px 10px 30px;
-      margin: 0 auto;
-      width: 100%;
-    }
-
-    .welcome-header {
-      max-width: 720px;
-    }
-
-    .welcome h2 {
-      font-size: 24px;
-      font-weight: 800;
-      color: var(--text);
-      letter-spacing: -0.5px;
-      margin-bottom: 6px;
-    }
-
-    .welcome p {
-      font-size: 14px;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    /* Flashcards 3-Column Responsive Grid */
-    .flashcards-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      width: 100%;
-      margin: 6px 0 12px;
-      text-align: left;
-    }
-
-    .flashcard {
-      background: #ffffff;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 18px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      box-shadow: var(--shadow);
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      position: relative;
-    }
-
-    .flashcard:hover {
-      border-color: var(--border-hover);
-      box-shadow: 0 10px 22px -4px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-      transform: translateY(-2px);
-    }
-
-    .card-top {
+    /* ── PANEL TABS & CONTROLS ─────────────────── */
+    .panel-header-tabs {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
+      padding: 10px 18px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
 
-    .card-tag {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-      padding: 3px 8px;
-      border-radius: 6px;
-    }
-
-    .tag-blue {
-      background: #eff6ff;
-      color: #2563eb;
-    }
-
-    .tag-purple {
-      background: #faf5ff;
-      color: #9333ea;
-    }
-
-    .tag-emerald {
-      background: #ecfdf5;
-      color: #059669;
-    }
-
-    .card-icon {
-      font-size: 22px;
-      line-height: 1;
-    }
-
-    .card-title {
-      font-size: 15.5px;
-      font-weight: 700;
-      color: var(--text);
-      letter-spacing: -0.3px;
-    }
-
-    .card-list {
-      list-style: none;
+    .tab-btn-group {
       display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin: 0;
-      padding: 0;
-      font-size: 12px;
-      line-height: 1.45;
-      color: var(--muted);
+      gap: 6px;
     }
 
-    .card-list li {
-      display: flex;
-      align-items: flex-start;
-      gap: 7px;
-    }
-
-    .card-list li strong {
-      color: var(--text);
-      font-weight: 600;
-    }
-
-    .prompt-section {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-    }
-
-    .prompt-label {
+    .tab-btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
       font-size: 12.5px;
       font-weight: 600;
       color: var(--muted);
-      letter-spacing: -0.2px;
-    }
-
-    .chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: center;
-    }
-
-    .chip {
-      padding: 8px 15px;
-      background: #ffffff;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      font-size: 12.5px;
-      font-weight: 500;
-      color: var(--text);
-      cursor: pointer;
-      transition: all .2s ease;
-      box-shadow: var(--shadow);
-    }
-
-    .chip:hover {
-      border-color: var(--primary);
-      color: var(--primary);
-      background: var(--primary-soft);
-      transform: translateY(-1px);
-    }
-
-    /* Modal for Guide */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(15, 23, 42, 0.45);
-      backdrop-filter: blur(4px);
-      z-index: 999;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .modal-overlay.open {
-      display: flex;
-    }
-
-    .modal-box {
-      background: #ffffff;
-      border-radius: 20px;
-      max-width: 980px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
-      padding: 28px;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-      position: relative;
-    }
-
-    .modal-close {
-      position: absolute;
-      top: 18px;
-      right: 20px;
-      background: #f1f5f9;
-      border: none;
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      font-size: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--muted);
-      transition: all .2s;
-    }
-
-    .modal-close:hover {
-      background: #e2e8f0;
-      color: var(--text);
-    }
-
-    .btn-guide {
-      padding: 7px 12px;
-      background: #ffffff;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      font-size: 12.5px;
-      font-weight: 600;
-      color: var(--text);
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -400,445 +266,699 @@
       transition: all .2s;
     }
 
-    .btn-guide:hover {
-      border-color: var(--primary);
-      color: var(--primary);
+    .tab-btn:hover {
+      background: #f1f5f9;
+      color: var(--text);
+    }
+
+    .tab-btn.active {
       background: var(--primary-soft);
+      color: var(--primary);
+      border-color: #bfdbfe;
     }
 
-    @media (max-width: 860px) {
-      .flashcards-grid {
-        grid-template-columns: 1fr;
-      }
-      header {
-        padding: 12px 16px;
-      }
-      .logo p {
-        display: none;
-      }
+    .badge-count {
+      background: #2563eb;
+      color: #fff;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-weight: 700;
     }
 
-    /* ── MESSAGES ─────────────────────────────── */
+    /* ── TAB CONTENT CONTAINERS ───────────────── */
+    .tab-content {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .tab-content.active {
+      display: flex;
+    }
+
+    /* Graph Traversal Tab */
+    #graph-tab {
+      position: relative;
+      background: #ffffff;
+    }
+
+    #graph-canvas {
+      width: 100%;
+      height: 100%;
+      outline: none;
+    }
+
+    .graph-legend {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      box-shadow: var(--shadow);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .legend-chip {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .chip-symptom { background: var(--symptom); }
+    .chip-ing { background: var(--ingredient); }
+    .chip-brand { background: var(--brand); }
+
+    .graph-controls {
+      position: absolute;
+      bottom: 14px;
+      right: 14px;
+      display: flex;
+      gap: 6px;
+      z-index: 10;
+    }
+
+    .graph-btn {
+      padding: 6px 12px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: all .2s;
+    }
+
+    .graph-btn:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    /* Raw Clinical Data Tab */
+    #raw-data-tab {
+      overflow-y: auto;
+      padding: 18px;
+      gap: 16px;
+    }
+
+    .raw-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all .2s;
+    }
+
+    .raw-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: var(--shadow-md);
+    }
+
+    .raw-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 8px;
+    }
+
+    .raw-card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .raw-badge-rxcui {
+      background: #f1f5f9;
+      color: #0f172a;
+      border: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 6px;
+    }
+
+    .raw-field {
+      font-size: 12px;
+      line-height: 1.5;
+      color: #334155;
+    }
+
+    .raw-field strong {
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    .raw-warning-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-left: 4px solid var(--warning);
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      color: #92400e;
+      line-height: 1.4;
+    }
+
+    /* ── CITATION INSPECTOR DRAWER / MODAL ─────── */
+    .citation-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #eff6ff;
+      color: #2563eb;
+      border: 1px solid #bfdbfe;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 1px 5px;
+      margin: 0 2px;
+      cursor: pointer;
+      text-decoration: none;
+      vertical-align: baseline;
+      transition: all .15s ease;
+    }
+
+    .citation-badge:hover {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #2563eb;
+    }
+
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(2px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .drawer-overlay.open {
+      display: flex;
+    }
+
+    .drawer-box {
+      background: #ffffff;
+      width: 90%;
+      max-width: 640px;
+      border-radius: 16px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      animation: modalIn .2s ease;
+    }
+
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .drawer-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .drawer-close {
+      background: transparent;
+      border: none;
+      font-size: 18px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .drawer-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .evidence-quote {
+      background: #f8fafc;
+      border-left: 4px solid #2563eb;
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: #334155;
+    }
+
+    /* ── MESSAGES LOG & CHAT STYLING ──────────── */
+    #log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    #log::-webkit-scrollbar { width: 5px; }
+    #log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
     .msg {
       display: flex;
-      gap: 14px;
-      align-items: flex-start;
-      animation: fadeIn .2s ease-out;
+      gap: 12px;
+      max-width: 100%;
     }
 
     .msg.user {
       flex-direction: row-reverse;
     }
 
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(6px)
-      }
-
-      to {
-        opacity: 1;
-        transform: none
-      }
-    }
-
     .avatar {
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
-      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
-      font-weight: 600;
-      overflow: hidden;
+      font-size: 15px;
+      flex-shrink: 0;
     }
 
-    .avatar.user {
-      background: var(--user-bg);
-      color: #fff;
-    }
-
-    .avatar.bot {
-      background: #ffffff;
-      border: 1px solid var(--border);
-      padding: 4px;
-      box-shadow: var(--shadow);
-    }
-
+    .avatar.user { background: #0f172a; color: #fff; }
+    .avatar.bot { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
 
     .bubble {
-      max-width: 82%;
-      padding: 18px 22px;
-      border-radius: var(--radius);
-      font-size: 14.5px;
-      line-height: 1.65;
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 13.5px;
+      line-height: 1.6;
+      max-width: 86%;
+      box-shadow: var(--shadow);
     }
 
-    .bubble.user {
-      background: var(--user-bg);
-      color: var(--user-text);
+    .msg.user .bubble {
+      background: #0f172a;
+      color: #ffffff;
       border-bottom-right-radius: 4px;
-      font-weight: 400;
     }
 
-    .bubble.bot {
-      background: var(--card-bg);
+    .msg.bot .bubble {
+      background: #ffffff;
+      color: var(--text);
       border: 1px solid var(--border);
       border-bottom-left-radius: 4px;
-      color: var(--text);
-      box-shadow: var(--shadow);
     }
 
     .bubble.error {
-      border-color: var(--error);
       background: #fef2f2;
+      border-color: #fecaca;
       color: #991b1b;
     }
 
-    /* Doctor Thinking Card */
+    .bubble h1, .bubble h2, .bubble h3 {
+      font-size: 14.5px;
+      font-weight: 700;
+      margin: 12px 0 6px;
+      color: var(--text);
+    }
+
+    .bubble h1:first-child, .bubble h2:first-child, .bubble h3:first-child { margin-top: 0; }
+    .bubble p { margin-bottom: 8px; }
+    .bubble p:last-child { margin-bottom: 0; }
+    .bubble ul, .bubble ol { padding-left: 18px; margin-bottom: 8px; }
+    .bubble li { margin-bottom: 4px; }
+
+    /* Doctor Thinking Indicator */
     .doctor-thinking {
       background: #ffffff;
-      border: 1px solid #bfdbfe;
-      border-radius: var(--radius);
-      border-bottom-left-radius: 4px;
-      padding: 16px 20px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      max-width: 86%;
       box-shadow: var(--shadow);
-      width: fit-content;
-      max-width: 82%;
     }
 
     .doctor-thinking-header {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 14px;
+      gap: 8px;
+      font-size: 12.5px;
       font-weight: 600;
-      color: var(--primary);
+      color: var(--text);
       margin-bottom: 10px;
     }
 
     .pulse-dot {
-      width: 9px;
-      height: 9px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
-      background: var(--primary);
-      animation: pulse 1.5s infinite;
+      background: #2563eb;
+      animation: pulse 1.4s infinite ease-in-out;
     }
 
     @keyframes pulse {
-
-      0%,
-      100% {
-        transform: scale(1);
-        opacity: 1
-      }
-
-      50% {
-        transform: scale(1.4);
-        opacity: .4
-      }
+      0%, 100% { transform: scale(0.8); opacity: 0.5; }
+      50% { transform: scale(1.2); opacity: 1; }
     }
 
     .doctor-steps {
       display: flex;
       flex-direction: column;
       gap: 6px;
-      font-size: 12.5px;
+      font-size: 11.5px;
       color: var(--muted);
       font-family: 'JetBrains Mono', monospace;
-    }
-
-    .doctor-step {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      opacity: 0.5;
-      transition: opacity .3s;
     }
 
     .doctor-step.active {
-      opacity: 1;
-      color: var(--text);
-      font-weight: 500;
-    }
-
-    /* Markdown inside Bot bubbles */
-    .bubble h1,
-    .bubble h2,
-    .bubble h3 {
-      color: var(--text);
-      margin: 14px 0 8px;
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: -0.2px;
-    }
-
-    .bubble h1:first-child,
-    .bubble h2:first-child,
-    .bubble h3:first-child {
-      margin-top: 0;
-    }
-
-    .bubble p {
-      margin-bottom: 10px;
-    }
-
-    .bubble p:last-child {
-      margin-bottom: 0;
-    }
-
-    .bubble ul,
-    .bubble ol {
-      padding-left: 20px;
-      margin-bottom: 10px;
-    }
-
-    .bubble li {
-      margin-bottom: 5px;
-    }
-
-    .bubble strong {
-      color: var(--text);
+      color: #2563eb;
       font-weight: 600;
     }
 
-    .bubble em {
-      color: var(--muted);
-    }
-
-    .bubble code {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12.5px;
-      background: #f1f5f9;
-      padding: 3px 6px;
-      border-radius: 6px;
-      color: #0f172a;
-    }
-
-    .bubble table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 12px 0;
-      font-size: 13.5px;
-    }
-
-    .bubble th,
-    .bubble td {
-      padding: 9px 13px;
-      border: 1px solid var(--border);
-      text-align: left;
-    }
-
-    .bubble th {
-      background: #f8fafc;
-      color: var(--text);
-      font-weight: 600;
-    }
-
-    .bubble tr:nth-child(even) td {
-      background: #f8fafc;
-    }
-
-    .bubble blockquote {
-      border-left: 3px solid var(--primary);
-      padding-left: 12px;
-      color: var(--muted);
-      margin: 12px 0;
-      font-style: italic;
-      font-size: 13.5px;
-    }
-
-    /* ── INPUT AREA ───────────────────────────── */
-    .input-zone {
-      padding: 16px 20px 24px;
+    /* Input Area */
+    .input-area {
+      padding: 14px 18px;
+      background: #ffffff;
+      border-top: 1px solid var(--border);
       flex-shrink: 0;
-      background: var(--bg);
     }
 
-    .input-wrap {
+    .chips-row {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      scrollbar-width: none;
+    }
+
+    .chips-row::-webkit-scrollbar { display: none; }
+
+    .chip {
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 4px 10px;
+      font-size: 11.5px;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all .15s;
+    }
+
+    .chip:hover {
+      background: #e2e8f0;
+      color: var(--text);
+    }
+
+    .input-box {
       display: flex;
       align-items: flex-end;
-      gap: 12px;
-      background: #ffffff;
+      gap: 8px;
+      background: #f8fafc;
       border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 12px 16px;
-      transition: all .2s ease;
-      box-shadow: var(--shadow-md);
+      border-radius: 12px;
+      padding: 8px 12px;
+      transition: all .2s;
     }
 
-    .input-wrap:focus-within {
+    .input-box:focus-within {
       border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
 
     #inp {
       flex: 1;
-      background: none;
       border: none;
+      background: transparent;
       outline: none;
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      font-size: 15px;
-      line-height: 1.5;
+      font-size: 13.5px;
+      font-family: inherit;
       resize: none;
-      max-height: 120px;
-      min-height: 24px;
-    }
-
-    #inp::placeholder {
-      color: var(--faint);
+      max-height: 100px;
+      line-height: 1.5;
+      color: var(--text);
     }
 
     #btn {
-      width: 40px;
-      height: 40px;
-      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
       background: var(--primary);
+      color: #fff;
       border: none;
-      border-radius: 12px;
-      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
-      color: #ffffff;
-      transition: all .18s ease;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all .15s;
     }
 
-    #btn:hover:not(:disabled) {
-      background: #1d4ed8;
-      transform: scale(1.02);
-    }
+    #btn:hover { background: #1d4ed8; }
+    #btn:disabled { background: #cbd5e1; cursor: not-allowed; }
 
-    #btn:disabled {
-      opacity: .4;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .foot-info {
+    /* Welcome Card */
+    .welcome-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
       text-align: center;
-      margin-top: 8px;
-      font-size: 12px;
+      padding: 20px;
       color: var(--muted);
+    }
+
+    .welcome-icon { font-size: 38px; margin-bottom: 12px; }
+    .welcome-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .welcome-desc { font-size: 13px; max-width: 440px; line-height: 1.5; }
+
+    /* Modal Animation */
+    @keyframes modalIn {
+      from { transform: scale(0.96); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
     }
   </style>
 </head>
 
 <body>
+  <!-- 1. PERSISTENT REGULATORY DISCLAIMER BANNER (FDA CDS GUIDANCE) -->
+  <div class="fda-banner">
+    <div class="fda-banner-content">
+      <span class="fda-tag">⚖️ FDA 2026 CDS COMPLIANCE</span>
+      <span class="fda-text">
+        <strong>Informational Reference Tool:</strong> MedGraph Nexus is intended exclusively to assist Healthcare Professionals with pharmacotherapy research. It does not provide medical diagnoses or dictate clinical care plans. Clinicians must exercise independent professional medical judgment.
+      </span>
+    </div>
+  </div>
 
+  <!-- HEADER -->
   <header>
     <div class="logo">
+      <div class="logo-icon">🧬</div>
       <div>
         <h1>MedGraph Nexus</h1>
-        <p>Doctor AI Clinical Knowledge Assistant</p>
+        <p>Neuro-Symbolic GraphRAG Clinical Decision Support</p>
       </div>
     </div>
+
     <div class="header-actions">
-      <button class="btn-guide" onclick="toggleModal(true)" title="View System & Clinical Guide">
-        ℹ️ <span>System Guide</span>
-      </button>
-      <select id="lang-select" class="lang-select" title="Choose response language">
-        <option value="en">🌐 English</option>
-        <option value="te">🌐 తెలుగు (Telugu)</option>
-        <option value="hi">🌐 हिन्दी (Hindi)</option>
+      <select id="lang-select" class="lang-select" title="Select Consultation Response Language">
+        <option value="en" selected>English</option>
+        <option value="es">Español</option>
+        <option value="te">తెలుగు (Telugu)</option>
+        <option value="hi">हिन्दी (Hindi)</option>
       </select>
-      <div class="status-pill" title="Neo4j Knowledge Graph live in Aura Cloud">
+
+      <button class="btn-guide" onclick="toggleModal('guide-modal', true)">
+        <span>📖</span> Clinical Guide
+      </button>
+
+      <div class="status-pill">
         <div class="dot"></div>
-        <span>10,434 Nodes • 22,098 Edges</span>
+        <span>Neo4j Cloud Connected</span>
       </div>
     </div>
   </header>
 
-  <div class="chat-container">
-    <div id="log">
-      <div class="welcome" id="welcome">
-        <div class="welcome-header">
-          <h2>⚕️ MedGraph Nexus</h2>
-          <p>Clinical Knowledge Graph & Neuro-Symbolic GraphRAG reasoning engine. Grounded in FDA package labels, NIH RxNorm, and DailyMed.</p>
+  <!-- SPLIT-SCREEN WORKSPACE -->
+  <div class="split-workspace">
+    <!-- PANEL 1: CONVERSATIONAL AI (DR. NEXUS) -->
+    <div class="panel-chat">
+      <div id="log">
+        <div id="welcome" class="welcome-container">
+          <div class="welcome-icon">👨‍⚕️</div>
+          <h2 class="welcome-title">Dr. Nexus Clinical Consultation</h2>
+          <p class="welcome-desc">
+            Type colloquial symptoms or query specific medications. The engine will retrieve verified OpenFDA labels and NIH RxNorm mappings and traverse active compositions.
+          </p>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="chips-row">
+          <button class="chip" onclick="chip(this)">my head is pounding and throbbing</button>
+          <button class="chip" onclick="chip(this)">what are alternative brands for Lipitor?</button>
+          <button class="chip" onclick="chip(this)">high blood pressure & hypertension</button>
+          <button class="chip" onclick="chip(this)">substitutes for Tylenol</button>
         </div>
 
-        <!-- 3 Interactive Flashcards Grid -->
-        <div class="flashcards-grid">
-          <!-- Card 1: Who Can Use This -->
-          <div class="flashcard">
-            <div class="card-top">
-              <span class="card-tag tag-blue">Target Users</span>
-              <span class="card-icon">👥</span>
-            </div>
-            <div class="card-title">Who Can Use This?</div>
-            <ul class="card-list">
-              <li><span>🩺</span> <div><strong>Clinicians & Doctors:</strong> Verify mechanism of action, active molecules, and therapeutic classes.</div></li>
-              <li><span>💊</span> <div><strong>Pharmacists:</strong> Prevent accidental overdosing, trace brand names, and check cross-reactivity.</div></li>
-              <li><span>🔬</span> <div><strong>Researchers & Students:</strong> Explore NIH RxNorm ontologies, indication clusters, and clinical classes.</div></li>
-              <li><span>🧑‍⚕️</span> <div><strong>Patients & Caregivers:</strong> Understand prescribed medications and safety warnings in simple terms.</div></li>
-            </ul>
-          </div>
-
-          <!-- Card 2: For What Purpose -->
-          <div class="flashcard">
-            <div class="card-top">
-              <span class="card-tag tag-purple">Clinical Purpose</span>
-              <span class="card-icon">🎯</span>
-            </div>
-            <div class="card-title">For What Purpose?</div>
-            <ul class="card-list">
-              <li><span>🔄</span> <div><strong>Cross-Class Alternatives:</strong> Discover substitute medicines treating the same condition (e.g. ARBs for ACE cough).</div></li>
-              <li><span>🔍</span> <div><strong>Brand Name Unmasking:</strong> Identify when commercial brands share identical chemicals (e.g. Advil vs Motrin &rarr; Ibuprofen).</div></li>
-              <li><span>🛡️</span> <div><strong>Zero-Hallucination Safety:</strong> All claims are anchored to verified FDA labels, preventing AI medical errors.</div></li>
-              <li><span>🌐</span> <div><strong>Multilingual Care:</strong> Interactive clinical reasoning in English, తెలుగు (Telugu), and हिन्दी (Hindi).</div></li>
-            </ul>
-          </div>
-
-          <!-- Card 3: What Does This Contain -->
-          <div class="flashcard">
-            <div class="card-top">
-              <span class="card-tag tag-emerald">Knowledge Base</span>
-              <span class="card-icon">📦</span>
-            </div>
-            <div class="card-title">What Does It Contain?</div>
-            <ul class="card-list">
-              <li><span>🕸️</span> <div><strong>10,434 Graph Nodes:</strong> 3,191 Master Medicines, 2,362 Active Substances, 468 Drug Classes.</div></li>
-              <li><span>🔗</span> <div><strong>22,098 Biological Edges:</strong> Indications, active ingredients, manufacturers, routes, and categories.</div></li>
-              <li><span>🏛️</span> <div><strong>Curated Federal Data:</strong> Harmonized across 262k+ FDA records; 292 non-drugs purged, 2,049 repackagings merged.</div></li>
-              <li><span>⚡</span> <div><strong>Neuro-Symbolic GraphRAG:</strong> Powered by Gemini 2.5 Flash with deterministic fail-safe fallback.</div></li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="prompt-section">
-          <div class="prompt-label">💡 Click a clinical query to start:</div>
-          <div class="chips">
-            <div class="chip" onclick="chip(this)">Why do we use Amoxicillin?</div>
-            <div class="chip" onclick="chip(this)">Find alternatives for Lisinopril for hypertension</div>
-            <div class="chip" onclick="chip(this)">Are Advil and Motrin the same drug?</div>
-            <div class="chip" onclick="chip(this)">What medicines belong to Biguanide class?</div>
-            <div class="chip" onclick="chip(this)">మందుల లక్షణాలు మరియు మోతాదు వివరాలు (Telugu)</div>
-            <div class="chip" onclick="chip(this)">बुखार और दर्द की दवाएं (Hindi)</div>
-          </div>
+        <div class="input-box">
+          <textarea id="inp" rows="1" placeholder="Describe symptoms or enter medication name..." onkeydown="onKey(event)" oninput="resize(this)"></textarea>
+          <button id="btn" onclick="send()" title="Send consultation query">➤</button>
         </div>
       </div>
     </div>
 
-    <div class="input-zone">
-      <div class="input-wrap">
-        <textarea id="inp" rows="1" maxlength="500"
-          placeholder="Ask Doctor AI about any medicine, symptom, or treatment..." onkeydown="onKey(event)"
-          oninput="resize(this)"></textarea>
-        <button id="btn" onclick="send()" title="Send Message">➤</button>
+    <!-- PANEL 2: STRUCTURED REVIEWABLE BASIS (GRAPH & RAW DATA) -->
+    <div class="panel-grounding">
+      <div class="panel-header-tabs">
+        <div class="tab-btn-group">
+          <button id="btn-tab-graph" class="tab-btn active" onclick="switchTab('graph')">
+            <span>🕸️</span> Graph Traversal <span id="badge-graph-count" class="badge-count">0</span>
+          </button>
+          <button id="btn-tab-raw" class="tab-btn" onclick="switchTab('raw')">
+            <span>📋</span> Raw FDA/RxNorm Data <span id="badge-raw-count" class="badge-count">0</span>
+          </button>
+          <button id="btn-tab-citations" class="tab-btn" onclick="switchTab('citations')">
+            <span>🔍</span> Citations & Evidence <span id="badge-cit-count" class="badge-count">0</span>
+          </button>
+        </div>
+
+        <div style="font-size: 11px; color: var(--muted); font-weight: 500;">
+          Reviewable Medical Basis
+        </div>
       </div>
-      <div class="foot-info">
-        MedGraph Knowledge Graph • Medical reference only. Consult a licensed physician.
+
+      <!-- TAB 1: INTERACTIVE GRAPH TRAVERSAL -->
+      <div id="tab-graph" class="tab-content active">
+        <div id="graph-tab" style="flex: 1; height: 100%; position: relative;">
+          <div class="graph-legend">
+            <div class="legend-item"><span class="legend-chip chip-symptom"></span> Symptom / Indication</div>
+            <div class="legend-item"><span class="legend-chip chip-ing"></span> Active Ingredient (RxNorm)</div>
+            <div class="legend-item"><span class="legend-chip chip-brand"></span> Brand Formulation (FDA)</div>
+          </div>
+
+          <div id="graph-canvas"></div>
+
+          <div class="graph-controls">
+            <button class="graph-btn" onclick="fitGraph()">Fit View</button>
+            <button class="graph-btn" onclick="togglePhysics()">Toggle Physics</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: RAW STRUCTURED DATA POINTS -->
+      <div id="tab-raw" class="tab-content">
+        <div id="raw-data-tab">
+          <div id="raw-data-empty" style="text-align: center; color: var(--muted); padding: 40px 20px; font-size: 13px;">
+            No records loaded. Execute a query to inspect raw openFDA & RxNorm data points.
+          </div>
+          <div id="raw-records-list" style="display: flex; flex-direction: column; gap: 14px;"></div>
+        </div>
+      </div>
+
+      <!-- TAB 3: CITATIONS & EVIDENCE -->
+      <div id="tab-citations" class="tab-content">
+        <div style="overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 12px;">
+          <div id="citations-empty" style="text-align: center; color: var(--muted); padding: 40px 20px; font-size: 13px;">
+            Footnote citations [1], [2] in Dr. Nexus consultations will appear here with verbatim label evidence.
+          </div>
+          <div id="citations-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <script>
-    const DEFAULT_BACKEND = 'https://medgraph-ai-service-1.onrender.com';
+  <!-- EVIDENCE INSPECTION MODAL (CLICKABLE CITATIONS [1]) -->
+  <div id="citation-modal" class="drawer-overlay" onclick="if(event.target===this) toggleModal('citation-modal', false)">
+    <div class="drawer-box">
+      <div class="drawer-header">
+        <div class="drawer-title">
+          <span id="modal-cit-badge" class="citation-badge">[1]</span>
+          <span id="modal-cit-title">Clinical Evidence Citation</span>
+        </div>
+        <button class="drawer-close" onclick="toggleModal('citation-modal', false)">✕</button>
+      </div>
 
+      <div class="drawer-body">
+        <div style="display: flex; gap: 10px; font-size: 12px; color: var(--muted);">
+          <div><strong>Source:</strong> <span id="modal-cit-source">openFDA Drug Label</span></div>
+          <div><strong>RxCUI:</strong> <span id="modal-cit-rxcui" style="font-family: monospace;">N/A</span></div>
+          <div><strong>Term Type:</strong> <span id="modal-cit-tty">IN / BN</span></div>
+        </div>
+
+        <div>
+          <strong style="font-size: 12.5px; color: var(--text);">Verbatim Regulatory Label Evidence:</strong>
+          <div id="modal-cit-evidence" class="evidence-quote" style="margin-top: 6px;">
+            Loading evidence excerpt...
+          </div>
+        </div>
+
+        <div style="font-size: 11px; color: var(--muted); border-top: 1px solid #f1f5f9; padding-top: 10px;">
+          ⚖️ Anchored directly to federal regulatory registry records to prevent AI medical hallucination.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLINICAL ARCHITECTURE GUIDE MODAL -->
+  <div id="guide-modal" class="drawer-overlay" onclick="if(event.target===this) toggleModal('guide-modal', false)">
+    <div class="drawer-box" style="max-width: 720px;">
+      <div class="drawer-header">
+        <div class="drawer-title">⚕️ MedGraph Nexus — Architecture & Regulatory Guidelines</div>
+        <button class="drawer-close" onclick="toggleModal('guide-modal', false)">✕</button>
+      </div>
+      <div class="drawer-body" style="font-size: 13px; line-height: 1.6; color: #334155;">
+        <p><strong>Clinical Decision Support (CDS) Architecture:</strong></p>
+        <ul style="padding-left: 20px; margin-bottom: 12px;">
+          <li><strong>Split-Screen Verification:</strong> Synthesized AI reasoning is presented alongside raw, unedited openFDA and RxNorm database entries so HCPs can independently verify recommendations.</li>
+          <li><strong>Deterministic Graph Traversal:</strong> Relationships follow verified paths: <code>[Original Drug] &rarr; [Ingredient] &rarr; [Symptom] &larr; [Alternative Drug]</code>.</li>
+          <li><strong>Granular Footnote Citations:</strong> Clickable numeric citations <code>[1]</code>, <code>[2]</code> directly bind AI assertions to regulatory labels.</li>
+          <li><strong>Strict Guardrails:</strong> Unknown symptoms and fabricated entities trigger immediate standard refusal without unanchored speculation.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <script>
+    // 1. Dynamic Backend Resolution
     function getBackendBaseUrl() {
       const saved = localStorage.getItem('MEDGRAPH_BACKEND_URL');
       if (saved && saved.trim()) return saved.trim().replace(/\/$/, '');
@@ -850,7 +970,7 @@
       if (proto === 'file:' || host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
         return window.location.port ? `${window.location.protocol}//${window.location.hostname}:${window.location.port}` : 'http://localhost:8008';
       }
-      return DEFAULT_BACKEND;
+      return 'https://medgraph-ai-service-1.onrender.com';
     }
 
     function getApiUrl() {
@@ -858,27 +978,275 @@
       return base ? (base + '/ask') : '/ask';
     }
 
-
+    // 2. Global State
     let busy = false;
     const chatHistory = [];
+    let currentCitations = [];
+    let currentClinicalRecords = [];
+    let visNetwork = null;
+    let physicsEnabled = true;
 
+    // 3. Tab Switching
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+      const btn = document.getElementById(`btn-tab-${tabName}`);
+      const content = document.getElementById(`tab-${tabName}`);
+      if (btn && content) {
+        btn.classList.add('active');
+        content.classList.add('active');
+      }
+
+      if (tabName === 'graph' && visNetwork) {
+        setTimeout(() => visNetwork.fit(), 100);
+      }
+    }
+
+    // 4. Modal Toggles
+    function toggleModal(modalId, show) {
+      const m = document.getElementById(modalId);
+      if (m) {
+        if (show) m.classList.add('open');
+        else m.classList.remove('open');
+      }
+    }
+
+    // 5. Open Citation Evidence Modal
+    function openCitationModal(citId) {
+      const cit = currentCitations.find(c => c.id === parseInt(citId));
+      if (!cit) return;
+
+      document.getElementById('modal-cit-badge').textContent = `[${cit.id}]`;
+      document.getElementById('modal-cit-title').textContent = cit.title || 'Regulatory Evidence';
+      document.getElementById('modal-cit-source').textContent = cit.source || 'openFDA';
+      document.getElementById('modal-cit-rxcui').textContent = cit.rxcui || 'N/A';
+      document.getElementById('modal-cit-tty').textContent = cit.tty || 'IN / BN';
+      document.getElementById('modal-cit-evidence').textContent = cit.evidence || 'Approved regulatory record.';
+
+      toggleModal('citation-modal', true);
+    }
+
+    // 6. Interactive Network Graph (vis-network)
+    function initOrUpdateGraph(graphData) {
+      const container = document.getElementById('graph-canvas');
+      if (!container || !graphData || !graphData.nodes || graphData.nodes.length === 0) return;
+
+      const nodeColors = {
+        'Symptom': { background: '#ef4444', border: '#b91c1c' },
+        'Ingredient': { background: '#2563eb', border: '#1d4ed8' },
+        'Brand': { background: '#10b981', border: '#047857' }
+      };
+
+      const visNodes = graphData.nodes.map(n => {
+        const colors = nodeColors[n.type] || { background: '#64748b', border: '#475569' };
+        return {
+          id: n.id,
+          label: n.label.length > 25 ? n.label.substring(0, 22) + '...' : n.label,
+          title: `<strong>${n.type}:</strong> ${n.label}`,
+          color: {
+            background: colors.background,
+            border: colors.border,
+            highlight: { background: '#fbbf24', border: '#d97706' }
+          },
+          font: { color: '#0f172a', size: 12, face: 'Inter', strokeWidth: 3, strokeColor: '#ffffff' },
+          shape: n.type === 'Symptom' ? 'box' : 'dot',
+          size: n.type === 'Ingredient' ? 22 : 18,
+          margin: 8,
+          shadow: true
+        };
+      });
+
+      const visEdges = graphData.edges.map(e => ({
+        from: e.source,
+        to: e.target,
+        label: e.relationship,
+        arrows: 'to',
+        color: { color: '#94a3b8', highlight: '#2563eb' },
+        font: { size: 10, face: 'JetBrains Mono', color: '#64748b', align: 'middle' },
+        smooth: { type: 'continuous' }
+      }));
+
+      const data = {
+        nodes: new vis.DataSet(visNodes),
+        edges: new vis.DataSet(visEdges)
+      };
+
+      const options = {
+        physics: {
+          enabled: true,
+          solver: 'forceAtlas2Based',
+          forceAtlas2Based: {
+            gravitationalConstant: -35,
+            centralGravity: 0.008,
+            springLength: 100,
+            springConstant: 0.14
+          },
+          stabilization: { iterations: 120 }
+        },
+        interaction: {
+          hover: true,
+          tooltipDelay: 100,
+          navigationButtons: false,
+          zoomView: true
+        }
+      };
+
+      if (visNetwork) {
+        visNetwork.setData(data);
+      } else {
+        visNetwork = new vis.Network(container, data, options);
+      }
+
+      document.getElementById('badge-graph-count').textContent = visNodes.length;
+
+      // Click node handler
+      visNetwork.on('click', function(params) {
+        if (params.nodes.length > 0) {
+          const clickedNodeId = params.nodes[0];
+          highlightConnected(clickedNodeId);
+        }
+      });
+    }
+
+    function fitGraph() {
+      if (visNetwork) visNetwork.fit({ animation: { duration: 500 } });
+    }
+
+    function togglePhysics() {
+      physicsEnabled = !physicsEnabled;
+      if (visNetwork) visNetwork.setOptions({ physics: { enabled: physicsEnabled } });
+    }
+
+    function highlightConnected(nodeId) {
+      // Switches to Raw Tab and scrolls to matching record if available
+      const rawCard = document.querySelector(`[data-node-id="${nodeId}"]`);
+      if (rawCard) {
+        switchTab('raw');
+        rawCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        rawCard.style.borderColor = '#2563eb';
+        setTimeout(() => rawCard.style.borderColor = '', 2000);
+      }
+    }
+
+    // 7. Render Raw FDA/RxNorm Structured Data
+    function renderRawClinicalRecords(records) {
+      currentClinicalRecords = records || [];
+      const container = document.getElementById('raw-records-list');
+      const emptyNotice = document.getElementById('raw-data-empty');
+      const badge = document.getElementById('badge-raw-count');
+
+      container.innerHTML = '';
+      badge.textContent = currentClinicalRecords.length;
+
+      if (currentClinicalRecords.length === 0) {
+        emptyNotice.style.display = 'block';
+        return;
+      }
+      emptyNotice.style.display = 'none';
+
+      currentClinicalRecords.forEach(rec => {
+        const card = document.createElement('div');
+        card.className = 'raw-card';
+        card.setAttribute('data-evidence-id', rec.evidence_id || '');
+
+        const altBrandsHtml = rec.alternative_brands && rec.alternative_brands.length > 0
+          ? `<div class="raw-field"><strong>Alternative Formulations:</strong> ${rec.alternative_brands.join(', ')}</div>`
+          : '';
+
+        const warningHtml = (rec.warnings && rec.warnings !== 'None specified in label summary')
+          ? `<div class="raw-warning-box"><strong>⚠️ FDA Warning / Precaution:</strong> ${rec.warnings}</div>`
+          : '';
+
+        card.innerHTML = `
+          <div class="raw-card-header">
+            <span class="raw-card-title">${rec.brand_name}</span>
+            <span class="raw-badge-rxcui">RxCUI: ${rec.rxcui || 'N/A'}</span>
+          </div>
+
+          <div class="raw-field"><strong>Active Chemical Molecule:</strong> ${rec.active_substance} (${rec.generic_name})</div>
+          <div class="raw-field"><strong>Therapeutic Category:</strong> ${rec.therapeutic_category || 'General Medicine'}</div>
+          <div class="raw-field"><strong>Approved Indication & Usage:</strong> ${rec.indications}</div>
+          ${altBrandsHtml}
+          ${warningHtml}
+
+          <div style="font-size: 11px; color: var(--muted); border-top: 1px solid #f1f5f9; padding-top: 6px; display: flex; justify-content: space-between;">
+            <span>Source: ${rec.source}</span>
+            <span style="font-weight: 600; color: #2563eb;">Evidence #${rec.evidence_id}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // 8. Render Citations List
+    function renderCitations(citations) {
+      currentCitations = citations || [];
+      const list = document.getElementById('citations-list');
+      const empty = document.getElementById('citations-empty');
+      const badge = document.getElementById('badge-cit-count');
+
+      list.innerHTML = '';
+      badge.textContent = currentCitations.length;
+
+      if (currentCitations.length === 0) {
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+
+      currentCitations.forEach(cit => {
+        const item = document.createElement('div');
+        item.className = 'raw-card';
+        item.style.cursor = 'pointer';
+        item.onclick = () => openCitationModal(cit.id);
+
+        item.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="citation-badge">[${cit.id}]</span>
+              <strong style="font-size: 13px; color: var(--text);">${cit.title}</strong>
+            </div>
+            <span class="raw-badge-rxcui">RxCUI: ${cit.rxcui || 'N/A'}</span>
+          </div>
+          <div style="font-size: 12px; color: #475569; line-height: 1.5; margin-top: 4px;">
+            "${cit.evidence.length > 180 ? cit.evidence.substring(0, 180) + '...' : cit.evidence}"
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    // 9. Footnote Citation Parser for Bot Markdown
+    function parseCitationsInText(text) {
+      if (!text) return '';
+      // Replace citations like [1], [2] with clickable badges
+      return text.replace(/\[(\d+)\]/g, (match, p1) => {
+        return `<button class="citation-badge" onclick="openCitationModal(${p1})">[${p1}]</button>`;
+      });
+    }
+
+    // 10. Chat Message Handlers
     function resize(el) {
       el.style.height = 'auto';
-      el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+      el.style.height = Math.min(el.scrollHeight, 100) + 'px';
     }
+
     function onKey(e) {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
     }
+
     function chip(el) {
       document.getElementById('inp').value = el.textContent;
       send();
     }
+
     function removeWelcome() {
       const w = document.getElementById('welcome');
       if (w) w.remove();
     }
 
-    function addMsg(role, html, isError = false) {
+    function addMsg(role, rawContent, isError = false) {
       removeWelcome();
       const log = document.getElementById('log');
       const wrap = document.createElement('div');
@@ -889,8 +1257,15 @@
       av.innerHTML = role === 'user' ? '👤' : '👨‍⚕️';
 
       const bub = document.createElement('div');
-      bub.className = 'bubble ' + (role === 'user' ? 'user' : 'bot') + (isError ? ' error' : '');
-      bub.innerHTML = html;
+      bub.className = 'bubble ' + (isError ? 'error' : '');
+
+      if (role === 'user') {
+        bub.textContent = rawContent;
+      } else {
+        // Parse markdown then convert [1] into clickable citation badges
+        const parsedMd = marked.parse(rawContent);
+        bub.innerHTML = parseCitationsInText(parsedMd);
+      }
 
       wrap.appendChild(av);
       wrap.appendChild(bub);
@@ -911,26 +1286,25 @@
       const t = document.createElement('div');
       t.className = 'doctor-thinking';
       t.innerHTML = `
-      <div class="doctor-thinking-header">
-        <div class="pulse-dot"></div>
-        <span>👨‍⚕️ Doctor AI is reviewing case & taking clinical notes...</span>
-      </div>
-      <div class="doctor-steps">
-        <div class="doctor-step step1 active">🔍 1. Resolving conversational context & intent...</div>
-        <div class="doctor-step step2">🕸️ 2. Querying Knowledge Graph with schema guardrails...</div>
-        <div class="doctor-step step3">📝 3. Verifying therapeutic class alignment...</div>
-        <div class="doctor-step step4">⚕️ 4. Formulating clinical assessment...</div>
-      </div>
-    `;
+        <div class="doctor-thinking-header">
+          <div class="pulse-dot"></div>
+          <span>Doctor AI is traversing Knowledge Graph & verifying labels...</span>
+        </div>
+        <div class="doctor-steps">
+          <div class="doctor-step step1 active">🔍 1. Resolving symptom semantics & target entities...</div>
+          <div class="doctor-step step2">🕸️ 2. Executing multi-hop traversal to active ingredients...</div>
+          <div class="doctor-step step3">📋 3. Ingesting openFDA label contraindications...</div>
+          <div class="doctor-step step4">⚖️ 4. Formulating reviewable clinical report with citations...</div>
+        </div>
+      `;
 
       wrap.appendChild(av); wrap.appendChild(t);
       log.appendChild(wrap);
       log.scrollTop = log.scrollHeight;
 
-      // Animate steps
-      setTimeout(() => { document.querySelector('.step2')?.classList.add('active'); }, 500);
-      setTimeout(() => { document.querySelector('.step3')?.classList.add('active'); }, 1000);
-      setTimeout(() => { document.querySelector('.step4')?.classList.add('active'); }, 1500);
+      setTimeout(() => { document.querySelector('.step2')?.classList.add('active'); }, 400);
+      setTimeout(() => { document.querySelector('.step3')?.classList.add('active'); }, 900);
+      setTimeout(() => { document.querySelector('.step4')?.classList.add('active'); }, 1400);
     }
 
     function hideDoctorThinking() {
@@ -946,6 +1320,7 @@
       btn.textContent = state ? '↻' : '➤';
     }
 
+    // 11. Send Consultation Request
     async function send() {
       if (busy) return;
       const inp = document.getElementById('inp');
@@ -954,7 +1329,6 @@
       if (!q) return;
 
       const lang = langSelect.value || 'en';
-
       addMsg('user', q);
       inp.value = ''; inp.style.height = 'auto';
       lock(true); showDoctorThinking();
@@ -982,10 +1356,26 @@
         }
 
         const data = await res.json();
-        const botText = data.answer || '⚠️ Empty response.';
-        addMsg('bot', data.answer ? marked.parse(data.answer) : botText, !data.answer);
 
-        // Update history
+        // 1. Render Doctor AI Consultation Text
+        addMsg('bot', data.answer || 'No response returned.');
+
+        // 2. Render Graph Traversal Network
+        if (data.graph && data.graph.nodes && data.graph.nodes.length > 0) {
+          initOrUpdateGraph(data.graph);
+        }
+
+        // 3. Render Raw Structured Records (openFDA & RxNorm)
+        if (data.clinical_records) {
+          renderRawClinicalRecords(data.clinical_records);
+        }
+
+        // 4. Render Granular Footnote Citations
+        if (data.citations) {
+          renderCitations(data.citations);
+        }
+
+        // 5. Update history
         chatHistory.push({ role: 'user', content: q });
         if (data.answer) {
           chatHistory.push({ role: 'assistant', content: data.answer });
@@ -994,81 +1384,15 @@
       } catch (err) {
         hideDoctorThinking();
         addMsg('bot',
-          `⚠️ **Connection Error**: Unable to reach Doctor AI engine at \`${getApiUrl()}\`.\n\n` +
-          `💡 *Note: If hosted on Render free tier, the backend server takes ~30 seconds to wake up from cold start.*`,
+          `⚠️ **Connection Error**: Unable to reach MedGraph Nexus backend at \`${getApiUrl()}\`.\n\n` +
+          `*Ensure the backend server is running on port 8008.*`,
           true
         );
       } finally {
         lock(false);
       }
     }
-
-    function toggleModal(show) {
-      const m = document.getElementById('guide-modal');
-      if (m) {
-        if (show) m.classList.add('open');
-        else m.classList.remove('open');
-      }
-    }
   </script>
-
-  <!-- Modal for Re-viewing Guide Anytime -->
-  <div id="guide-modal" class="modal-overlay" onclick="if(event.target===this) toggleModal(false)">
-    <div class="modal-box">
-      <button class="modal-close" onclick="toggleModal(false)" title="Close modal">✕</button>
-      <div style="margin-bottom: 16px;">
-        <h2 style="font-size: 20px; font-weight: 800; color: var(--text); letter-spacing: -0.4px;">⚕️ MedGraph Nexus — Clinical Knowledge System</h2>
-        <p style="font-size: 13.5px; color: var(--muted); margin-top: 4px;">Neuro-Symbolic GraphRAG platform powered by Neo4j Aura Cloud & Google Gemini 2.5 Flash.</p>
-      </div>
-
-      <div class="flashcards-grid">
-        <!-- Card 1 -->
-        <div class="flashcard">
-          <div class="card-top">
-            <span class="card-tag tag-blue">Target Users</span>
-            <span class="card-icon">👥</span>
-          </div>
-          <div class="card-title">Who Can Use This?</div>
-          <ul class="card-list">
-            <li><span>🩺</span> <div><strong>Clinicians & Doctors:</strong> Verify mechanism of action, active molecules, and therapeutic classes.</div></li>
-            <li><span>💊</span> <div><strong>Pharmacists:</strong> Prevent accidental overdosing, trace brand names, and check cross-reactivity.</div></li>
-            <li><span>🔬</span> <div><strong>Researchers & Students:</strong> Explore NIH RxNorm ontologies, indication clusters, and clinical classes.</div></li>
-            <li><span>🧑‍⚕️</span> <div><strong>Patients & Caregivers:</strong> Understand prescribed medications and safety warnings in simple terms.</div></li>
-          </ul>
-        </div>
-
-        <!-- Card 2 -->
-        <div class="flashcard">
-          <div class="card-top">
-            <span class="card-tag tag-purple">Clinical Purpose</span>
-            <span class="card-icon">🎯</span>
-          </div>
-          <div class="card-title">For What Purpose?</div>
-          <ul class="card-list">
-            <li><span>🔄</span> <div><strong>Cross-Class Alternatives:</strong> Discover substitute medicines treating the same condition (e.g. ARBs for ACE cough).</div></li>
-            <li><span>🔍</span> <div><strong>Brand Name Unmasking:</strong> Identify when commercial brands share identical chemicals (e.g. Advil vs Motrin &rarr; Ibuprofen).</div></li>
-            <li><span>🛡️</span> <div><strong>Zero-Hallucination Safety:</strong> All claims are anchored to verified FDA labels, preventing AI medical errors.</div></li>
-            <li><span>🌐</span> <div><strong>Multilingual Care:</strong> Interactive clinical reasoning in English, తెలుగు (Telugu), and हिन्दी (Hindi).</div></li>
-          </ul>
-        </div>
-
-        <!-- Card 3 -->
-        <div class="flashcard">
-          <div class="card-top">
-            <span class="card-tag tag-emerald">Knowledge Base</span>
-            <span class="card-icon">📦</span>
-          </div>
-          <div class="card-title">What Does It Contain?</div>
-          <ul class="card-list">
-            <li><span>🕸️</span> <div><strong>10,434 Graph Nodes:</strong> 3,191 Master Medicines, 2,362 Active Substances, 468 Drug Classes.</div></li>
-            <li><span>🔗</span> <div><strong>22,098 Biological Edges:</strong> Indications, active ingredients, manufacturers, routes, and categories.</div></li>
-            <li><span>🏛️</span> <div><strong>Curated Federal Data:</strong> Harmonized across 262k+ FDA records; 292 non-drugs purged, 2,049 repackagings merged.</div></li>
-            <li><span>⚡</span> <div><strong>Neuro-Symbolic GraphRAG:</strong> Powered by Gemini 2.5 Flash with deterministic fail-safe fallback.</div></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
 </body>
 
 </html>

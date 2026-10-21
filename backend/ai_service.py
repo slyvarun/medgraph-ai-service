@@ -94,6 +94,33 @@ class GraphData(BaseModel):
     edges: List[GraphEdge] = []
 
 
+class Citation(BaseModel):
+    id: int
+    source: str = "openFDA"
+    title: str
+    rxcui: Optional[str] = None
+    tty: Optional[str] = None
+    evidence: str
+    node_id: Optional[str] = None
+
+
+class ClinicalRecord(BaseModel):
+    evidence_id: int
+    brand_name: str
+    generic_name: str
+    active_substance: str
+    rxcui: Optional[str] = None
+    therapeutic_category: Optional[str] = "General Medicine"
+    drug_classes: List[str] = []
+    indications: str
+    warnings: Optional[str] = "None specified in label summary"
+    adverse_reactions: Optional[str] = "None specified in label summary"
+    contraindications: Optional[str] = "None specified in label summary"
+    drug_interactions: Optional[str] = "None specified in label summary"
+    alternative_brands: List[str] = []
+    source: str = "openFDA Drug Label & NIH RxNorm"
+
+
 class SearchResponse(BaseModel):
     query: str
     answer: str
@@ -102,9 +129,11 @@ class SearchResponse(BaseModel):
     compositions: List[str] = []
     alternative_medicines: List[str] = []
     graph: GraphData
+    clinical_records: List[ClinicalRecord] = []
+    citations: List[Citation] = []
     warning_disclaimer: str = (
-        "Medical Disclaimer: MedGraph Nexus is an algorithmic pharmaceutical reference for educational "
-        "purposes. Always consult a licensed physician before initiating or modifying any medication regimen."
+        "MedGraph Nexus is an informational tool intended to assist Healthcare Professionals. "
+        "It does not provide medical diagnoses or dictate treatment plans. Clinicians must exercise independent judgment."
     )
 
 
@@ -115,6 +144,8 @@ class AlternativesResponse(BaseModel):
     alternative_brands: List[str] = []
     indications: List[str] = []
     graph: GraphData
+    clinical_records: List[ClinicalRecord] = []
+    citations: List[Citation] = []
     message: str = "Success"
 
 
@@ -130,12 +161,15 @@ STRICT OPERATIONAL RULES:
    - If the Knowledge Graph context contains NO matching clinical records or is empty, DO NOT attempt to answer from external memory or extrapolate.
    - You MUST respond with this exact statement:
      "I cannot find verified pharmaceutical records in MedGraph Nexus for the requested symptoms. Please consult a qualified healthcare provider or medical professional."
-3. STRUCTURED REPORTING:
+3. STRICT FOOTNOTE CITATIONS:
+   - Every factual claim about an indication, active ingredient, brand alternative, or contraindication MUST include bracketed citations like [1], [2] corresponding to the Evidence ID.
+   - Example: "Acetaminophen is an analgesic indicated for minor aches and headaches [1], with known brand alternatives including Panadol and Tylenol [2]."
+4. STRUCTURED REPORTING:
    - State the identified Symptom(s).
    - Clearly identify the active chemical composition / active ingredient.
    - List the alternative brand formulations found in the graph.
-   - Note critical contraindications, warnings, or adverse reactions if available in the context.
-4. MEDICAL DISCLAIMER: Maintain clinical precision without prescribing or dispensing unverified medical directives.
+   - Note critical contraindications, black box warnings, or adverse reactions if available in the context.
+5. MEDICAL DISCLAIMER: Maintain clinical precision without prescribing or dispensing unverified medical directives.
 """
 
 STOPWORDS = {
@@ -186,63 +220,104 @@ def retrieve_graph_subgraph(query_text: str) -> Dict[str, Any]:
     alt_brands = set()
     nodes: Dict[str, GraphNode] = {}
     edges: List[GraphEdge] = []
+    clinical_records: List[ClinicalRecord] = []
+    citations: List[Citation] = []
     raw_context = []
+    evidence_counter = 1
 
     # 1. Attempt Live Neo4j Query
     db_success = False
     if driver:
         try:
             with driver.session() as session:
-                # Query schema: (:Brand)-[:CONTAINS]->(:Ingredient)-[:TREATS]->(:Symptom)
                 cypher = """
                 MATCH (s:Symptom)
                 WHERE any(kw IN $keywords WHERE toLower(s.name) CONTAINS kw)
                 MATCH (s)<-[:TREATS]-(i:Ingredient)
                 OPTIONAL MATCH (b:Brand)-[:CONTAINS]->(i)
+                OPTIONAL MATCH (m:Medicine) WHERE toLower(m.brand_name) = toLower(b.name)
                 RETURN s.name AS symptom,
                        i.name AS ingredient,
-                       collect(DISTINCT b.name) AS brands
-                LIMIT 10
+                       i.rxcui AS ingredient_rxcui,
+                       collect(DISTINCT b.name) AS brands,
+                       collect(DISTINCT {
+                           brand: m.brand_name,
+                           generic: m.generic_name,
+                           rxcui: m.rxcui,
+                           category: m.category,
+                           indications: m.indications,
+                           warnings: m.warnings,
+                           contraindications: m.contraindications,
+                           adverse_reactions: m.adverse_reactions,
+                           drug_interactions: m.drug_interactions
+                       }) AS med_details
+                LIMIT 8
                 """
                 res = list(session.run(cypher, keywords=keywords))
-                
-                # If schema uses Medicine / Indication / Substance
-                if not res:
-                    cypher_fallback = """
-                    MATCH (m:Medicine)-[:TREATS_INDICATION]->(ind:Indication)
-                    WHERE any(kw IN $keywords WHERE toLower(ind.description) CONTAINS kw)
-                       OR any(kw IN $keywords WHERE toLower(m.brand_name) CONTAINS kw)
-                    OPTIONAL MATCH (m)-[:CONTAINS_SUBSTANCE]->(sub:ActiveSubstance)
-                    OPTIONAL MATCH (m)-[:HAS_ALTERNATIVE_BRAND]->(ab:AlternativeBrand)
-                    RETURN coalesce(ind.description, 'Symptom') AS symptom,
-                           coalesce(sub.name, m.generic_name) AS ingredient,
-                           collect(DISTINCT coalesce(ab.name, m.brand_name)) AS brands
-                    LIMIT 8
-                    """
-                    res = list(session.run(cypher_fallback, keywords=keywords))
 
                 for row in res:
-                    sym = row["symptom"][:60]
+                    sym = row["symptom"][:70]
                     ing = row["ingredient"]
-                    brands = row["brands"][:8]
+                    ing_rxcui = row.get("ingredient_rxcui", "")
+                    brands = [b for b in row["brands"] if b][:8]
+                    med_list = [m for m in row.get("med_details", []) if m and m.get("brand")]
 
                     matched_symptoms.add(sym)
                     compositions.add(ing)
                     alt_brands.update(brands)
 
-                    # Build graph nodes & edges
-                    sym_id = f"symptom_{sym.lower()}"
+                    # Graph Nodes & Edges
+                    sym_id = f"symptom_{sym.lower()[:30]}"
                     ing_id = f"ing_{ing.lower()}"
                     nodes[sym_id] = GraphNode(id=sym_id, label=sym, type="Symptom")
                     nodes[ing_id] = GraphNode(id=ing_id, label=ing, type="Ingredient")
                     edges.append(GraphEdge(source=ing_id, target=sym_id, relationship="TREATS"))
 
+                    primary_brand = brands[0] if brands else ing
                     for b in brands:
                         b_id = f"brand_{b.lower()}"
                         nodes[b_id] = GraphNode(id=b_id, label=b, type="Brand")
                         edges.append(GraphEdge(source=b_id, target=ing_id, relationship="CONTAINS"))
 
-                    raw_context.append(f"Symptom/Indication: {sym}\nComposition (Active Ingredient): {ing}\nAlternative Brands: {', '.join(brands)}")
+                    # Structured Clinical Record & Citation
+                    med_props = med_list[0] if med_list else {}
+                    ind_text = med_props.get("indications") or sym
+                    rec = ClinicalRecord(
+                        evidence_id=evidence_counter,
+                        brand_name=primary_brand,
+                        generic_name=med_props.get("generic") or ing,
+                        active_substance=ing,
+                        rxcui=med_props.get("rxcui") or ing_rxcui or "N/A",
+                        therapeutic_category=med_props.get("category") or "General Medicine",
+                        indications=ind_text,
+                        warnings=med_props.get("warnings") or "None specified in label summary",
+                        adverse_reactions=med_props.get("adverse_reactions") or "None specified in label summary",
+                        contraindications=med_props.get("contraindications") or "None specified in label summary",
+                        drug_interactions=med_props.get("drug_interactions") or "None specified in label summary",
+                        alternative_brands=brands
+                    )
+                    clinical_records.append(rec)
+
+                    citations.append(Citation(
+                        id=evidence_counter,
+                        source="openFDA Drug Label & NIH RxNorm",
+                        title=f"{primary_brand} ({ing}) Prescribing Label",
+                        rxcui=rec.rxcui,
+                        tty="IN / BN",
+                        evidence=ind_text[:350],
+                        node_id=sym_id
+                    ))
+
+                    raw_context.append(
+                        f"[Evidence Record {evidence_counter}]\n"
+                        f"- Symptom / Indication: {sym}\n"
+                        f"- Active Composition (Ingredient): {ing} (RxCUI: {rec.rxcui})\n"
+                        f"- Marketed Brands: {', '.join(brands)}\n"
+                        f"- FDA Approved Usage: {ind_text[:280]}...\n"
+                        f"- Black Box Warnings & Precautions: {rec.warnings[:200]}..."
+                    )
+                    evidence_counter += 1
+
                 db_success = len(res) > 0
         except Exception:
             db_success = False
@@ -262,9 +337,8 @@ def retrieve_graph_subgraph(query_text: str) -> Dict[str, Any]:
                     active_ing = subs[0] if subs else med.get("generic_name", "Unknown")
                     known = med.get("known_brands", [b_name])
 
-                    # Check keyword match
                     if any(kw in ind or kw in b_name.lower() or kw in active_ing.lower() for kw in keywords):
-                        symptom_label = "Headache / Pain" if "head" in query_text.lower() or "pound" in query_text.lower() else (keywords[0].title() if keywords else "General Condition")
+                        symptom_label = "Headache / Pain" if "head" in query_text.lower() or "pound" in query_text.lower() else (keywords[0].title() if keywords else "General Indication")
                         matched_symptoms.add(symptom_label)
                         compositions.add(active_ing)
                         alt_brands.update(known[:5])
@@ -280,7 +354,40 @@ def retrieve_graph_subgraph(query_text: str) -> Dict[str, Any]:
                             nodes[b_id] = GraphNode(id=b_id, label=kb, type="Brand")
                             edges.append(GraphEdge(source=b_id, target=ing_id, relationship="CONTAINS"))
 
-                        raw_context.append(f"Symptom: {symptom_label}\nIngredient: {active_ing}\nBrands: {', '.join(known[:4])}\nClinical Summary: {med.get('indications', '')[:250]}...")
+                        rec = ClinicalRecord(
+                            evidence_id=evidence_counter,
+                            brand_name=b_name,
+                            generic_name=med.get("generic_name", active_ing),
+                            active_substance=active_ing,
+                            rxcui=med.get("rxcui", "N/A"),
+                            therapeutic_category=med.get("category", "General Medicine"),
+                            indications=med.get("indications", symptom_label),
+                            warnings=med.get("warnings", "None specified in label summary"),
+                            adverse_reactions=med.get("adverse_reactions", "None specified in label summary"),
+                            contraindications=med.get("contraindications", "None specified in label summary"),
+                            drug_interactions=med.get("drug_interactions", "None specified in label summary"),
+                            alternative_brands=known
+                        )
+                        clinical_records.append(rec)
+
+                        citations.append(Citation(
+                            id=evidence_counter,
+                            source="openFDA Drug Label & NIH RxNorm",
+                            title=f"{b_name} ({active_ing}) Prescribing Label",
+                            rxcui=rec.rxcui,
+                            tty="IN / BN",
+                            evidence=med.get("indications", "")[:350],
+                            node_id=sym_id
+                        ))
+
+                        raw_context.append(
+                            f"[Evidence Record {evidence_counter}]\n"
+                            f"- Symptom: {symptom_label}\n"
+                            f"- Ingredient: {active_ing} (RxCUI: {rec.rxcui})\n"
+                            f"- Commercial Brands: {', '.join(known[:4])}\n"
+                            f"- Approved Usage: {med.get('indications', '')[:280]}..."
+                        )
+                        evidence_counter += 1
                         count += 1
                         if count >= 6:
                             break
@@ -292,6 +399,8 @@ def retrieve_graph_subgraph(query_text: str) -> Dict[str, Any]:
         "compositions": list(compositions),
         "alternative_medicines": list(alt_brands),
         "graph": GraphData(nodes=list(nodes.values()), edges=edges),
+        "clinical_records": clinical_records,
+        "citations": citations,
         "raw_context": "\n\n---\n\n".join(raw_context) if raw_context else ""
     }
 
@@ -370,7 +479,9 @@ Provide a structured clinical answer synthesizing the symptom mapping, active in
         symptoms_identified=retrieved["symptoms"],
         compositions=retrieved["compositions"],
         alternative_medicines=retrieved["alternative_medicines"],
-        graph=retrieved["graph"]
+        graph=retrieved["graph"],
+        clinical_records=retrieved.get("clinical_records", []),
+        citations=retrieved.get("citations", [])
     )
 
 
@@ -386,7 +497,11 @@ async def ask_legacy(payload: Dict[str, Any]):
         "answer": res.answer,
         "is_grounded": res.is_grounded,
         "context_used": res.symptoms_identified,
-        "graph": res.graph.dict()
+        "compositions": res.compositions,
+        "alternative_medicines": res.alternative_medicines,
+        "graph": res.graph.dict(),
+        "clinical_records": [r.dict() for r in res.clinical_records],
+        "citations": [c.dict() for c in res.citations]
     }
 
 
@@ -491,7 +606,28 @@ async def get_brand_alternatives(
         rxcui=rxcui,
         alternative_brands=[b for b in alt_brands if b.lower() != clean_brand.lower()],
         indications=indications,
-        graph=GraphData(nodes=list(nodes.values()), edges=edges)
+        graph=GraphData(nodes=list(nodes.values()), edges=edges),
+        clinical_records=[
+            ClinicalRecord(
+                evidence_id=1,
+                brand_name=clean_brand,
+                generic_name=active_ing or clean_brand,
+                active_substance=active_ing or clean_brand,
+                rxcui=rxcui,
+                indications=indications[0] if indications else "Clinical indications documented in official label.",
+                alternative_brands=[b for b in alt_brands if b.lower() != clean_brand.lower()]
+            )
+        ] if active_ing else [],
+        citations=[
+            Citation(
+                id=1,
+                source="NIH RxNorm & openFDA",
+                title=f"{clean_brand} ({active_ing}) Multi-Brand Composition Mapping",
+                rxcui=rxcui or "N/A",
+                tty="BN / IN",
+                evidence=f"Active chemical composition {active_ing} mapped to alternative brands: {', '.join(list(alt_brands)[:5])}."
+            )
+        ] if active_ing else []
     )
 
 
