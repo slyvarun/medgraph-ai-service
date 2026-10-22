@@ -10,6 +10,8 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <!-- Vis-network for Interactive Graph Traversal Visualization -->
   <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <!-- Three.js for Interactive 3D Doctor Avatar -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
   <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -19,25 +21,31 @@
 
   <style>
     :root {
-      --bg: #f8fafc;
-      --header-bg: #ffffff;
-      --card-bg: #ffffff;
-      --border: #e2e8f0;
-      --border-hover: #cbd5e1;
-      --primary: #2563eb;
-      --primary-soft: #eff6ff;
-      --text: #0f172a;
-      --muted: #64748b;
-      --faint: #94a3b8;
+      --bg: #060913;
+      --bg-panel: rgba(10, 16, 31, 0.78);
+      --bg-card: rgba(15, 23, 42, 0.72);
+      --bg-card-hover: rgba(22, 34, 58, 0.85);
+      --header-bg: rgba(9, 14, 28, 0.88);
+      --border: rgba(56, 189, 248, 0.16);
+      --border-hover: rgba(56, 189, 248, 0.45);
+      --border-active: rgba(56, 189, 248, 0.8);
+      --primary: #0284c7;
+      --primary-neon: #38bdf8;
+      --primary-soft: rgba(2, 132, 199, 0.18);
+      --primary-glow: 0 0 25px rgba(56, 189, 248, 0.35);
+      --text: #f8fafc;
+      --text-bright: #ffffff;
+      --muted: #94a3b8;
+      --faint: #64748b;
       --success: #10b981;
       --warning: #f59e0b;
       --error: #ef4444;
-      --symptom: #ef4444;
-      --ingredient: #2563eb;
+      --symptom: #f43f5e;
+      --ingredient: #00d2ff;
       --brand: #10b981;
-      --alt-brand: #8b5cf6;
-      --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
-      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --alt-brand: #a855f7;
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+      --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.6);
       --radius: 14px;
     }
 
@@ -56,21 +64,48 @@
       flex-direction: column;
       overflow: hidden;
       -webkit-font-smoothing: antialiased;
+      position: relative;
     }
 
-    /* ── 1. PERSISTENT REGULATORY DISCLAIMER BANNER (FDA CDS GUIDANCE) ── */
+    /* ── 3D AMBIENT BACKGROUND CANVAS & CYBER GRID ── */
+    #bg-3d-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.8;
+    }
+
+    .cyber-grid-overlay {
+      position: fixed;
+      inset: 0;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.08) 0%, transparent 60%),
+        linear-gradient(to right, rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 36px 36px, 36px 36px;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* ── 1. REGULATORY DISCLAIMER BANNER (FDA CDS GUIDANCE) ── */
     .fda-banner {
-      background: #0f172a;
-      color: #e2e8f0;
+      background: rgba(6, 10, 20, 0.95);
+      color: #94a3b8;
       padding: 7px 24px;
       font-size: 11.5px;
       line-height: 1.4;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid #1e293b;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.12);
       flex-shrink: 0;
       z-index: 50;
+      position: relative;
+      backdrop-filter: blur(12px);
     }
 
     .fda-banner-content {
@@ -81,15 +116,16 @@
     }
 
     .fda-tag {
-      background: #1e293b;
+      background: rgba(30, 41, 59, 0.8);
       color: #38bdf8;
-      border: 1px solid #334155;
+      border: 1px solid rgba(56, 189, 248, 0.35);
       padding: 2px 8px;
       border-radius: 6px;
       font-weight: 700;
       font-size: 10px;
       letter-spacing: 0.5px;
       white-space: nowrap;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
     }
 
     .fda-text {
@@ -110,6 +146,9 @@
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
       box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      position: relative;
+      z-index: 40;
     }
 
     .logo {
@@ -119,28 +158,37 @@
     }
 
     .logo-icon {
-      width: 36px;
-      height: 36px;
+      width: 38px;
+      height: 38px;
       border-radius: 10px;
-      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
       display: flex;
       align-items: center;
       justify-content: center;
       color: #fff;
-      font-size: 18px;
-      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+      font-size: 19px;
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.45);
+      animation: float 4s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
     }
 
     .logo h1 {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--text);
+      font-size: 17.5px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 0%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
       letter-spacing: -0.3px;
     }
 
     .logo p {
       font-size: 11px;
       color: var(--muted);
+      letter-spacing: 0.2px;
     }
 
     .header-actions {
@@ -151,7 +199,7 @@
 
     .lang-select {
       padding: 6px 12px;
-      background: #f1f5f9;
+      background: rgba(15, 23, 42, 0.85);
       border: 1px solid var(--border);
       border-radius: 10px;
       font-size: 12.5px;
@@ -159,26 +207,35 @@
       color: var(--text);
       outline: none;
       cursor: pointer;
+      transition: all .2s;
+    }
+
+    .lang-select:hover, .lang-select:focus {
+      border-color: var(--primary-neon);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
     }
 
     .btn-guide {
-      padding: 6px 12px;
-      background: #f8fafc;
+      padding: 6px 14px;
+      background: rgba(15, 23, 42, 0.8);
       border: 1px solid var(--border);
       border-radius: 10px;
       font-size: 12px;
       font-weight: 600;
-      color: var(--muted);
+      color: #cbd5e1;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 6px;
       transition: all .2s;
+      backdrop-filter: blur(8px);
     }
 
     .btn-guide:hover {
-      background: #f1f5f9;
-      color: var(--text);
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border-color: var(--primary-neon);
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
     }
 
     .status-pill {
@@ -186,12 +243,13 @@
       align-items: center;
       gap: 7px;
       padding: 5px 12px;
-      background: #f1f5f9;
-      border: 1px solid var(--border);
+      background: rgba(6, 78, 59, 0.25);
+      border: 1px solid rgba(16, 185, 129, 0.35);
       border-radius: 20px;
       font-size: 11.5px;
-      font-weight: 500;
-      color: var(--muted);
+      font-weight: 600;
+      color: #34d399;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
     }
 
     .dot {
@@ -199,7 +257,8 @@
       height: 8px;
       border-radius: 50%;
       background: #10b981;
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse 1.6s infinite;
     }
 
     /* ── SPLIT-SCREEN WORKSPACE ─────────────────── */
@@ -209,6 +268,8 @@
       overflow: hidden;
       width: 100%;
       height: calc(100vh - 88px);
+      position: relative;
+      z-index: 10;
     }
 
     /* Left Panel: Conversational AI Assistant */
@@ -219,18 +280,20 @@
       display: flex;
       flex-direction: column;
       border-right: 1px solid var(--border);
-      background: #ffffff;
+      background: var(--bg-panel);
+      backdrop-filter: blur(20px);
       height: 100%;
       overflow: hidden;
     }
 
-    /* Right Panel: Structured Reviewable Grounding & Graph */
+    /* Right Panel: Structured Grounding & Graph */
     .panel-grounding {
       flex: 1;
       min-width: 420px;
       display: flex;
       flex-direction: column;
-      background: #f8fafc;
+      background: rgba(7, 12, 24, 0.82);
+      backdrop-filter: blur(20px);
       height: 100%;
       overflow: hidden;
     }
@@ -241,9 +304,10 @@
       align-items: center;
       justify-content: space-between;
       padding: 10px 18px;
-      background: #ffffff;
+      background: rgba(13, 22, 42, 0.9);
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
+      backdrop-filter: blur(12px);
     }
 
     .tab-btn-group {
@@ -267,18 +331,19 @@
     }
 
     .tab-btn:hover {
-      background: #f1f5f9;
-      color: var(--text);
+      background: rgba(56, 189, 248, 0.1);
+      color: #f1f5f9;
     }
 
     .tab-btn.active {
-      background: var(--primary-soft);
-      color: var(--primary);
-      border-color: #bfdbfe;
+      background: rgba(2, 132, 199, 0.22);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.25);
     }
 
     .badge-count {
-      background: #2563eb;
+      background: #0284c7;
       color: #fff;
       font-size: 10px;
       padding: 1px 6px;
@@ -302,7 +367,7 @@
     /* Graph Traversal Tab */
     #graph-tab {
       position: relative;
-      background: #ffffff;
+      background: radial-gradient(circle at 50% 50%, #0d1629 0%, #060913 100%);
     }
 
     #graph-canvas {
@@ -315,8 +380,8 @@
       position: absolute;
       top: 14px;
       left: 14px;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(8px);
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(14px);
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 8px 14px;
@@ -343,9 +408,9 @@
       border-radius: 50%;
     }
 
-    .chip-symptom { background: var(--symptom); }
-    .chip-ing { background: var(--ingredient); }
-    .chip-brand { background: var(--brand); }
+    .chip-symptom { background: var(--symptom); box-shadow: 0 0 8px var(--symptom); }
+    .chip-ing { background: var(--ingredient); box-shadow: 0 0 8px var(--ingredient); }
+    .chip-brand { background: var(--brand); box-shadow: 0 0 8px var(--brand); }
 
     .graph-controls {
       position: absolute;
@@ -358,7 +423,7 @@
 
     .graph-btn {
       padding: 6px 12px;
-      background: #ffffff;
+      background: rgba(15, 23, 42, 0.85);
       border: 1px solid var(--border);
       border-radius: 8px;
       font-size: 11px;
@@ -367,11 +432,14 @@
       cursor: pointer;
       box-shadow: var(--shadow);
       transition: all .2s;
+      backdrop-filter: blur(8px);
     }
 
     .graph-btn:hover {
-      background: #f1f5f9;
-      border-color: #cbd5e1;
+      background: rgba(56, 189, 248, 0.2);
+      border-color: var(--primary-neon);
+      color: #38bdf8;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
     }
 
     /* Raw Clinical Data Tab */
@@ -379,10 +447,12 @@
       overflow-y: auto;
       padding: 18px;
       gap: 16px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
     }
 
     .raw-card {
-      background: #ffffff;
+      background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 16px;
@@ -390,32 +460,34 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      transition: all .2s;
+      transition: all .25s ease;
+      backdrop-filter: blur(12px);
     }
 
     .raw-card:hover {
-      border-color: #cbd5e1;
-      box-shadow: var(--shadow-md);
+      border-color: var(--border-hover);
+      box-shadow: var(--shadow-md), 0 0 20px rgba(56, 189, 248, 0.15);
+      transform: translateY(-2px);
     }
 
     .raw-card-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.12);
       padding-bottom: 8px;
     }
 
     .raw-card-title {
       font-size: 15px;
       font-weight: 700;
-      color: var(--text);
+      color: var(--primary-neon);
     }
 
     .raw-badge-rxcui {
-      background: #f1f5f9;
-      color: #0f172a;
-      border: 1px solid var(--border);
+      background: rgba(30, 41, 59, 0.7);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       font-weight: 600;
@@ -426,22 +498,22 @@
     .raw-field {
       font-size: 12px;
       line-height: 1.5;
-      color: #334155;
+      color: #cbd5e1;
     }
 
     .raw-field strong {
-      color: #0f172a;
+      color: #f1f5f9;
       font-weight: 600;
     }
 
     .raw-warning-box {
-      background: #fffbeb;
-      border: 1px solid #fde68a;
+      background: rgba(120, 53, 15, 0.25);
+      border: 1px solid rgba(245, 158, 11, 0.4);
       border-left: 4px solid var(--warning);
       padding: 10px 12px;
       border-radius: 6px;
       font-size: 11.5px;
-      color: #92400e;
+      color: #fde68a;
       line-height: 1.4;
     }
 
@@ -450,9 +522,9 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      background: #eff6ff;
-      color: #2563eb;
-      border: 1px solid #bfdbfe;
+      background: rgba(2, 132, 199, 0.2);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.35);
       border-radius: 4px;
       font-family: 'JetBrains Mono', monospace;
       font-size: 10.5px;
@@ -463,12 +535,14 @@
       text-decoration: none;
       vertical-align: baseline;
       transition: all .15s ease;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.15);
     }
 
     .citation-badge:hover {
-      background: #2563eb;
+      background: #0284c7;
       color: #ffffff;
-      border-color: #2563eb;
+      border-color: #38bdf8;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
     }
 
     /* ── ENTITY PROVENANCE TOKENS ───────────── */
@@ -476,11 +550,11 @@
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      background: #eff6ff;
-      color: #1d4ed8;
-      border: 1px solid #bfdbfe;
+      background: rgba(15, 23, 42, 0.8);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
       border-radius: 6px;
-      padding: 1px 7px;
+      padding: 2px 8px;
       margin: 0 2px;
       font-size: 12px;
       font-weight: 600;
@@ -488,42 +562,43 @@
       text-decoration: none;
       vertical-align: baseline;
       transition: all .15s ease;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
     }
 
     .entity-chip:hover {
-      background: #2563eb;
+      background: rgba(56, 189, 248, 0.25);
       color: #ffffff;
-      border-color: #1d4ed8;
+      border-color: #38bdf8;
       transform: translateY(-1px);
-      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
     }
 
     .entity-chip.active {
-      background: #1e3a8a;
+      background: #0284c7;
       color: #ffffff;
-      border-color: #172554;
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4);
+      border-color: #38bdf8;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.5);
     }
 
     .chip-pulse {
       width: 6px;
       height: 6px;
       border-radius: 50%;
-      background: #3b82f6;
+      background: #38bdf8;
       display: inline-block;
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+      box-shadow: 0 0 8px #38bdf8;
     }
 
     .entity-chip:hover .chip-pulse {
       background: #ffffff;
+      box-shadow: 0 0 8px #ffffff;
     }
 
     .drawer-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.4);
-      backdrop-filter: blur(2px);
+      background: rgba(6, 10, 20, 0.7);
+      backdrop-filter: blur(6px);
       z-index: 100;
       display: none;
       align-items: center;
@@ -535,12 +610,13 @@
     }
 
     .drawer-box {
-      background: #ffffff;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(24px);
       width: 90%;
       max-width: 640px;
       border-radius: 16px;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
-      border: 1px solid var(--border);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(56, 189, 248, 0.2);
+      border: 1px solid var(--border-hover);
       overflow: hidden;
       animation: modalIn .2s ease;
     }
@@ -550,7 +626,7 @@
       align-items: center;
       justify-content: space-between;
       padding: 16px 20px;
-      background: #f8fafc;
+      background: rgba(10, 16, 31, 0.9);
       border-bottom: 1px solid var(--border);
     }
 
@@ -569,6 +645,11 @@
       font-size: 18px;
       color: var(--muted);
       cursor: pointer;
+      transition: color .15s;
+    }
+
+    .drawer-close:hover {
+      color: #f1f5f9;
     }
 
     .drawer-body {
@@ -581,13 +662,13 @@
     }
 
     .evidence-quote {
-      background: #f8fafc;
-      border-left: 4px solid #2563eb;
+      background: rgba(22, 34, 58, 0.6);
+      border-left: 4px solid var(--primary-neon);
       padding: 12px 14px;
       border-radius: 6px;
       font-size: 12.5px;
       line-height: 1.6;
-      color: #334155;
+      color: #cbd5e1;
     }
 
     /* ── MESSAGES LOG & CHAT STYLING ──────────── */
@@ -616,18 +697,28 @@
     }
 
     .avatar {
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 15px;
+      font-size: 16px;
       flex-shrink: 0;
     }
 
-    .avatar.user { background: #0f172a; color: #fff; }
-    .avatar.bot { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+    .avatar.user {
+      background: #1e293b;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .avatar.bot {
+      background: rgba(2, 132, 199, 0.2);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+    }
 
     .bubble {
       padding: 12px 16px;
@@ -639,29 +730,33 @@
     }
 
     .msg.user .bubble {
-      background: #0f172a;
+      background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
       color: #ffffff;
+      border: 1px solid rgba(96, 165, 250, 0.4);
       border-bottom-right-radius: 4px;
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
     }
 
     .msg.bot .bubble {
-      background: #ffffff;
+      background: var(--bg-card);
+      backdrop-filter: blur(14px);
       color: var(--text);
       border: 1px solid var(--border);
       border-bottom-left-radius: 4px;
+      box-shadow: var(--shadow);
     }
 
     .bubble.error {
-      background: #fef2f2;
-      border-color: #fecaca;
-      color: #991b1b;
+      background: rgba(153, 27, 27, 0.25);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
     }
 
     .bubble h1, .bubble h2, .bubble h3 {
       font-size: 14.5px;
       font-weight: 700;
       margin: 12px 0 6px;
-      color: var(--text);
+      color: #38bdf8;
     }
 
     .bubble h1:first-child, .bubble h2:first-child, .bubble h3:first-child { margin-top: 0; }
@@ -672,12 +767,13 @@
 
     /* Doctor Thinking Indicator */
     .doctor-thinking {
-      background: #ffffff;
-      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border-hover);
       border-radius: 12px;
       padding: 14px;
       max-width: 86%;
-      box-shadow: var(--shadow);
+      box-shadow: var(--shadow), 0 0 20px rgba(56, 189, 248, 0.15);
+      backdrop-filter: blur(12px);
     }
 
     .doctor-thinking-header {
@@ -686,7 +782,7 @@
       gap: 8px;
       font-size: 12.5px;
       font-weight: 600;
-      color: var(--text);
+      color: #38bdf8;
       margin-bottom: 10px;
     }
 
@@ -694,8 +790,9 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #2563eb;
-      animation: pulse 1.4s infinite ease-in-out;
+      background: #38bdf8;
+      box-shadow: 0 0 10px #38bdf8;
+      animation: pulse 1.2s infinite ease-in-out;
     }
 
     @keyframes pulse {
@@ -713,16 +810,17 @@
     }
 
     .doctor-step.active {
-      color: #2563eb;
+      color: #38bdf8;
       font-weight: 600;
     }
 
     /* Input Area */
     .input-area {
       padding: 14px 18px;
-      background: #ffffff;
+      background: rgba(9, 15, 28, 0.92);
       border-top: 1px solid var(--border);
       flex-shrink: 0;
+      backdrop-filter: blur(16px);
     }
 
     .chips-row {
@@ -736,7 +834,7 @@
     .chips-row::-webkit-scrollbar { display: none; }
 
     .chip {
-      background: #f1f5f9;
+      background: rgba(22, 34, 58, 0.7);
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 4px 10px;
@@ -744,19 +842,21 @@
       color: var(--muted);
       cursor: pointer;
       white-space: nowrap;
-      transition: all .15s;
+      transition: all .2s;
     }
 
     .chip:hover {
-      background: #e2e8f0;
-      color: var(--text);
+      background: rgba(56, 189, 248, 0.18);
+      color: #38bdf8;
+      border-color: var(--primary-neon);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
     }
 
     .input-box {
       display: flex;
       align-items: flex-end;
       gap: 8px;
-      background: #f8fafc;
+      background: rgba(15, 23, 42, 0.85);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 8px 12px;
@@ -764,9 +864,9 @@
     }
 
     .input-box:focus-within {
-      border-color: var(--primary);
-      background: #ffffff;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      border-color: var(--primary-neon);
+      background: rgba(17, 26, 46, 0.95);
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
     }
 
     #inp {
@@ -779,26 +879,42 @@
       resize: none;
       max-height: 100px;
       line-height: 1.5;
-      color: var(--text);
+      color: var(--text-bright);
+    }
+
+    #inp::placeholder {
+      color: var(--faint);
     }
 
     #btn {
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       border-radius: 8px;
-      background: var(--primary);
+      background: linear-gradient(135deg, #0284c7, #2563eb);
       color: #fff;
-      border: none;
+      border: 1px solid rgba(56, 189, 248, 0.4);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       font-size: 14px;
       transition: all .15s;
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
     }
 
-    #btn:hover { background: #1d4ed8; }
-    #btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+    #btn:hover {
+      background: linear-gradient(135deg, #0369a1, #1d4ed8);
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+      transform: scale(1.05);
+    }
+
+    #btn:disabled {
+      background: rgba(30, 41, 59, 0.8);
+      border-color: transparent;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
 
     /* Welcome Card */
     .welcome-container {
@@ -812,9 +928,183 @@
       color: var(--muted);
     }
 
-    .welcome-icon { font-size: 38px; margin-bottom: 12px; }
-    .welcome-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
-    .welcome-desc { font-size: 13px; max-width: 440px; line-height: 1.5; }
+    .welcome-icon { font-size: 40px; margin-bottom: 12px; filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.4)); }
+    .welcome-title { font-size: 18px; font-weight: 700; color: #f8fafc; margin-bottom: 6px; }
+    .welcome-desc { font-size: 13px; max-width: 440px; line-height: 1.5; color: #94a3b8; }
+
+    /* ── 3D DOCTOR AVATAR CONSOLE (DR. NEXUS) ── */
+    .doctor-3d-console {
+      height: 220px;
+      background: radial-gradient(circle at 50% 30%, #0f172a 0%, #060913 100%);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    .doctor-3d-console.folded {
+      height: 38px;
+    }
+
+    .doctor-3d-hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 14px;
+      background: rgba(10, 16, 31, 0.88);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(56, 189, 248, 0.12);
+      z-index: 10;
+      height: 38px;
+      flex-shrink: 0;
+    }
+
+    .doctor-3d-hud-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hud-status-pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+      animation: pulse 1.5s infinite;
+    }
+
+    .hud-status-pulse.listening {
+      background: #38bdf8;
+      box-shadow: 0 0 12px #38bdf8;
+    }
+
+    .hud-status-pulse.thinking {
+      background: #f59e0b;
+      box-shadow: 0 0 14px #f59e0b;
+      animation: pulse 0.7s infinite;
+    }
+
+    .hud-status-pulse.speaking {
+      background: #a855f7;
+      box-shadow: 0 0 14px #a855f7;
+    }
+
+    .hud-status-text {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #f1f5f9;
+      letter-spacing: 0.2px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .ecg-line-wrap {
+      width: 55px;
+      height: 14px;
+      overflow: hidden;
+      opacity: 0.8;
+      display: flex;
+      align-items: center;
+    }
+
+    .ecg-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .ecg-path {
+      fill: none;
+      stroke: #10b981;
+      stroke-width: 1.8;
+      stroke-dasharray: 80;
+      stroke-dashoffset: 80;
+      animation: ecgFlow 2s linear infinite;
+    }
+
+    @keyframes ecgFlow {
+      to { stroke-dashoffset: 0; }
+    }
+
+    .doctor-3d-hud-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hud-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      color: #cbd5e1;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .hud-btn:hover {
+      background: rgba(56, 189, 248, 0.2);
+      color: #ffffff;
+      border-color: #38bdf8;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+    }
+
+    .doctor-3d-canvas-wrap {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      cursor: grab;
+      user-select: none;
+    }
+
+    .doctor-3d-canvas-wrap:active {
+      cursor: grabbing;
+    }
+
+    #doctor-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .doctor-3d-overlay-badge {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10, 16, 31, 0.9);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #f1f5f9;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      pointer-events: none;
+      max-width: 90%;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 14px rgba(56, 189, 248, 0.2);
+      transition: all 0.25s ease;
+    }
+
+    .doctor-3d-console.folded .doctor-3d-canvas-wrap,
+    .doctor-3d-console.folded .doctor-3d-overlay-badge {
+      display: none !important;
+    }
 
     /* Modal Animation */
     @keyframes modalIn {
@@ -825,6 +1115,10 @@
 </head>
 
 <body>
+  <!-- 3D INTERACTIVE MEDICAL/DNA BACKGROUND CANVAS -->
+  <canvas id="bg-3d-canvas"></canvas>
+  <div class="cyber-grid-overlay"></div>
+
   <!-- 1. PERSISTENT REGULATORY DISCLAIMER BANNER (FDA CDS GUIDANCE) -->
   <div class="fda-banner">
     <div class="fda-banner-content">
@@ -870,6 +1164,33 @@
   <div class="split-workspace">
     <!-- PANEL 1: CONVERSATIONAL AI (DR. NEXUS) -->
     <div class="panel-chat">
+      <!-- 3D DOCTOR AVATAR CONSOLE -->
+      <div id="doctor-3d-console" class="doctor-3d-console">
+        <div class="doctor-3d-hud">
+          <div class="doctor-3d-hud-left">
+            <span id="hud-pulse-dot" class="hud-status-pulse"></span>
+            <span id="doctor-hud-status" class="hud-status-text">Dr. Nexus — Active & Ready</span>
+            <div class="ecg-line-wrap" title="Real-time Bio-Telemetry Stream">
+              <svg class="ecg-svg" viewBox="0 0 80 20">
+                <path class="ecg-path" d="M 0 10 L 15 10 L 20 10 L 25 3 L 30 17 L 35 6 L 40 13 L 45 10 L 80 10" />
+              </svg>
+            </div>
+          </div>
+          <div class="doctor-3d-hud-right">
+            <button class="hud-btn" onclick="triggerDoctorGreeting()" title="Wave to Dr. Nexus">👋 Greet</button>
+            <button class="hud-btn" onclick="resetDoctorCamera()" title="Reset 3D View">🎯 Center</button>
+            <button class="hud-btn" onclick="toggleDoctorConsole()" title="Collapse / Expand 3D View" id="doctor-toggle-btn">⛶ Fold</button>
+          </div>
+        </div>
+        <div class="doctor-3d-canvas-wrap" id="doctor-canvas-container">
+          <canvas id="doctor-canvas"></canvas>
+          <div class="doctor-3d-overlay-badge" id="doctor-thought-bubble">
+            <span id="doctor-thought-icon">💡</span>
+            <span id="doctor-thought-text">Ask me about any medication, active ingredient, or symptom...</span>
+          </div>
+        </div>
+      </div>
+
       <div id="log">
         <div id="welcome" class="welcome-container">
           <div class="welcome-icon">👨‍⚕️</div>
@@ -889,7 +1210,7 @@
         </div>
 
         <div class="input-box">
-          <textarea id="inp" rows="1" placeholder="Describe symptoms or enter medication name..." onkeydown="onKey(event)" oninput="resize(this)"></textarea>
+          <textarea id="inp" rows="1" placeholder="Describe symptoms or enter medication name..." onkeydown="onKey(event)" oninput="onDoctorInput(this); resize(this)"></textarea>
           <button id="btn" onclick="send()" title="Send consultation query">➤</button>
         </div>
       </div>
@@ -1083,8 +1404,8 @@
       if (!container || !graphData || !graphData.nodes || graphData.nodes.length === 0) return;
 
       const nodeColors = {
-        'Symptom': { background: '#ef4444', border: '#b91c1c' },
-        'Ingredient': { background: '#2563eb', border: '#1d4ed8' },
+        'Symptom': { background: '#f43f5e', border: '#be123c' },
+        'Ingredient': { background: '#00d2ff', border: '#0284c7' },
         'Brand': { background: '#10b981', border: '#047857' }
       };
 
@@ -1099,11 +1420,11 @@
             border: colors.border,
             highlight: { background: '#fbbf24', border: '#d97706' }
           },
-          font: { color: '#0f172a', size: 12, face: 'Inter', strokeWidth: 3, strokeColor: '#ffffff' },
+          font: { color: '#ffffff', size: 12, face: 'Inter', strokeWidth: 2, strokeColor: '#090d16' },
           shape: n.type === 'Symptom' ? 'box' : 'dot',
           size: n.type === 'Ingredient' ? 22 : 18,
           margin: 8,
-          shadow: true
+          shadow: { enabled: true, color: 'rgba(0,0,0,0.6)', size: 8, x: 2, y: 2 }
         };
       });
 
@@ -1112,8 +1433,8 @@
         to: e.target,
         label: e.relationship,
         arrows: 'to',
-        color: { color: '#94a3b8', highlight: '#2563eb' },
-        font: { size: 10, face: 'JetBrains Mono', color: '#64748b', align: 'middle' },
+        color: { color: 'rgba(56, 189, 248, 0.45)', highlight: '#38bdf8' },
+        font: { size: 10, face: 'JetBrains Mono', color: '#94a3b8', strokeWidth: 2, strokeColor: '#090d16', align: 'middle' },
         smooth: { type: 'continuous' }
       }));
 
@@ -1499,6 +1820,7 @@
       addMsg('user', q);
       inp.value = ''; inp.style.height = 'auto';
       lock(true); showDoctorThinking();
+      if (typeof setDoctorState === 'function') setDoctorState('thinking');
 
       try {
         const payload = {
@@ -1519,6 +1841,7 @@
           let msg = 'Server error: ' + res.status;
           try { const d = await res.json(); msg = d.detail || msg; } catch (_) { }
           addMsg('bot', '⚠️ ' + msg, true);
+          if (typeof setDoctorState === 'function') setDoctorState('idle');
           return;
         }
 
@@ -1526,6 +1849,7 @@
 
         // 1. Render Doctor AI Consultation Text
         addMsg('bot', data.answer || 'No response returned.');
+        if (typeof setDoctorState === 'function') setDoctorState('speaking');
 
         // 2. Render Graph Traversal Network
         if (data.graph && data.graph.nodes && data.graph.nodes.length > 0) {
@@ -1550,6 +1874,7 @@
 
       } catch (err) {
         hideDoctorThinking();
+        if (typeof setDoctorState === 'function') setDoctorState('idle');
         addMsg('bot',
           `⚠️ **Connection Error**: Unable to reach MedGraph Nexus backend at \`${getApiUrl()}\`.\n\n` +
           `*Ensure the backend server is running on port 8008.*`,
@@ -1558,6 +1883,799 @@
       } finally {
         lock(false);
       }
+    }
+
+    // ========================================================
+    // 12. INTERACTIVE 3D DOCTOR AVATAR ENGINE (DR. NEXUS)
+    // ========================================================
+    let docScene, docCamera, docRenderer;
+    let docGroup, docTorso, docHeadPivot, docEyelids = [], docMouth, docStethLight, docStethRing;
+    let docOrbitGroup, docParticleSystem;
+    let doctorState = 'idle'; // 'idle' | 'listening' | 'thinking' | 'speaking' | 'greeting'
+    let stateTimeout = null;
+    let isDragging = false, prevMouseX = 0, prevMouseY = 0;
+    let targetRotationY = 0, targetRotationX = 0;
+    let mouseNDC = { x: 0, y: 0 };
+    let clock = null;
+    let nextBlinkTime = 2.0;
+    let isBlinking = false, blinkProgress = 0;
+
+    function initDoctor3D() {
+      const container = document.getElementById('doctor-canvas-container');
+      const canvas = document.getElementById('doctor-canvas');
+      if (!container || !canvas || typeof THREE === 'undefined') return;
+
+      clock = new THREE.Clock();
+      const width = container.clientWidth || 380;
+      const height = container.clientHeight || 182;
+
+      // 1. Scene & Camera
+      docScene = new THREE.Scene();
+      docCamera = new THREE.PerspectiveCamera(42, width / height, 0.1, 50);
+      docCamera.position.set(0, 0.15, 3.6);
+
+      // 2. Renderer
+      docRenderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true,
+        alpha: true,
+        powerPreference: 'high-performance'
+      });
+      docRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      docRenderer.setSize(width, height);
+      if (THREE.ACESFilmicToneMapping) {
+        docRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+        docRenderer.toneMappingExposure = 1.1;
+      }
+
+      // 3. Lighting System (Clinical Sci-Fi Studio)
+      const ambientLight = new THREE.AmbientLight(0x334155, 1.2);
+      docScene.add(ambientLight);
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
+      keyLight.position.set(2.5, 3.5, 3.0);
+      docScene.add(keyLight);
+
+      const cyanRimLight = new THREE.DirectionalLight(0x00d2ff, 2.2);
+      cyanRimLight.position.set(-3.0, 2.0, -2.5);
+      docScene.add(cyanRimLight);
+
+      const warmFill = new THREE.PointLight(0xffedd5, 0.8, 6);
+      warmFill.position.set(0, -1.2, 2.5);
+      docScene.add(warmFill);
+
+      // 4. Build Procedural Doctor Geometry
+      docGroup = new THREE.Group();
+      docGroup.position.set(0, -0.55, 0);
+      docScene.add(docGroup);
+
+      // --- Materials ---
+      const coatMat = new THREE.MeshStandardMaterial({
+        color: 0xf8fafc,
+        roughness: 0.35,
+        metalness: 0.05
+      });
+      const scrubsMat = new THREE.MeshStandardMaterial({
+        color: 0x0284c7,
+        roughness: 0.7,
+        metalness: 0.1
+      });
+      const skinMat = new THREE.MeshStandardMaterial({
+        color: 0xe0a97a,
+        roughness: 0.55,
+        metalness: 0.0
+      });
+      const hairMat = new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        roughness: 0.85
+      });
+      const chromeMat = new THREE.MeshStandardMaterial({
+        color: 0xcfd8dc,
+        metalness: 0.95,
+        roughness: 0.15
+      });
+      const glassMat = new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.45,
+        metalness: 0.8,
+        roughness: 0.1
+      });
+      const stethEmissiveMat = new THREE.MeshStandardMaterial({
+        color: 0x00f0ff,
+        emissive: 0x00f0ff,
+        emissiveIntensity: 1.2,
+        roughness: 0.2
+      });
+
+      // --- Torso & Lab Coat ---
+      docTorso = new THREE.Group();
+      docGroup.add(docTorso);
+
+      // Coat core cylinder
+      const coatGeom = new THREE.CylinderGeometry(0.48, 0.64, 1.1, 24);
+      const coatMesh = new THREE.Mesh(coatGeom, coatMat);
+      coatMesh.position.y = 0.55;
+      docTorso.add(coatMesh);
+
+      // Scrubs V-neck insert
+      const scrubsGeom = new THREE.CylinderGeometry(0.42, 0.49, 0.55, 16);
+      const scrubsMesh = new THREE.Mesh(scrubsGeom, scrubsMat);
+      scrubsMesh.position.set(0, 0.75, 0.05);
+      docTorso.add(scrubsMesh);
+
+      // Lapels
+      const lapelGeom = new THREE.BoxGeometry(0.12, 0.65, 0.04);
+      const leftLapel = new THREE.Mesh(lapelGeom, coatMat);
+      leftLapel.position.set(-0.20, 0.68, 0.48);
+      leftLapel.rotation.set(-0.15, 0.1, -0.22);
+      docTorso.add(leftLapel);
+
+      const rightLapel = new THREE.Mesh(lapelGeom, coatMat);
+      rightLapel.position.set(0.20, 0.68, 0.48);
+      rightLapel.rotation.set(-0.15, -0.1, 0.22);
+      docTorso.add(rightLapel);
+
+      // Doctor ID Badge
+      const badgeGeom = new THREE.BoxGeometry(0.13, 0.17, 0.02);
+      const badgeMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6 });
+      const badgeMesh = new THREE.Mesh(badgeGeom, badgeMat);
+      badgeMesh.position.set(0.28, 0.72, 0.46);
+      badgeMesh.rotation.y = 0.3;
+      docTorso.add(badgeMesh);
+
+      // Badge clip
+      const clipGeom = new THREE.BoxGeometry(0.04, 0.03, 0.02);
+      const clipMesh = new THREE.Mesh(clipGeom, chromeMat);
+      clipMesh.position.set(0.28, 0.82, 0.47);
+      docTorso.add(clipMesh);
+
+      // Stethoscope
+      const stethArcGeom = new THREE.TorusGeometry(0.30, 0.022, 16, 32, Math.PI);
+      const stethArc = new THREE.Mesh(stethArcGeom, chromeMat);
+      stethArc.position.set(0, 1.05, 0.12);
+      stethArc.rotation.set(1.4, 0, 0);
+      docTorso.add(stethArc);
+
+      // Stethoscope tube down chest
+      const tubeGeom = new THREE.CylinderGeometry(0.018, 0.018, 0.42, 12);
+      const tubeMesh = new THREE.Mesh(tubeGeom, chromeMat);
+      tubeMesh.position.set(-0.06, 0.66, 0.50);
+      tubeMesh.rotation.z = -0.1;
+      docTorso.add(tubeMesh);
+
+      // Stethoscope chestpiece disc with glowing LED
+      const chestpieceGeom = new THREE.CylinderGeometry(0.09, 0.09, 0.025, 24);
+      docStethRing = new THREE.Mesh(chestpieceGeom, stethEmissiveMat);
+      docStethRing.position.set(-0.10, 0.46, 0.53);
+      docStethRing.rotation.set(1.45, 0, -0.1);
+      docTorso.add(docStethRing);
+
+      docStethLight = new THREE.PointLight(0x00f0ff, 1.5, 2.2);
+      docStethLight.position.set(-0.10, 0.46, 0.60);
+      docTorso.add(docStethLight);
+
+      // --- Head & Neck ---
+      const neckGeom = new THREE.CylinderGeometry(0.16, 0.19, 0.22, 16);
+      const neckMesh = new THREE.Mesh(neckGeom, skinMat);
+      neckMesh.position.set(0, 1.15, 0.02);
+      docTorso.add(neckMesh);
+
+      docHeadPivot = new THREE.Group();
+      docHeadPivot.position.set(0, 1.34, 0.05);
+      docTorso.add(docHeadPivot);
+
+      // Cranium / Face
+      const headGeom = new THREE.SphereGeometry(0.38, 32, 28);
+      headGeom.scale(0.88, 1.05, 0.94);
+      const headMesh = new THREE.Mesh(headGeom, skinMat);
+      docHeadPivot.add(headMesh);
+
+      // Hair
+      const hairGeom = new THREE.SphereGeometry(0.40, 24, 20);
+      hairGeom.scale(0.92, 0.98, 0.95);
+      const hairMesh = new THREE.Mesh(hairGeom, hairMat);
+      hairMesh.position.set(0, 0.12, -0.06);
+      docHeadPivot.add(hairMesh);
+
+      // Smart Clinical Visor / Glasses
+      const frameGeom = new THREE.BoxGeometry(0.22, 0.12, 0.03);
+      const leftLens = new THREE.Mesh(frameGeom, glassMat);
+      leftLens.position.set(-0.14, 0.02, 0.36);
+      docHeadPivot.add(leftLens);
+
+      const rightLens = new THREE.Mesh(frameGeom, glassMat);
+      rightLens.position.set(0.14, 0.02, 0.36);
+      docHeadPivot.add(rightLens);
+
+      const bridgeGeom = new THREE.BoxGeometry(0.08, 0.02, 0.02);
+      const bridgeMesh = new THREE.Mesh(bridgeGeom, chromeMat);
+      bridgeMesh.position.set(0, 0.03, 0.36);
+      docHeadPivot.add(bridgeMesh);
+
+      // Eyes & Pupils
+      const eyeballGeom = new THREE.SphereGeometry(0.055, 16, 16);
+      const eyeWhiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1 });
+      const pupilMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.2 });
+
+      const leftEyeWhite = new THREE.Mesh(eyeballGeom, eyeWhiteMat);
+      leftEyeWhite.position.set(-0.14, 0.02, 0.32);
+      docHeadPivot.add(leftEyeWhite);
+
+      const rightEyeWhite = new THREE.Mesh(eyeballGeom, eyeWhiteMat);
+      rightEyeWhite.position.set(0.14, 0.02, 0.32);
+      docHeadPivot.add(rightEyeWhite);
+
+      const pupilGeom = new THREE.SphereGeometry(0.030, 16, 16);
+      const leftPupil = new THREE.Mesh(pupilGeom, pupilMat);
+      leftPupil.position.set(-0.14, 0.02, 0.355);
+      docHeadPivot.add(leftPupil);
+
+      const rightPupil = new THREE.Mesh(pupilGeom, pupilMat);
+      rightPupil.position.set(0.14, 0.02, 0.355);
+      docHeadPivot.add(rightPupil);
+
+      // Eyelids (for blinking)
+      const lidGeom = new THREE.BoxGeometry(0.14, 0.06, 0.04);
+      const leftLid = new THREE.Mesh(lidGeom, skinMat);
+      leftLid.position.set(-0.14, 0.06, 0.35);
+      docHeadPivot.add(leftLid);
+      docEyelids.push(leftLid);
+
+      const rightLid = new THREE.Mesh(lidGeom, skinMat);
+      rightLid.position.set(0.14, 0.06, 0.35);
+      docHeadPivot.add(rightLid);
+      docEyelids.push(rightLid);
+
+      // Mouth
+      const mouthGeom = new THREE.BoxGeometry(0.11, 0.022, 0.03);
+      const mouthMat = new THREE.MeshStandardMaterial({ color: 0xa85542, roughness: 0.6 });
+      docMouth = new THREE.Mesh(mouthGeom, mouthMat);
+      docMouth.position.set(0, -0.16, 0.35);
+      docHeadPivot.add(docMouth);
+
+      // Headset Comm Device on Ear
+      const commGeom = new THREE.CylinderGeometry(0.04, 0.04, 0.03, 16);
+      const commMesh = new THREE.Mesh(commGeom, chromeMat);
+      commMesh.position.set(0.38, 0.02, 0.02);
+      commMesh.rotation.z = Math.PI / 2;
+      docHeadPivot.add(commMesh);
+
+      // Headset LED
+      const ledGeom = new THREE.SphereGeometry(0.015, 8, 8);
+      const ledMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+      const ledMesh = new THREE.Mesh(ledGeom, ledMat);
+      ledMesh.position.set(0.40, 0.02, 0.02);
+      docHeadPivot.add(ledMesh);
+
+      // 5. Holographic Clinical Gyro-Rings & Bio-Particle System
+      docOrbitGroup = new THREE.Group();
+      docOrbitGroup.position.set(0, 0.7, 0);
+      docScene.add(docOrbitGroup);
+
+      // Ring 1 (Cyan)
+      const ring1Geom = new THREE.TorusGeometry(1.22, 0.012, 16, 64);
+      const ring1Mat = new THREE.MeshBasicMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.65,
+        wireframe: true
+      });
+      const ring1 = new THREE.Mesh(ring1Geom, ring1Mat);
+      ring1.rotation.x = Math.PI / 2.3;
+      docOrbitGroup.add(ring1);
+      docOrbitGroup.ring1 = ring1;
+
+      // Ring 2 (Indigo)
+      const ring2Geom = new THREE.TorusGeometry(1.36, 0.010, 16, 64);
+      const ring2Mat = new THREE.MeshBasicMaterial({
+        color: 0x818cf8,
+        transparent: true,
+        opacity: 0.5,
+        wireframe: true
+      });
+      const ring2 = new THREE.Mesh(ring2Geom, ring2Mat);
+      ring2.rotation.y = Math.PI / 3;
+      docOrbitGroup.add(ring2);
+      docOrbitGroup.ring2 = ring2;
+
+      // Ring 3 (Emerald)
+      const ring3Geom = new THREE.TorusGeometry(1.10, 0.012, 16, 64);
+      const ring3Mat = new THREE.MeshBasicMaterial({
+        color: 0x34d399,
+        transparent: true,
+        opacity: 0.45,
+        wireframe: true
+      });
+      const ring3 = new THREE.Mesh(ring3Geom, ring3Mat);
+      ring3.rotation.z = Math.PI / 4;
+      docOrbitGroup.add(ring3);
+      docOrbitGroup.ring3 = ring3;
+
+      // Bio-Data Particle Cloud
+      const particleCount = 130;
+      const particleGeom = new THREE.BufferGeometry();
+      const posArray = new Float32Array(particleCount * 3);
+      for (let i = 0; i < particleCount * 3; i += 3) {
+        const u = Math.random();
+        const v = Math.random();
+        const theta = u * 2.0 * Math.PI;
+        const phi = Math.acos(2.0 * v - 1.0);
+        const r = 1.0 + Math.random() * 0.7;
+        posArray[i] = r * Math.sin(phi) * Math.cos(theta);
+        posArray[i + 1] = (r * Math.sin(phi) * Math.sin(theta)) * 0.7;
+        posArray[i + 2] = r * Math.cos(phi);
+      }
+      particleGeom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+      const particleMat = new THREE.PointsMaterial({
+        color: 0x00f0ff,
+        size: 0.035,
+        transparent: true,
+        opacity: 0.75,
+        blending: THREE.AdditiveBlending
+      });
+      docParticleSystem = new THREE.Points(particleGeom, particleMat);
+      docOrbitGroup.add(docParticleSystem);
+
+      // 6. Interactive Event Handlers (Mouse Drag & Tracking)
+      setupDoctorInteractions(canvas, container);
+
+      // 7. Auto-Resize Observer
+      if (window.ResizeObserver) {
+        const ro = new ResizeObserver(() => onDoctorResize());
+        ro.observe(container);
+      } else {
+        window.addEventListener('resize', onDoctorResize);
+      }
+
+      // 8. Start Animation Loop
+      animateDoctor();
+    }
+
+    function setupDoctorInteractions(canvas, container) {
+      // Dragging rotation
+      canvas.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        prevMouseX = e.clientX;
+        prevMouseY = e.clientY;
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          const deltaX = e.clientX - prevMouseX;
+          const deltaY = e.clientY - prevMouseY;
+          targetRotationY += deltaX * 0.008;
+          targetRotationX += deltaY * 0.005;
+          targetRotationX = Math.max(-0.35, Math.min(0.35, targetRotationX));
+          prevMouseX = e.clientX;
+          prevMouseY = e.clientY;
+        }
+
+        // Track cursor for gaze lerp
+        const rect = container.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          mouseNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+          mouseNDC.y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+
+      // Touch drag
+      canvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          isDragging = true;
+          prevMouseX = e.touches[0].clientX;
+          prevMouseY = e.touches[0].clientY;
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchmove', (e) => {
+        if (isDragging && e.touches.length === 1) {
+          const deltaX = e.touches[0].clientX - prevMouseX;
+          const deltaY = e.touches[0].clientY - prevMouseY;
+          targetRotationY += deltaX * 0.008;
+          targetRotationX += deltaY * 0.005;
+          targetRotationX = Math.max(-0.35, Math.min(0.35, targetRotationX));
+          prevMouseX = e.touches[0].clientX;
+          prevMouseY = e.touches[0].clientY;
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchend', () => {
+        isDragging = false;
+      });
+    }
+
+    function onDoctorResize() {
+      const container = document.getElementById('doctor-canvas-container');
+      if (!container || !docRenderer || !docCamera) return;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      if (width === 0 || height === 0) return;
+      docCamera.aspect = width / height;
+      docCamera.updateProjectionMatrix();
+      docRenderer.setSize(width, height);
+    }
+
+    function resetDoctorCamera() {
+      targetRotationX = 0;
+      targetRotationY = 0;
+      if (docGroup) {
+        docGroup.rotation.set(0, 0, 0);
+      }
+    }
+
+    function toggleDoctorConsole() {
+      const consoleEl = document.getElementById('doctor-3d-console');
+      const toggleBtn = document.getElementById('doctor-toggle-btn');
+      if (!consoleEl) return;
+      consoleEl.classList.toggle('folded');
+      const isFolded = consoleEl.classList.contains('folded');
+      toggleBtn.innerHTML = isFolded ? '⛶ Expand 3D' : '⛶ Fold';
+      toggleBtn.title = isFolded ? 'Expand 3D Doctor Avatar' : 'Collapse 3D Doctor Avatar';
+      setTimeout(() => onDoctorResize(), 350);
+    }
+
+    function triggerDoctorGreeting() {
+      setDoctorState('greeting');
+      if (stateTimeout) clearTimeout(stateTimeout);
+      stateTimeout = setTimeout(() => {
+        setDoctorState('idle');
+      }, 3000);
+    }
+
+    function onDoctorInput(el) {
+      if (doctorState === 'thinking') return;
+      if (el.value.trim().length > 0) {
+        if (doctorState !== 'listening') setDoctorState('listening');
+      } else {
+        if (doctorState !== 'idle') setDoctorState('idle');
+      }
+    }
+
+    function setDoctorState(newState) {
+      doctorState = newState;
+      const pulseDot = document.getElementById('hud-pulse-dot');
+      const hudStatus = document.getElementById('doctor-hud-status');
+      const thoughtText = document.getElementById('doctor-thought-text');
+      const thoughtIcon = document.getElementById('doctor-thought-icon');
+
+      if (!pulseDot || !hudStatus || !thoughtText) return;
+
+      pulseDot.className = 'hud-status-pulse ' + newState;
+
+      switch (newState) {
+        case 'listening':
+          hudStatus.textContent = 'Dr. Nexus — Listening...';
+          thoughtIcon.textContent = '🎧';
+          thoughtText.textContent = 'Listening to your clinical query: formulating semantic intent...';
+          break;
+        case 'thinking':
+          hudStatus.textContent = 'Dr. Nexus — Traversing Graph & NIH RxNorm...';
+          thoughtIcon.textContent = '⚡';
+          thoughtText.textContent = 'Traversing multi-hop graph, NIH RxNorm & FDA contraindication data...';
+          break;
+        case 'speaking':
+          hudStatus.textContent = 'Dr. Nexus — Formulating CDS Guidance';
+          thoughtIcon.textContent = '📋';
+          thoughtText.textContent = 'Clinical Decision Guidance formulated. Reviewing citations & indications.';
+          if (stateTimeout) clearTimeout(stateTimeout);
+          stateTimeout = setTimeout(() => {
+            if (doctorState === 'speaking') setDoctorState('idle');
+          }, 4500);
+          break;
+        case 'greeting':
+          hudStatus.textContent = 'Dr. Nexus — Welcome, Clinician!';
+          thoughtIcon.textContent = '👋';
+          thoughtText.textContent = 'Hello! I am Dr. Nexus, your clinical pharmacotherapy knowledge co-pilot.';
+          break;
+        case 'idle':
+        default:
+          hudStatus.textContent = 'Dr. Nexus — Active & Ready';
+          thoughtIcon.textContent = '💡';
+          thoughtText.textContent = 'Ask me about any medication, active ingredient, or symptom...';
+          break;
+      }
+    }
+
+    function animateDoctor() {
+      requestAnimationFrame(animateDoctor);
+      if (!clock || !docGroup || !docRenderer || !docScene || !docCamera) return;
+
+      const delta = clock.getDelta();
+      const time = clock.getElapsedTime();
+
+      // 1. Smooth character rotation damping
+      docGroup.rotation.y += (targetRotationY - docGroup.rotation.y) * 0.1;
+      docGroup.rotation.x += (targetRotationX - docGroup.rotation.x) * 0.1;
+
+      // 2. Procedural Breathing
+      const breathCycle = Math.sin(time * 2.2);
+      if (docTorso) {
+        docTorso.position.y = breathCycle * 0.015;
+        docTorso.scale.set(1 + breathCycle * 0.008, 1, 1 + breathCycle * 0.008);
+      }
+
+      // 3. Procedural Blinking
+      if (time > nextBlinkTime && !isBlinking) {
+        isBlinking = true;
+        blinkProgress = 0;
+      }
+
+      if (isBlinking) {
+        blinkProgress += delta * 12.0;
+        const lidY = 0.06 - Math.sin(Math.min(blinkProgress, Math.PI)) * 0.045;
+        docEyelids.forEach(lid => { lid.position.y = lidY; });
+        if (blinkProgress >= Math.PI) {
+          isBlinking = false;
+          nextBlinkTime = time + 2.5 + Math.random() * 3.5;
+          docEyelids.forEach(lid => { lid.position.y = 0.06; });
+        }
+      }
+
+      // 4. State-Driven Animations
+      if (doctorState === 'idle') {
+        // Natural gaze & head sway
+        const targetHeadY = (mouseNDC.x * 0.35);
+        const targetHeadX = (-mouseNDC.y * 0.25);
+        docHeadPivot.rotation.y += (targetHeadY - docHeadPivot.rotation.y) * 0.06;
+        docHeadPivot.rotation.x += (targetHeadX - docHeadPivot.rotation.x) * 0.06;
+        docHeadPivot.rotation.z = Math.sin(time * 1.1) * 0.025;
+        if (docMouth) docMouth.scale.set(1, 1, 1);
+
+        // Slow gyro rings
+        if (docOrbitGroup) {
+          docOrbitGroup.ring1.rotation.z += 0.004;
+          docOrbitGroup.ring2.rotation.x += 0.005;
+          docOrbitGroup.ring3.rotation.y += 0.003;
+          docParticleSystem.rotation.y += 0.002;
+        }
+
+        // Stethoscope gentle idle pulse
+        if (docStethLight) {
+          docStethLight.intensity = 1.0 + Math.sin(time * 2.2) * 0.4;
+        }
+
+      } else if (doctorState === 'listening') {
+        // Leaning in attentively
+        const targetHeadX = 0.16 + Math.sin(time * 2.5) * 0.02;
+        const targetHeadY = (mouseNDC.x * 0.30);
+        docHeadPivot.rotation.x += (targetHeadX - docHeadPivot.rotation.x) * 0.08;
+        docHeadPivot.rotation.y += (targetHeadY - docHeadPivot.rotation.y) * 0.08;
+        docHeadPivot.rotation.z = 0.08;
+        if (docMouth) docMouth.scale.set(1, 1, 1);
+
+        // Accelerated rings
+        if (docOrbitGroup) {
+          docOrbitGroup.ring1.rotation.z += 0.012;
+          docOrbitGroup.ring2.rotation.x += 0.014;
+          docOrbitGroup.ring3.rotation.y += 0.010;
+          docParticleSystem.rotation.y += 0.008;
+        }
+
+        if (docStethLight) {
+          docStethLight.intensity = 1.6 + Math.sin(time * 4.0) * 0.6;
+        }
+
+      } else if (doctorState === 'thinking') {
+        // Pondering / Diagnostic computation
+        const targetHeadX = -0.10 + Math.sin(time * 3.5) * 0.03;
+        const targetHeadY = 0.22 + Math.sin(time * 1.8) * 0.05;
+        docHeadPivot.rotation.x += (targetHeadX - docHeadPivot.rotation.x) * 0.08;
+        docHeadPivot.rotation.y += (targetHeadY - docHeadPivot.rotation.y) * 0.08;
+        docHeadPivot.rotation.z = -0.06;
+        if (docMouth) docMouth.scale.set(1, 0.8, 1);
+
+        // Rapid gyro spin
+        if (docOrbitGroup) {
+          docOrbitGroup.ring1.rotation.z += 0.035;
+          docOrbitGroup.ring2.rotation.x += 0.040;
+          docOrbitGroup.ring3.rotation.y += 0.030;
+          docParticleSystem.rotation.y += 0.025;
+        }
+
+        // Stethoscope rapid diagnostic heartbeat
+        if (docStethLight) {
+          docStethLight.intensity = 2.0 + Math.sin(time * 8.0) * 1.0;
+        }
+
+      } else if (doctorState === 'speaking') {
+        // Affirmed nodding + talking articulation
+        const nod = Math.sin(time * 6.0) * 0.07;
+        docHeadPivot.rotation.x += (nod - docHeadPivot.rotation.x) * 0.15;
+        docHeadPivot.rotation.y += (0 - docHeadPivot.rotation.y) * 0.08;
+        docHeadPivot.rotation.z = Math.sin(time * 3.0) * 0.02;
+
+        // Mouth speech opening/closing
+        if (docMouth) {
+          const mouthScale = 1.0 + Math.abs(Math.sin(time * 14.0)) * 2.2;
+          docMouth.scale.set(1, mouthScale, 1);
+        }
+
+        // Harmonious orbit
+        if (docOrbitGroup) {
+          docOrbitGroup.ring1.rotation.z += 0.015;
+          docOrbitGroup.ring2.rotation.x += 0.012;
+          docOrbitGroup.ring3.rotation.y += 0.015;
+          docParticleSystem.rotation.y += 0.010;
+        }
+
+        if (docStethLight) {
+          docStethLight.intensity = 1.8 + Math.sin(time * 5.0) * 0.7;
+        }
+
+      } else if (doctorState === 'greeting') {
+        // Enthusiastic wave nod
+        const nod = Math.sin(time * 8.0) * 0.12;
+        docHeadPivot.rotation.x += (nod - docHeadPivot.rotation.x) * 0.2;
+        docHeadPivot.rotation.z = 0.12;
+        if (docMouth) {
+          docMouth.scale.set(1.2, 1.4, 1);
+        }
+        if (docOrbitGroup) {
+          docOrbitGroup.ring1.rotation.z += 0.02;
+          docParticleSystem.rotation.y += 0.015;
+        }
+      }
+
+      // Render
+      docRenderer.render(docScene, docCamera);
+    }
+
+    // ========================================================
+    // 13. INTERACTIVE 3D MEDICAL / DNA BACKGROUND ENGINE
+    // ========================================================
+    let bgScene, bgCamera, bgRenderer, bgDnaGroup, bgConstellation;
+    let bgMouse = { x: 0, y: 0 };
+    let bgTargetRotation = { x: 0, y: 0 };
+
+    function initBackground3D() {
+      const canvas = document.getElementById('bg-3d-canvas');
+      if (!canvas || typeof THREE === 'undefined') return;
+
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      bgScene = new THREE.Scene();
+      bgCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
+      bgCamera.position.set(0, 0, 18);
+
+      bgRenderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true,
+        alpha: true,
+        powerPreference: 'high-performance'
+      });
+      bgRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+      bgRenderer.setSize(width, height);
+
+      // Ambient & directional lights
+      const bgAmb = new THREE.AmbientLight(0x0f172a, 1.0);
+      bgScene.add(bgAmb);
+      const bgLight1 = new THREE.PointLight(0x0284c7, 2.5, 35);
+      bgLight1.position.set(12, 10, 8);
+      bgScene.add(bgLight1);
+      const bgLight2 = new THREE.PointLight(0xa855f7, 2.0, 35);
+      bgLight2.position.set(-12, -8, 6);
+      bgScene.add(bgLight2);
+
+      // --- 1. Procedural 3D DNA Double Helix ---
+      bgDnaGroup = new THREE.Group();
+      bgDnaGroup.position.set(7, 0, -2);
+      bgDnaGroup.rotation.z = Math.PI / 6;
+      bgScene.add(bgDnaGroup);
+
+      const strand1Mat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+      const strand2Mat = new THREE.MeshBasicMaterial({ color: 0xc084fc });
+      const rungMat = new THREE.LineBasicMaterial({ color: 0x1e3a8a, transparent: true, opacity: 0.5 });
+
+      const nodeGeom = new THREE.SphereGeometry(0.12, 12, 12);
+      const numPairs = 36;
+      const helixRadius = 1.6;
+      const helixHeight = 22;
+      const stepY = helixHeight / numPairs;
+      const twistSpeed = 0.35;
+
+      for (let i = 0; i < numPairs; i++) {
+        const y = (i - numPairs / 2) * stepY;
+        const angle = i * twistSpeed;
+
+        const x1 = Math.cos(angle) * helixRadius;
+        const z1 = Math.sin(angle) * helixRadius;
+        const sphere1 = new THREE.Mesh(nodeGeom, strand1Mat);
+        sphere1.position.set(x1, y, z1);
+        bgDnaGroup.add(sphere1);
+
+        const x2 = Math.cos(angle + Math.PI) * helixRadius;
+        const z2 = Math.sin(angle + Math.PI) * helixRadius;
+        const sphere2 = new THREE.Mesh(nodeGeom, strand2Mat);
+        sphere2.position.set(x2, y, z2);
+        bgDnaGroup.add(sphere2);
+
+        // Connecting base-pair rung
+        const lineGeom = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(x1, y, z1),
+          new THREE.Vector3(x2, y, z2)
+        ]);
+        const rung = new THREE.Line(lineGeom, rungMat);
+        bgDnaGroup.add(rung);
+      }
+
+      // --- 2. Floating Neural Constellation / Molecular Lattice ---
+      const starCount = 140;
+      const starGeom = new THREE.BufferGeometry();
+      const starPos = new Float32Array(starCount * 3);
+      for (let i = 0; i < starCount * 3; i += 3) {
+        starPos[i] = (Math.random() - 0.5) * 36;
+        starPos[i + 1] = (Math.random() - 0.5) * 28;
+        starPos[i + 2] = (Math.random() - 0.5) * 16 - 2;
+      }
+      starGeom.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+      const starMat = new THREE.PointsMaterial({
+        color: 0x38bdf8,
+        size: 0.08,
+        transparent: true,
+        opacity: 0.65,
+        blending: THREE.AdditiveBlending
+      });
+      bgConstellation = new THREE.Points(starGeom, starMat);
+      bgScene.add(bgConstellation);
+
+      // Mouse Parallax
+      window.addEventListener('mousemove', (e) => {
+        bgMouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        bgMouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        bgTargetRotation.y = bgMouse.x * 0.15;
+        bgTargetRotation.x = -bgMouse.y * 0.10;
+      });
+
+      window.addEventListener('resize', () => {
+        if (!bgCamera || !bgRenderer) return;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        bgCamera.aspect = w / h;
+        bgCamera.updateProjectionMatrix();
+        bgRenderer.setSize(w, h);
+      });
+
+      animateBackground();
+    }
+
+    function animateBackground() {
+      requestAnimationFrame(animateBackground);
+      if (!bgRenderer || !bgScene || !bgCamera) return;
+
+      // Parallax smooth lerp
+      bgScene.rotation.y += (bgTargetRotation.y - bgScene.rotation.y) * 0.04;
+      bgScene.rotation.x += (bgTargetRotation.x - bgScene.rotation.x) * 0.04;
+
+      // Rotate DNA double helix
+      if (bgDnaGroup) {
+        bgDnaGroup.rotation.y += 0.006;
+      }
+
+      // Drift constellation
+      if (bgConstellation) {
+        bgConstellation.rotation.y += 0.001;
+        bgConstellation.rotation.z += 0.0005;
+      }
+
+      bgRenderer.render(bgScene, bgCamera);
+    }
+
+    // Auto-initialize when window loads or immediately
+    function startEngines() {
+      if (typeof initBackground3D === 'function') initBackground3D();
+      if (typeof initDoctor3D === 'function') initDoctor3D();
+    }
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(startEngines, 100);
+    } else {
+      window.addEventListener('DOMContentLoaded', startEngines);
     }
   </script>
 </body>
