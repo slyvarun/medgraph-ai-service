@@ -391,34 +391,150 @@
       color: #ffffff;
     }
 
-    /* THINKING INDICATOR */
+    /* CLINICAL PAPER DIAGNOSIS WRITING ANIMATION */
     .doctor-thinking {
-      background: rgba(15, 23, 42, 0.95);
+      background: rgba(14, 21, 38, 0.85);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 14px 16px;
-      max-width: 90%;
+      padding: 16px 18px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(14px);
+      position: relative;
     }
 
-    .doctor-thinking-header {
+    .paper-diagnosis-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.12);
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+
+    .paper-rx-badge {
+      font-size: 11px;
+      font-weight: 700;
+      color: #93c5fd;
+      background: rgba(37, 99, 235, 0.22);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .paper-status-title {
+      font-size: 13px;
       font-weight: 600;
-      font-size: 12.5px;
-      color: #f1f5f9;
-      margin-bottom: 8px;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .doctor-steps {
+    .paper-live-pill {
+      font-size: 11px;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 500;
+    }
+
+    .paper-live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #38bdf8;
+      box-shadow: 0 0 8px #38bdf8;
+      animation: pulseLiveDot 1.4s infinite ease-in-out;
+    }
+
+    @keyframes pulseLiveDot {
+      0%, 100% { opacity: 0.35; transform: scale(0.85); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    /* Paper Pad Surface & Animated Sketch */
+    .paper-sketch-wrapper {
+      background: rgba(8, 12, 22, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 12px 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .paper-sketch-svg {
+      width: 100%;
+      height: 64px;
+      display: block;
+    }
+
+    .ink-stroke-1 {
+      stroke-dasharray: 240;
+      stroke-dashoffset: 240;
+      animation: drawInkLine 2.2s ease-in-out infinite alternate;
+    }
+
+    .ink-stroke-2 {
+      stroke-dasharray: 240;
+      stroke-dashoffset: 240;
+      animation: drawInkLine 2.5s ease-in-out 0.35s infinite alternate;
+    }
+
+    .ink-stroke-3 {
+      stroke-dasharray: 240;
+      stroke-dashoffset: 240;
+      animation: drawInkLine 2.0s ease-in-out 0.7s infinite alternate;
+    }
+
+    @keyframes drawInkLine {
+      0% { stroke-dashoffset: 240; }
+      100% { stroke-dashoffset: 0; }
+    }
+
+    .writing-pen-group {
+      animation: writePenMotion 2.4s ease-in-out infinite alternate;
+    }
+
+    @keyframes writePenMotion {
+      0% { transform: translate(32px, 16px) rotate(-18deg); }
+      33% { transform: translate(110px, 32px) rotate(-24deg); }
+      66% { transform: translate(75px, 48px) rotate(-16deg); }
+      100% { transform: translate(185px, 26px) rotate(-22deg); }
+    }
+
+    .paper-diagnosis-notes {
+      margin-top: 10px;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 6px;
       font-size: 11.5px;
       color: var(--muted);
       font-family: 'JetBrains Mono', monospace;
     }
 
-    .doctor-step.active {
+    .diagnosis-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0.45;
+      transition: opacity 0.3s ease, color 0.3s ease;
+    }
+
+    .diagnosis-line.active {
+      opacity: 1;
       color: #93c5fd;
-      font-weight: 500;
+    }
+
+    .diagnosis-line-bullet {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #60a5fa;
     }
 
     /* COMPOSER */
@@ -1442,14 +1558,54 @@
       const t = document.createElement('div');
       t.className = 'doctor-thinking';
       t.innerHTML = `
-        <div class="doctor-thinking-header">
-          Traversing NIH RxNorm & openFDA Knowledge Graph...
+        <div class="paper-diagnosis-header">
+          <div class="paper-status-title">
+            <span class="paper-rx-badge">Rx CLINICAL CHART</span>
+            <span>Writing Diagnosis on Medical Record...</span>
+          </div>
+          <div class="paper-live-pill">
+            <span class="paper-live-dot"></span> Drafting Notes
+          </div>
         </div>
-        <div class="doctor-steps">
-          <div class="doctor-step step1 active">1. Resolving clinical symptoms to semantic target entities...</div>
-          <div class="doctor-step step2">2. Traversing knowledge graph to active pharmaceutical ingredients...</div>
-          <div class="doctor-step step3">3. Ingesting openFDA label contraindications & generic equivalents...</div>
-          <div class="doctor-step step4">4. Formulating reviewable evidence summary with citations...</div>
+
+        <div class="paper-sketch-wrapper">
+          <svg viewBox="0 0 240 64" fill="none" class="paper-sketch-svg">
+            <!-- Prescription Rx Symbol -->
+            <text x="6" y="24" fill="#3b82f6" font-size="16" font-family="'Inter', sans-serif" font-weight="700">℞</text>
+            
+            <!-- Ruled Notebook Paper Background Lines -->
+            <line x1="28" y1="20" x2="235" y2="20" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+            <line x1="28" y1="36" x2="235" y2="36" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+            <line x1="28" y1="52" x2="235" y2="52" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+            
+            <!-- Dynamic Cursive Diagnosis Ink Strokes -->
+            <path class="ink-stroke-1" d="M30 19 Q 45 13, 62 19 T 95 19 T 130 19 T 168 19 T 205 19" stroke="#93c5fd" stroke-width="2" stroke-linecap="round" fill="none"/>
+            <path class="ink-stroke-2" d="M30 35 Q 48 29, 66 35 T 102 35 T 142 35 T 182 35 T 220 35" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+            <path class="ink-stroke-3" d="M30 51 Q 45 46, 60 51 T 88 51 T 118 51 T 150 51" stroke="#38bdf8" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+            
+            <!-- Doctor Pen / Stylus Writing on Paper -->
+            <g class="writing-pen-group">
+              <path d="M0 0 L-3 -14 L3 -14 Z" fill="#e2e8f0"/>
+              <polygon points="0,0 -1.5,-5 1.5,-5" fill="#38bdf8"/>
+              <line x1="0" y1="0" x2="-7" y2="-28" stroke="#2563eb" stroke-width="3.5" stroke-linecap="round"/>
+              <circle cx="0" cy="0" r="1.5" fill="#60a5fa"/>
+            </g>
+          </svg>
+        </div>
+
+        <div class="paper-diagnosis-notes">
+          <div class="diagnosis-line line-symptom active">
+            <span class="diagnosis-line-bullet"></span>
+            <span>Documenting patient symptoms & clinical indications...</span>
+          </div>
+          <div class="diagnosis-line line-comp">
+            <span class="diagnosis-line-bullet"></span>
+            <span>Synthesizing active pharmacological ingredients & contraindications...</span>
+          </div>
+          <div class="diagnosis-line line-rx">
+            <span class="diagnosis-line-bullet"></span>
+            <span>Formulating bioequivalent generic prescription plan...</span>
+          </div>
         </div>
       `;
 
@@ -1457,9 +1613,8 @@
       log.appendChild(wrap);
       log.scrollTop = log.scrollHeight;
 
-      setTimeout(() => { document.querySelector('.step2')?.classList.add('active'); }, 400);
-      setTimeout(() => { document.querySelector('.step3')?.classList.add('active'); }, 900);
-      setTimeout(() => { document.querySelector('.step4')?.classList.add('active'); }, 1400);
+      setTimeout(() => { document.querySelector('.line-comp')?.classList.add('active'); }, 500);
+      setTimeout(() => { document.querySelector('.line-rx')?.classList.add('active'); }, 1200);
     }
 
     function hideDoctorThinking() {
