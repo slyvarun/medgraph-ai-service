@@ -11,7 +11,7 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <!-- Vis-network for Interactive Graph Traversal Visualization -->
   <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-  <!-- Three.js for 3D Ambient DNA Background -->
+  <!-- Three.js for Continuous 3D Background & Welcome Screen Animations -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
   <!-- Google Fonts: Fraunces (Editorial High-Trust Serif) + Inter (Clean Sans) + JetBrains Mono -->
@@ -24,16 +24,16 @@
   <style>
     :root {
       --bg: #070b14;
-      --bg-panel: rgba(13, 20, 36, 0.88);
-      --bg-card: rgba(19, 29, 52, 0.72);
-      --bg-card-hover: rgba(26, 40, 72, 0.88);
+      --bg-panel: rgba(10, 16, 31, 0.62);
+      --bg-card: rgba(19, 29, 52, 0.78);
+      --bg-card-hover: rgba(26, 40, 72, 0.92);
       --header-bg: rgba(9, 14, 27, 0.94);
-      --border: rgba(56, 189, 248, 0.16);
+      --border: rgba(56, 189, 248, 0.18);
       --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-hover: rgba(56, 189, 248, 0.45);
+      --border-hover: rgba(56, 189, 248, 0.5);
       --primary: #0284c7;
       --primary-neon: #38bdf8;
-      --primary-glow: 0 0 25px rgba(56, 189, 248, 0.3);
+      --primary-glow: 0 0 25px rgba(56, 189, 248, 0.35);
       --accent-emerald: #10b981;
       --accent-purple: #c084fc;
       --accent-amber: #f59e0b;
@@ -67,7 +67,7 @@
       position: relative;
     }
 
-    /* ── 3D AMBIENT BACKGROUND CANVAS & CYBER GRID ── */
+    /* ── 3D CONTINUOUS BACKGROUND CANVAS & CYBER GRID ── */
     #bg-3d-canvas {
       position: fixed;
       top: 0;
@@ -76,7 +76,7 @@
       height: 100vh;
       z-index: 0;
       pointer-events: none;
-      opacity: 0.65;
+      opacity: 0.92;
     }
 
     .cyber-grid-overlay {
@@ -84,9 +84,9 @@
       inset: 0;
       background-image: 
         radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.06) 0%, transparent 60%),
-        linear-gradient(to right, rgba(56, 189, 248, 0.025) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(56, 189, 248, 0.025) 1px, transparent 1px);
-      background-size: 100% 100%, 40px 40px, 40px 40px;
+        linear-gradient(to right, rgba(56, 189, 248, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(56, 189, 248, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 42px 42px, 42px 42px;
       z-index: 1;
       pointer-events: none;
     }
@@ -190,7 +190,7 @@
       cursor: pointer;
     }
 
-    /* Doctronic-inspired Geometric Radiant Medical Cross Emblem */
+    /* Geometric Radiant Medical Cross Emblem */
     .radiant-cross-logo {
       width: 36px;
       height: 36px;
@@ -205,7 +205,7 @@
       width: 100%;
       height: 100%;
       filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.45));
-      transition: transform 0.3s ease;
+      transition: transform 0.4s ease;
     }
 
     .logo-group:hover .radiant-cross-svg {
@@ -344,7 +344,7 @@
       flex-direction: column;
       border-right: 1px solid var(--border);
       background: var(--bg-panel);
-      backdrop-filter: blur(20px);
+      backdrop-filter: blur(16px) saturate(130%);
       min-height: 0;
       position: relative;
     }
@@ -360,7 +360,7 @@
       scroll-behavior: smooth;
     }
 
-    /* DOCTRONIC-STYLE HERO WELCOME CONTAINER */
+    /* ── 4. WELCOME SCREEN WITH DEDICATED 3D ANIMATION ── */
     .welcome-container {
       display: flex;
       flex-direction: column;
@@ -371,17 +371,72 @@
       padding: 10px 16px;
       max-width: 580px;
       align-self: center;
+      animation: welcomeFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .welcome-radiant-badge {
-      width: 58px;
-      height: 58px;
-      margin-bottom: 16px;
+    @keyframes welcomeFadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Interactive 3D Welcome Hero Stage & Holographic Aura */
+    .welcome-3d-stage {
+      position: relative;
+      width: 130px;
+      height: 130px;
+      margin: 0 auto 12px auto;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: radial-gradient(circle, rgba(56, 189, 248, 0.18) 0%, transparent 70%);
+      user-select: none;
+    }
+
+    .welcome-3d-aura {
+      position: absolute;
+      inset: -12px;
       border-radius: 50%;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.28) 0%, rgba(129, 140, 248, 0.12) 45%, transparent 70%);
+      filter: blur(14px);
+      animation: auraPulse 3.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes auraPulse {
+      0%, 100% { transform: scale(1); opacity: 0.75; }
+      50% { transform: scale(1.18); opacity: 1; }
+    }
+
+    #welcome-3d-canvas {
+      width: 130px;
+      height: 130px;
+      display: block;
+      cursor: grab;
+      z-index: 2;
+    }
+
+    #welcome-3d-canvas:active {
+      cursor: grabbing;
+    }
+
+    .welcome-badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #38bdf8;
+      margin-bottom: 12px;
+      letter-spacing: 0.2px;
+      animation: floatSlow 4s ease-in-out infinite;
+    }
+
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
     }
 
     .welcome-headline {
@@ -412,9 +467,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 14px;
+      gap: 12px;
       flex-wrap: wrap;
-      margin-bottom: 24px;
+      margin-bottom: 22px;
     }
 
     .welcome-trust-pill {
@@ -428,9 +483,10 @@
       padding: 4px 10px;
       border-radius: 14px;
       border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(8px);
     }
 
-    /* Purpose-driven 2x2 Interactive Prompt Grid */
+    /* Purpose-driven 2x2 Interactive Prompt Grid with Shimmer */
     .prompt-cards-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -440,23 +496,40 @@
     }
 
     .prompt-card {
-      background: rgba(19, 29, 52, 0.65);
+      position: relative;
+      background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
+      border-radius: 14px;
+      padding: 13px 15px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      backdrop-filter: blur(10px);
+      gap: 5px;
+      backdrop-filter: blur(12px);
+      overflow: hidden;
+    }
+
+    .prompt-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.15), transparent);
+      transition: left 0.6s ease;
+    }
+
+    .prompt-card:hover::before {
+      left: 100%;
     }
 
     .prompt-card:hover {
-      background: rgba(26, 42, 74, 0.9);
-      border-color: var(--primary-neon);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.18);
+      background: var(--bg-card-hover);
+      border-color: #38bdf8;
+      transform: translateY(-3px) scale(1.01);
+      box-shadow: 0 8px 25px rgba(56, 189, 248, 0.22);
     }
 
     .prompt-card-header {
@@ -529,7 +602,7 @@
     }
 
     .msg.bot .bubble {
-      background: rgba(17, 26, 46, 0.88);
+      background: rgba(17, 26, 46, 0.92);
       border: 1px solid var(--border);
       color: #f1f5f9;
       border-bottom-left-radius: 2px;
@@ -636,7 +709,7 @@
 
     /* Doctor Thinking Diagnostic Progress UI */
     .doctor-thinking {
-      background: rgba(10, 16, 31, 0.92);
+      background: rgba(10, 16, 31, 0.94);
       border: 1px solid rgba(56, 189, 248, 0.3);
       border-radius: 12px;
       padding: 14px 16px;
@@ -773,8 +846,8 @@
     .panel-grounding {
       display: flex;
       flex-direction: column;
-      background: rgba(10, 15, 29, 0.82);
-      backdrop-filter: blur(20px);
+      background: rgba(9, 14, 27, 0.65);
+      backdrop-filter: blur(16px) saturate(130%);
       min-height: 0;
     }
 
@@ -851,7 +924,7 @@
     #graph-canvas {
       width: 100%;
       height: 100%;
-      background: radial-gradient(circle at 50% 50%, #0d1527 0%, #060913 100%);
+      background: transparent;
     }
 
     .graph-legend {
@@ -925,7 +998,7 @@
     }
 
     .raw-card {
-      background: rgba(17, 26, 46, 0.75);
+      background: rgba(17, 26, 46, 0.85);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 14px 16px;
@@ -935,7 +1008,7 @@
 
     .raw-card:hover {
       border-color: rgba(56, 189, 248, 0.4);
-      background: rgba(22, 34, 60, 0.88);
+      background: rgba(22, 34, 60, 0.92);
     }
 
     .raw-card-header {
@@ -1094,7 +1167,7 @@
 </head>
 
 <body>
-  <!-- 3D INTERACTIVE MEDICAL/DNA BACKGROUND CANVAS -->
+  <!-- 3D CONTINUOUS BACKGROUND CANVAS (DUAL HELIX, BIO-WAVE & PARTICLES) -->
   <canvas id="bg-3d-canvas"></canvas>
   <div class="cyber-grid-overlay"></div>
 
@@ -1186,14 +1259,16 @@
     <!-- PANEL 1: CONVERSATIONAL CONSULTATION -->
     <div class="panel-chat">
       <div id="log">
-        <!-- DOCTRONIC-STYLE WELCOME SCREEN -->
+        <!-- DOCTRONIC-STYLE WELCOME SCREEN WITH 3D ANIMATED MOLECULAR CORE -->
         <div id="welcome" class="welcome-container">
-          <div class="welcome-radiant-badge">
-            <svg width="40" height="40" viewBox="0 0 100 100" fill="none">
-              <rect x="42" y="8" width="16" height="84" rx="8" fill="#38bdf8" />
-              <rect x="8" y="42" width="84" height="16" rx="8" fill="#38bdf8" />
-              <path d="M50 30 L54 44 L68 48 L54 52 L50 66 L46 52 L32 48 L46 44 Z" fill="#ffffff" />
-            </svg>
+          <div class="welcome-3d-stage" id="welcome-stage">
+            <div class="welcome-3d-aura"></div>
+            <canvas id="welcome-3d-canvas"></canvas>
+          </div>
+
+          <div class="welcome-badge-pill">
+            <span class="live-pulse-dot"></span>
+            <span>Autonomous Clinical Pharmacotherapy Co-Pilot</span>
           </div>
 
           <h2 class="welcome-headline">Hi, I’m <span class="brand-highlight">MedGraph Nexus</span></h2>
@@ -1813,6 +1888,10 @@
     function removeWelcome() {
       const w = document.getElementById('welcome');
       if (w) w.remove();
+      if (welcomeAnimId) {
+        cancelAnimationFrame(welcomeAnimId);
+        welcomeAnimId = null;
+      }
     }
 
     function startNewConsult() {
@@ -1820,12 +1899,14 @@
       const log = document.getElementById('log');
       log.innerHTML = `
         <div id="welcome" class="welcome-container">
-          <div class="welcome-radiant-badge">
-            <svg width="40" height="40" viewBox="0 0 100 100" fill="none">
-              <rect x="42" y="8" width="16" height="84" rx="8" fill="#38bdf8" />
-              <rect x="8" y="42" width="84" height="16" rx="8" fill="#38bdf8" />
-              <path d="M50 30 L54 44 L68 48 L54 52 L50 66 L46 52 L32 48 L46 44 Z" fill="#ffffff" />
-            </svg>
+          <div class="welcome-3d-stage" id="welcome-stage">
+            <div class="welcome-3d-aura"></div>
+            <canvas id="welcome-3d-canvas"></canvas>
+          </div>
+
+          <div class="welcome-badge-pill">
+            <span class="live-pulse-dot"></span>
+            <span>Autonomous Clinical Pharmacotherapy Co-Pilot</span>
           </div>
 
           <h2 class="welcome-headline">Hi, I’m <span class="brand-highlight">MedGraph Nexus</span></h2>
@@ -1884,6 +1965,9 @@
       inp.value = '';
       inp.style.height = 'auto';
       inp.focus();
+
+      // Revive the 3D welcome animation
+      setTimeout(initWelcome3D, 50);
     }
 
     function addMsg(role, rawContent, isError = false) {
@@ -2035,16 +2119,53 @@
     }
 
     // ========================================================
-    // 12. INTERACTIVE 3D MEDICAL / DNA BACKGROUND ENGINE
+    // 12. CONTINUOUS FULL-VIEWPORT 3D BACKGROUND ENGINE
     // ========================================================
-    let bgScene, bgCamera, bgRenderer, bgDnaGroup, bgConstellation;
+    let bgScene, bgCamera, bgRenderer, bgDnaRight, bgDnaLeft, bgConstellation, bgWaveLattice;
     let bgMouse = { x: 0, y: 0 };
     let bgTargetRotation = { x: 0, y: 0 };
+    let bgWavePositions, bgWaveCount = 450;
+    let bgClock = null;
+
+    function buildDnaHelix(color1, color2, radius, height, numPairs, twist) {
+      const group = new THREE.Group();
+      const nodeGeom = new THREE.SphereGeometry(0.12, 12, 12);
+      const mat1 = new THREE.MeshBasicMaterial({ color: color1 });
+      const mat2 = new THREE.MeshBasicMaterial({ color: color2 });
+      const rungMat = new THREE.LineBasicMaterial({ color: 0x1e3a8a, transparent: true, opacity: 0.5 });
+      const stepY = height / numPairs;
+
+      for (let i = 0; i < numPairs; i++) {
+        const y = (i - numPairs / 2) * stepY;
+        const angle = i * twist;
+
+        const x1 = Math.cos(angle) * radius;
+        const z1 = Math.sin(angle) * radius;
+        const s1 = new THREE.Mesh(nodeGeom, mat1);
+        s1.position.set(x1, y, z1);
+        group.add(s1);
+
+        const x2 = Math.cos(angle + Math.PI) * radius;
+        const z2 = Math.sin(angle + Math.PI) * radius;
+        const s2 = new THREE.Mesh(nodeGeom, mat2);
+        s2.position.set(x2, y, z2);
+        group.add(s2);
+
+        const lineGeom = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(x1, y, z1),
+          new THREE.Vector3(x2, y, z2)
+        ]);
+        const rung = new THREE.Line(lineGeom, rungMat);
+        group.add(rung);
+      }
+      return group;
+    }
 
     function initBackground3D() {
       const canvas = document.getElementById('bg-3d-canvas');
       if (!canvas || typeof THREE === 'undefined') return;
 
+      bgClock = new THREE.Clock();
       const width = window.innerWidth;
       const height = window.innerHeight;
 
@@ -2061,71 +2182,72 @@
       bgRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
       bgRenderer.setSize(width, height);
 
-      const bgAmb = new THREE.AmbientLight(0x0f172a, 1.0);
+      const bgAmb = new THREE.AmbientLight(0x0a1122, 1.2);
       bgScene.add(bgAmb);
-      const bgLight1 = new THREE.PointLight(0x0284c7, 2.5, 35);
-      bgLight1.position.set(12, 10, 8);
+      const bgLight1 = new THREE.PointLight(0x0284c7, 3.0, 40);
+      bgLight1.position.set(14, 10, 8);
       bgScene.add(bgLight1);
-      const bgLight2 = new THREE.PointLight(0x818cf8, 2.0, 35);
-      bgLight2.position.set(-12, -8, 6);
+      const bgLight2 = new THREE.PointLight(0x818cf8, 2.5, 40);
+      bgLight2.position.set(-14, -8, 6);
       bgScene.add(bgLight2);
 
-      // --- 1. Procedural 3D DNA Double Helix ---
-      bgDnaGroup = new THREE.Group();
-      bgDnaGroup.position.set(7, 0, -2);
-      bgDnaGroup.rotation.z = Math.PI / 6;
-      bgScene.add(bgDnaGroup);
+      // --- 1. Dual Continuous DNA Helices ---
+      // Right Helix (Cyan & Indigo)
+      bgDnaRight = buildDnaHelix(0x38bdf8, 0x818cf8, 1.6, 24, 38, 0.35);
+      bgDnaRight.position.set(8.5, 0, -2);
+      bgDnaRight.rotation.z = Math.PI / 5.5;
+      bgScene.add(bgDnaRight);
 
-      const strand1Mat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-      const strand2Mat = new THREE.MeshBasicMaterial({ color: 0x818cf8 });
-      const rungMat = new THREE.LineBasicMaterial({ color: 0x1e3a8a, transparent: true, opacity: 0.5 });
+      // Left Helix (Emerald & Cyan)
+      bgDnaLeft = buildDnaHelix(0x10b981, 0x38bdf8, 1.5, 22, 34, -0.32);
+      bgDnaLeft.position.set(-9.5, -1, -4);
+      bgDnaLeft.rotation.z = -Math.PI / 6;
+      bgScene.add(bgDnaLeft);
 
-      const nodeGeom = new THREE.SphereGeometry(0.12, 12, 12);
-      const numPairs = 36;
-      const helixRadius = 1.6;
-      const helixHeight = 22;
-      const stepY = helixHeight / numPairs;
-      const twistSpeed = 0.35;
+      // --- 2. Undulating 3D Molecular Wave Lattice (Spans full viewport width) ---
+      const waveGeom = new THREE.BufferGeometry();
+      const cols = 28, rows = 16;
+      bgWaveCount = cols * rows;
+      bgWavePositions = new Float32Array(bgWaveCount * 3);
 
-      for (let i = 0; i < numPairs; i++) {
-        const y = (i - numPairs / 2) * stepY;
-        const angle = i * twistSpeed;
-
-        const x1 = Math.cos(angle) * helixRadius;
-        const z1 = Math.sin(angle) * helixRadius;
-        const sphere1 = new THREE.Mesh(nodeGeom, strand1Mat);
-        sphere1.position.set(x1, y, z1);
-        bgDnaGroup.add(sphere1);
-
-        const x2 = Math.cos(angle + Math.PI) * helixRadius;
-        const z2 = Math.sin(angle + Math.PI) * helixRadius;
-        const sphere2 = new THREE.Mesh(nodeGeom, strand2Mat);
-        sphere2.position.set(x2, y, z2);
-        bgDnaGroup.add(sphere2);
-
-        const lineGeom = new THREE.BufferGeometry().setFromPoints([
-          new THREE.Vector3(x1, y, z1),
-          new THREE.Vector3(x2, y, z2)
-        ]);
-        const rung = new THREE.Line(lineGeom, rungMat);
-        bgDnaGroup.add(rung);
+      let idx = 0;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const x = (c - cols / 2) * 1.8;
+          const z = (r - rows / 2) * 1.8 - 2;
+          const y = -4.5;
+          bgWavePositions[idx] = x;
+          bgWavePositions[idx + 1] = y;
+          bgWavePositions[idx + 2] = z;
+          idx += 3;
+        }
       }
+      waveGeom.setAttribute('position', new THREE.BufferAttribute(bgWavePositions, 3));
+      const waveMat = new THREE.PointsMaterial({
+        color: 0x0ea5e9,
+        size: 0.09,
+        transparent: true,
+        opacity: 0.65,
+        blending: THREE.AdditiveBlending
+      });
+      bgWaveLattice = new THREE.Points(waveGeom, waveMat);
+      bgScene.add(bgWaveLattice);
 
-      // --- 2. Floating Molecular Constellation ---
-      const starCount = 140;
+      // --- 3. Floating Molecular Constellation ---
+      const starCount = 180;
       const starGeom = new THREE.BufferGeometry();
       const starPos = new Float32Array(starCount * 3);
       for (let i = 0; i < starCount * 3; i += 3) {
-        starPos[i] = (Math.random() - 0.5) * 36;
-        starPos[i + 1] = (Math.random() - 0.5) * 28;
-        starPos[i + 2] = (Math.random() - 0.5) * 16 - 2;
+        starPos[i] = (Math.random() - 0.5) * 44;
+        starPos[i + 1] = (Math.random() - 0.5) * 32;
+        starPos[i + 2] = (Math.random() - 0.5) * 20 - 4;
       }
       starGeom.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
       const starMat = new THREE.PointsMaterial({
         color: 0x38bdf8,
         size: 0.08,
         transparent: true,
-        opacity: 0.65,
+        opacity: 0.7,
         blending: THREE.AdditiveBlending
       });
       bgConstellation = new THREE.Points(starGeom, starMat);
@@ -2134,7 +2256,7 @@
       window.addEventListener('mousemove', (e) => {
         bgMouse.x = (e.clientX / window.innerWidth) * 2 - 1;
         bgMouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-        bgTargetRotation.y = bgMouse.x * 0.15;
+        bgTargetRotation.y = bgMouse.x * 0.16;
         bgTargetRotation.x = -bgMouse.y * 0.10;
       });
 
@@ -2152,25 +2274,206 @@
 
     function animateBackground() {
       requestAnimationFrame(animateBackground);
-      if (!bgRenderer || !bgScene || !bgCamera) return;
+      if (!bgRenderer || !bgScene || !bgCamera || !bgClock) return;
 
+      const time = bgClock.getElapsedTime();
+
+      // Parallax smooth lerp
       bgScene.rotation.y += (bgTargetRotation.y - bgScene.rotation.y) * 0.04;
       bgScene.rotation.x += (bgTargetRotation.x - bgScene.rotation.x) * 0.04;
 
-      if (bgDnaGroup) {
-        bgDnaGroup.rotation.y += 0.006;
+      // Continuous dual DNA rotations
+      if (bgDnaRight) bgDnaRight.rotation.y += 0.007;
+      if (bgDnaLeft) bgDnaLeft.rotation.y -= 0.006;
+
+      // Undulating Molecular Wave computation
+      if (bgWaveLattice && bgWavePositions) {
+        const pos = bgWaveLattice.geometry.attributes.position.array;
+        for (let i = 0; i < pos.length; i += 3) {
+          const x = pos[i];
+          const z = pos[i + 2];
+          pos[i + 1] = Math.sin(x * 0.25 + time * 0.8) * Math.cos(z * 0.25 + time * 0.6) * 1.6 - 4.5;
+        }
+        bgWaveLattice.geometry.attributes.position.needsUpdate = true;
       }
 
+      // Drift constellation
       if (bgConstellation) {
         bgConstellation.rotation.y += 0.001;
-        bgConstellation.rotation.z += 0.0005;
+        bgConstellation.rotation.z += 0.0004;
       }
 
       bgRenderer.render(bgScene, bgCamera);
     }
 
+    // ========================================================
+    // 13. WELCOME SCREEN 3D ANIMATED MOLECULAR CORE ENGINE
+    // ========================================================
+    let welcomeScene, welcomeCamera, welcomeRenderer, welcomeCoreGroup, welcomeRings = [], welcomeParticles;
+    let welcomeAnimId = null;
+    let welcomeMouse = { x: 0, y: 0 };
+    let welcomeTargetTilt = { x: 0, y: 0 };
+
+    function initWelcome3D() {
+      const canvas = document.getElementById('welcome-3d-canvas');
+      const stage = document.getElementById('welcome-stage');
+      if (!canvas || typeof THREE === 'undefined') return;
+
+      if (welcomeAnimId) {
+        cancelAnimationFrame(welcomeAnimId);
+        welcomeAnimId = null;
+      }
+
+      const size = 130;
+      welcomeScene = new THREE.Scene();
+      welcomeCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 50);
+      welcomeCamera.position.set(0, 0, 4.4);
+
+      welcomeRenderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true,
+        alpha: true,
+        powerPreference: 'high-performance'
+      });
+      welcomeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      welcomeRenderer.setSize(size, size);
+
+      // Core lights
+      const amb = new THREE.AmbientLight(0xffffff, 1.2);
+      welcomeScene.add(amb);
+      const pointLight = new THREE.PointLight(0x38bdf8, 3.5, 10);
+      pointLight.position.set(2, 2, 3);
+      welcomeScene.add(pointLight);
+
+      welcomeCoreGroup = new THREE.Group();
+      welcomeScene.add(welcomeCoreGroup);
+
+      // 1. Inner Glowing Nucleus (Sphere)
+      const nucleusGeom = new THREE.SphereGeometry(0.35, 20, 20);
+      const nucleusMat = new THREE.MeshBasicMaterial({
+        color: 0x38bdf8,
+        wireframe: false
+      });
+      const nucleusMesh = new THREE.Mesh(nucleusGeom, nucleusMat);
+      welcomeCoreGroup.add(nucleusMesh);
+      welcomeCoreGroup.nucleus = nucleusMesh;
+
+      // 2. Geodesic Bio-Cage (Icosahedron Wireframe)
+      const cageGeom = new THREE.IcosahedronGeometry(0.68, 1);
+      const cageMat = new THREE.MeshBasicMaterial({
+        color: 0x00f0ff,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.8
+      });
+      const cageMesh = new THREE.Mesh(cageGeom, cageMat);
+      welcomeCoreGroup.add(cageMesh);
+      welcomeCoreGroup.cage = cageMesh;
+
+      // 3. Concentric Gyro-Rings
+      welcomeRings = [];
+      const ringSpecs = [
+        { r: 1.05, w: 0.016, color: 0x38bdf8, rotX: Math.PI / 3, rotY: 0 },
+        { r: 1.22, w: 0.014, color: 0x818cf8, rotX: -Math.PI / 4, rotY: Math.PI / 4 },
+        { r: 1.38, w: 0.012, color: 0x10b981, rotX: Math.PI / 2.2, rotY: Math.PI / 6 }
+      ];
+
+      ringSpecs.forEach(spec => {
+        const rGeom = new THREE.TorusGeometry(spec.r, spec.w, 12, 48);
+        const rMat = new THREE.MeshBasicMaterial({
+          color: spec.color,
+          transparent: true,
+          opacity: 0.75,
+          wireframe: true
+        });
+        const ring = new THREE.Mesh(rGeom, rMat);
+        ring.rotation.set(spec.rotX, spec.rotY, 0);
+        welcomeCoreGroup.add(ring);
+        welcomeRings.push(ring);
+      });
+
+      // 4. Bio-Particle Orbiting Halo
+      const pCount = 55;
+      const pGeom = new THREE.BufferGeometry();
+      const pPos = new Float32Array(pCount * 3);
+      for (let i = 0; i < pCount * 3; i += 3) {
+        const u = Math.random();
+        const v = Math.random();
+        const theta = u * 2.0 * Math.PI;
+        const phi = Math.acos(2.0 * v - 1.0);
+        const r = 1.1 + Math.random() * 0.45;
+        pPos[i] = r * Math.sin(phi) * Math.cos(theta);
+        pPos[i + 1] = r * Math.sin(phi) * Math.sin(theta);
+        pPos[i + 2] = r * Math.cos(phi);
+      }
+      pGeom.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+      const pMat = new THREE.PointsMaterial({
+        color: 0x00f0ff,
+        size: 0.045,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending
+      });
+      welcomeParticles = new THREE.Points(pGeom, pMat);
+      welcomeCoreGroup.add(welcomeParticles);
+
+      // Mouse track on stage
+      if (stage) {
+        stage.addEventListener('mousemove', (e) => {
+          const rect = stage.getBoundingClientRect();
+          welcomeMouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+          welcomeMouse.y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+          welcomeTargetTilt.y = welcomeMouse.x * 0.35;
+          welcomeTargetTilt.x = -welcomeMouse.y * 0.25;
+        });
+
+        stage.addEventListener('mouseleave', () => {
+          welcomeTargetTilt.x = 0;
+          welcomeTargetTilt.y = 0;
+        });
+      }
+
+      animateWelcome3D();
+    }
+
+    function animateWelcome3D() {
+      welcomeAnimId = requestAnimationFrame(animateWelcome3D);
+      const canvas = document.getElementById('welcome-3d-canvas');
+      if (!canvas || !welcomeRenderer || !welcomeScene || !welcomeCamera || !welcomeCoreGroup) return;
+
+      // Mouse lean
+      welcomeCoreGroup.rotation.y += (welcomeTargetTilt.y - welcomeCoreGroup.rotation.y) * 0.08;
+      welcomeCoreGroup.rotation.x += (welcomeTargetTilt.x - welcomeCoreGroup.rotation.x) * 0.08;
+
+      // Continuous autonomous rotations
+      if (welcomeCoreGroup.cage) {
+        welcomeCoreGroup.cage.rotation.y += 0.012;
+        welcomeCoreGroup.cage.rotation.x += 0.008;
+      }
+
+      if (welcomeCoreGroup.nucleus) {
+        const pulse = 1.0 + Math.sin(Date.now() * 0.004) * 0.12;
+        welcomeCoreGroup.nucleus.scale.set(pulse, pulse, pulse);
+      }
+
+      if (welcomeRings.length >= 3) {
+        welcomeRings[0].rotation.z += 0.015;
+        welcomeRings[1].rotation.x += 0.012;
+        welcomeRings[2].rotation.y += 0.018;
+      }
+
+      if (welcomeParticles) {
+        welcomeParticles.rotation.y += 0.008;
+        welcomeParticles.rotation.z += 0.004;
+      }
+
+      welcomeRenderer.render(welcomeScene, welcomeCamera);
+    }
+
+    // Auto-initialize when window loads or immediately
     function startEngines() {
       if (typeof initBackground3D === 'function') initBackground3D();
+      if (typeof initWelcome3D === 'function') initWelcome3D();
     }
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
