@@ -1,0 +1,8 @@
+# Netlify Configuration when Base directory is set to "frontend"
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"

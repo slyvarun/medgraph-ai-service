@@ -1,0 +1,2360 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedGraph — Clinical Pharmacotherapy & Generic Intelligence</title>
+  <meta name="description" content="Clinical pharmacotherapy intelligence system. Explore active pharmaceutical ingredients, drug safety labels, and generic alternatives grounded in NIH RxNorm and openFDA records." />
+
+  <!-- Marked.js for Markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Vis-network for Interactive Graph Traversal Visualization -->
+  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <!-- Three.js for 3D DNA & Floating Medicines Background -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- Google Fonts: Inter (Clean Sans) + JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg: #070a12;
+      --bg-panel: rgba(10, 15, 26, 0.65); /* 35% background visibility, 65% tinted */
+      --bg-card: rgba(18, 26, 44, 0.72);
+      --bg-card-hover: rgba(26, 38, 64, 0.90);
+      --header-bg: rgba(9, 14, 25, 0.85);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-subtle: rgba(255, 255, 255, 0.05);
+      --border-hover: rgba(148, 163, 184, 0.35);
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --text: #f1f5f9;
+      --text-bright: #ffffff;
+      --muted: #94a3b8;
+      --faint: #64748b;
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.40);
+      --radius: 10px;
+      --radius-sm: 6px;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      position: relative;
+    }
+
+    /* ── BLURRED CINEMATIC 3D BACKGROUND (HARDWARE-ACCELERATED BOKEH VEIL) ── */
+    #bg-3d-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.50;
+    }
+
+    .bg-bokeh-veil {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      background: radial-gradient(circle at 65% 50%, rgba(7, 10, 18, 0.25) 0%, rgba(4, 7, 14, 0.55) 100%);
+    }
+
+    /* ── NETFLIX-STYLE CINEMATIC INTRO: MEDGRAPH NEXUS ── */
+    #netflix-intro {
+      position: fixed;
+      inset: 0;
+      z-index: 100000;
+      background: #000000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      perspective: 1200px;
+      cursor: pointer;
+      user-select: none;
+      transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s ease;
+      will-change: opacity, transform;
+    }
+
+    #netflix-intro.netflix-dismissed {
+      opacity: 0;
+      transform: scale(1.12);
+      pointer-events: none;
+    }
+
+    .netflix-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .netflix-container {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transform-style: preserve-3d;
+      will-change: transform, opacity;
+      animation: netflixCinematicZoom 2.5s cubic-bezier(0.2, 0.85, 0.15, 1) forwards;
+    }
+
+    @keyframes netflixCinematicZoom {
+      0% {
+        transform: scale(0.65) translateZ(-120px);
+        opacity: 0;
+        filter: brightness(0.8);
+      }
+      16% {
+        transform: scale(1) translateZ(0);
+        opacity: 1;
+        filter: brightness(1.2);
+      }
+      58% {
+        transform: scale(1.06) translateZ(40px);
+        opacity: 1;
+      }
+      78% {
+        transform: scale(1.75) translateZ(280px);
+        opacity: 0.95;
+        filter: brightness(2.6) blur(1px);
+      }
+      100% {
+        transform: scale(4.8) translateZ(780px);
+        opacity: 0;
+        filter: brightness(4) blur(14px);
+      }
+    }
+
+    /* Iconic 3D Ribbon Monogram "M" */
+    .netflix-m-ribbon {
+      position: relative;
+      width: 96px;
+      height: 124px;
+      margin-bottom: 24px;
+      filter: drop-shadow(0 0 40px rgba(37, 99, 235, 0.85));
+    }
+
+    .m-stem {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 24px;
+      background: linear-gradient(180deg, #38bdf8 0%, #1d4ed8 65%, #0c2162 100%);
+      border-radius: 2px;
+    }
+
+    .m-stem.left {
+      left: 0;
+      box-shadow: 0 0 24px rgba(56, 189, 248, 0.6);
+    }
+
+    .m-stem.right {
+      right: 0;
+      box-shadow: 0 0 24px rgba(56, 189, 248, 0.6);
+    }
+
+    .m-diag-left {
+      position: absolute;
+      top: 0;
+      left: 12px;
+      width: 22px;
+      height: 126px;
+      background: linear-gradient(180deg, #60a5fa 0%, #2563eb 55%, #1e3a8a 100%);
+      transform-origin: top left;
+      transform: rotate(-26deg);
+      box-shadow: 4px 0 16px rgba(0, 0, 0, 0.85), 0 0 25px rgba(37, 99, 235, 0.6);
+      z-index: 2;
+    }
+
+    .m-diag-right {
+      position: absolute;
+      top: 0;
+      right: 12px;
+      width: 22px;
+      height: 126px;
+      background: linear-gradient(180deg, #93c5fd 0%, #3b82f6 55%, #1d4ed8 100%);
+      transform-origin: top right;
+      transform: rotate(26deg);
+      box-shadow: -4px 0 16px rgba(0, 0, 0, 0.85), 0 0 25px rgba(56, 189, 248, 0.6);
+      z-index: 3;
+    }
+
+    /* Netflix Bold Cinematic Typography */
+    .netflix-title-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .netflix-title-text {
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: 12px;
+      text-indent: 12px;
+      color: #ffffff;
+      text-transform: uppercase;
+      background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 45%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 25px rgba(56, 189, 248, 0.65));
+      margin-bottom: 8px;
+      white-space: nowrap;
+    }
+
+    .netflix-subtitle-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 6px;
+      text-indent: 6px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      opacity: 0.9;
+    }
+
+    .netflix-skip-hint {
+      position: absolute;
+      bottom: 24px;
+      right: 28px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #64748b;
+      letter-spacing: 1px;
+      z-index: 10;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .netflix-skip-hint:hover {
+      opacity: 1;
+      color: #cbd5e1;
+    }
+
+    /* Workspace Optical Reveal */
+    .split-workspace, header, .top-notice-bar {
+      transition: filter 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease;
+    }
+
+    body.netflix-active .split-workspace,
+    body.netflix-active header,
+    body.netflix-active .top-notice-bar {
+      filter: blur(12px);
+      transform: scale(0.985);
+      opacity: 0.15;
+    }
+
+    body.netflix-done .split-workspace,
+    body.netflix-done header,
+    body.netflix-done .top-notice-bar {
+      filter: blur(0px);
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    /* Interactive Card Click Flash */
+    .prompt-card.card-pulse {
+      animation: cardPulseGlow 0.6s ease-out;
+    }
+
+    @keyframes cardPulseGlow {
+      0% { box-shadow: 0 0 0 rgba(37, 99, 235, 0); border-color: var(--primary); }
+      50% { box-shadow: 0 0 20px rgba(37, 99, 235, 0.5); border-color: #60a5fa; }
+      100% { box-shadow: 0 0 0 rgba(37, 99, 235, 0); }
+    }
+
+    /* ── TOP REGULATORY NOTICE STRIP ── */
+    .top-notice-bar {
+      animation: entrySlideDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s backwards;
+      background: rgba(8, 12, 22, 0.85);
+      border-bottom: 1px solid var(--border);
+      padding: 6px 24px;
+      font-size: 11.5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      z-index: 50;
+      color: var(--muted);
+      backdrop-filter: blur(10px);
+    }
+
+    .top-notice-bar strong {
+      color: #e2e8f0;
+      font-weight: 600;
+    }
+
+    /* ── HEADER ───────────────────────────────── */
+    header {
+      animation: entrySlideDown 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.25s backwards;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      position: relative;
+      z-index: 40;
+    }
+
+    .logo-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .logo-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.3px;
+    }
+
+    .logo-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .lang-select {
+      background: rgba(18, 25, 42, 0.9);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: #cbd5e1;
+      padding: 6px 10px;
+      font-size: 12px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .lang-select:hover, .lang-select:focus {
+      border-color: var(--border-hover);
+      color: #ffffff;
+    }
+
+    .btn-new {
+      background: var(--primary);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-new:hover {
+      background: var(--primary-hover);
+    }
+
+    /* ── SPLIT WORKSPACE ──────────────────────── */
+    .split-workspace {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* ── PANEL 1: CONSULTATION ────────────────── */
+    .panel-chat {
+      animation: entryFadeLeft 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.35s backwards;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+      background: var(--bg-panel);
+      backdrop-filter: blur(14px);
+      min-height: 0;
+      position: relative;
+    }
+
+    #log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 0;
+      scroll-behavior: smooth;
+    }
+
+    /* WELCOME SCREEN (CLEAN, MINIMAL, NO ICONS) */
+    .welcome-container {
+      animation: entryFadeUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.45s backwards;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      margin: auto 0;
+      padding: 20px;
+      max-width: 520px;
+      align-self: center;
+    }
+
+    .welcome-headline {
+      font-size: 24px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 8px;
+      letter-spacing: -0.4px;
+    }
+
+    .welcome-subhead {
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+
+    .prompt-cards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+      text-align: left;
+    }
+
+    .prompt-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 13px 15px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      backdrop-filter: blur(8px);
+    }
+
+    .prompt-card:nth-child(1) { animation: entryFadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.55s backwards; }
+    .prompt-card:nth-child(2) { animation: entryFadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.65s backwards; }
+    .prompt-card:nth-child(3) { animation: entryFadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.75s backwards; }
+    .prompt-card:nth-child(4) { animation: entryFadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.85s backwards; }
+
+    .prompt-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+    }
+
+    .prompt-card-title {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .prompt-card-desc {
+      font-size: 11.5px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    /* MESSAGES */
+    .msg {
+      display: flex;
+      gap: 12px;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg.user {
+      flex-direction: row-reverse;
+    }
+
+    .avatar-label {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 4px;
+      height: fit-content;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    .avatar-label.user {
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+    }
+
+    .avatar-label.bot {
+      background: rgba(37, 99, 235, 0.2);
+      border: 1px solid rgba(37, 99, 235, 0.4);
+      color: #93c5fd;
+    }
+
+    .bubble {
+      max-width: 84%;
+      padding: 13px 16px;
+      border-radius: var(--radius);
+      font-size: 13.5px;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+
+    .msg.user .bubble {
+      background: var(--primary);
+      color: #ffffff;
+      border-bottom-right-radius: 2px;
+    }
+
+    .msg.bot .bubble {
+      background: rgba(18, 25, 42, 0.94);
+      border: 1px solid var(--border);
+      color: #f1f5f9;
+      border-bottom-left-radius: 2px;
+    }
+
+    .msg.bot .bubble.error {
+      background: rgba(69, 10, 10, 0.85);
+      border-color: #ef4444;
+      color: #fecaca;
+    }
+
+    .bubble h3 {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #93c5fd;
+      margin: 12px 0 6px 0;
+    }
+
+    .bubble h3:first-child { margin-top: 0; }
+    .bubble p { margin-bottom: 8px; }
+    .bubble p:last-child { margin-bottom: 0; }
+    .bubble ul, .bubble ol { margin: 6px 0 8px 18px; }
+    .bubble li { margin-bottom: 4px; }
+    .bubble strong { color: #ffffff; font-weight: 600; }
+
+    /* CITATION BADGES */
+    .citation-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(37, 99, 235, 0.18);
+      color: #93c5fd;
+      border: 1px solid rgba(37, 99, 235, 0.45);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin: 0 2px;
+      cursor: pointer;
+      vertical-align: super;
+      line-height: 1;
+      transition: all 0.15s;
+    }
+
+    .citation-badge:hover {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    /* ENTITY CHIPS */
+    .entity-chip {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      color: #cbd5e1;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 2px 7px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 1px 2px;
+      transition: all 0.15s;
+    }
+
+    .entity-chip:hover, .entity-chip.active {
+      background: rgba(37, 99, 235, 0.25);
+      border-color: #60a5fa;
+      color: #ffffff;
+    }
+
+    /* THINKING INDICATOR */
+    .doctor-thinking {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      max-width: 90%;
+    }
+
+    .doctor-thinking-header {
+      font-weight: 600;
+      font-size: 12.5px;
+      color: #f1f5f9;
+      margin-bottom: 8px;
+    }
+
+    .doctor-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 11.5px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .doctor-step.active {
+      color: #93c5fd;
+      font-weight: 500;
+    }
+
+    /* COMPOSER */
+    .input-area {
+      padding: 14px 20px;
+      background: var(--header-bg);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      backdrop-filter: blur(14px);
+    }
+
+    .composer-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      background: rgba(13, 19, 35, 0.75);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      transition: border-color 0.2s;
+    }
+
+    .composer-row:focus-within {
+      border-color: var(--primary);
+    }
+
+    #inp {
+      flex: 1;
+      border: none;
+      background: transparent;
+      outline: none;
+      font-size: 13.5px;
+      font-family: inherit;
+      resize: none;
+      max-height: 110px;
+      line-height: 1.5;
+      color: #ffffff;
+    }
+
+    #inp::placeholder {
+      color: var(--faint);
+    }
+
+    #btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 7px 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+
+    #btn:hover {
+      background: var(--primary-hover);
+    }
+
+    #btn:disabled {
+      background: rgba(30, 41, 59, 0.8);
+      color: var(--faint);
+      cursor: not-allowed;
+    }
+
+    /* ── PANEL 2: EVIDENCE & KNOWLEDGE GRAPH ───── */
+    .panel-grounding {
+      animation: entryFadeRight 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.35s backwards;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-panel);
+      backdrop-filter: blur(14px);
+      min-height: 0;
+    }
+
+    .panel-header-tabs {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 18px;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      backdrop-filter: blur(14px);
+    }
+
+    .tab-btn-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+
+    .tab-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-btn.active {
+      background: rgba(37, 99, 235, 0.2);
+      border-color: rgba(37, 99, 235, 0.4);
+      color: #93c5fd;
+    }
+
+    .badge-count {
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .tab-btn.active .badge-count {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .tab-content {
+      display: none;
+      flex: 1;
+      min-height: 0;
+      position: relative;
+    }
+
+    .tab-content.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Vis.js Network Canvas */
+    #graph-canvas {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+    }
+
+    .graph-legend {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: rgba(10, 15, 26, 0.85);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 10;
+      backdrop-filter: blur(10px);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #cbd5e1;
+    }
+
+    .legend-chip {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+    }
+
+    .legend-chip.chip-symptom { background: #e11d48; }
+    .legend-chip.chip-ing { background: #0284c7; }
+    .legend-chip.chip-brand { background: #059669; }
+
+    .graph-controls {
+      position: absolute;
+      bottom: 14px;
+      right: 14px;
+      display: flex;
+      gap: 6px;
+      z-index: 10;
+    }
+
+    .graph-btn {
+      background: rgba(10, 15, 26, 0.70);
+      border: 1px solid var(--border);
+      color: #cbd5e1;
+      padding: 5px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+      backdrop-filter: blur(2px);
+    }
+
+    .graph-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    /* Structured Raw Records & Citations */
+    #raw-data-tab, #tab-citations > div {
+      overflow-y: auto;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .raw-card {
+      background: rgba(18, 25, 42, 0.9);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      transition: border-color 0.15s;
+    }
+
+    .raw-card:hover {
+      border-color: var(--border-hover);
+    }
+
+    .raw-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .raw-card-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .raw-badge-rxcui {
+      background: rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      border: 1px solid var(--border);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .raw-field {
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: #cbd5e1;
+      margin-bottom: 5px;
+    }
+
+    .raw-field strong {
+      color: #f1f5f9;
+      font-weight: 600;
+    }
+
+    .raw-warning-box {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      line-height: 1.45;
+      margin-top: 8px;
+    }
+
+    /* Citation Modal */
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .drawer-overlay.open {
+      display: flex;
+    }
+
+    .drawer-box {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 600px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8);
+      overflow: hidden;
+    }
+
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: #111c34;
+    }
+
+    .drawer-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .drawer-close {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 18px;
+      cursor: pointer;
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s;
+    }
+
+    .drawer-close:hover {
+      color: #ffffff;
+    }
+
+    .drawer-body {
+      padding: 18px;
+      overflow-y: auto;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #cbd5e1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .evidence-quote {
+      background: rgba(11, 17, 32, 0.9);
+      border-left: 3px solid #2563eb;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #e2e8f0;
+      border-radius: 0 6px 6px 0;
+    }
+
+    @media (max-width: 900px) {
+      .split-workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
+      }
+      .panel-chat {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+    }
+  </style>
+</head>
+
+<body class="netflix-active">
+  <!-- NETFLIX-STYLE CINEMATIC INTRO: MEDGRAPH NEXUS -->
+  <div id="netflix-intro" onclick="skipNetflixIntro()">
+    <canvas id="netflix-ribbon-canvas" class="netflix-canvas"></canvas>
+    <div class="netflix-container">
+      <div class="netflix-m-ribbon">
+        <div class="m-stem left"></div>
+        <div class="m-diag-left"></div>
+        <div class="m-diag-right"></div>
+        <div class="m-stem right"></div>
+      </div>
+      <div class="netflix-title-wrap">
+        <div class="netflix-title-text">MEDGRAPH NEXUS</div>
+        <div class="netflix-subtitle-text">CLINICAL PHARMACOTHERAPY INTELLIGENCE</div>
+      </div>
+    </div>
+    <div class="netflix-skip-hint">Click or press any key to skip &rarr;</div>
+  </div>
+
+  <!-- 3D FULL VIEWPORT BACKGROUND (DNA & FLOATING MEDICINES) -->
+  <canvas id="bg-3d-canvas"></canvas>
+  <div class="bg-bokeh-veil"></div>
+
+  <!-- TOP REGULATORY NOTICE STRIP -->
+  <div class="top-notice-bar">
+    <div>
+      <strong>MedGraph Clinical Reference System</strong> &bull; Grounded in federal NIH RxNorm & openFDA public health registries.
+    </div>
+    <div style="font-size: 11px;">
+      Informational Decision Support &bull; FDA 2026 CDS Guidance
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-wrap" onclick="startNewConsult()">
+      <div class="logo-title">MedGraph</div>
+      <div class="logo-subtitle">Clinical Knowledge & Generic Drug Intelligence</div>
+    </div>
+
+    <div class="header-actions">
+      <select id="lang-select" class="lang-select" title="Select Consultation Response Language">
+        <option value="en" selected>English</option>
+        <option value="es">Español (Spanish)</option>
+        <option value="fr">Français (French)</option>
+        <option value="de">Deutsch (German)</option>
+        <option value="te">Telugu</option>
+        <option value="hi">Hindi</option>
+      </select>
+
+      <button class="btn-new" onclick="startNewConsult()" title="Start a fresh consultation">
+        New Consultation
+      </button>
+    </div>
+  </header>
+
+  <!-- SPLIT-SCREEN WORKSPACE -->
+  <div class="split-workspace">
+    <!-- PANEL 1: CONVERSATION -->
+    <div class="panel-chat">
+      <div id="log">
+        <!-- WELCOME SCREEN (CLEAN, MINIMAL, NO ICONS) -->
+        <div id="welcome" class="welcome-container">
+          <h2 class="welcome-headline">MedGraph</h2>
+          <p class="welcome-subhead">
+            Search colloquial symptoms, explore active pharmaceutical ingredients, or find verified generic equivalents grounded in FDA package inserts.
+          </p>
+
+          <div class="prompt-cards-grid">
+            <div class="prompt-card" onclick="chipText('what are alternative brands for Lipitor?')">
+              <div class="prompt-card-title">Generic Alternatives for Lipitor</div>
+              <div class="prompt-card-desc">Find bioequivalent generic formulations for brand-name atorvastatin.</div>
+            </div>
+
+            <div class="prompt-card" onclick="chipText('my head is pounding and throbbing with sinus pressure')">
+              <div class="prompt-card-title">Headache & Sinus Symptoms</div>
+              <div class="prompt-card-desc">Map multi-hop symptom paths to active decongestant & analgesic molecules.</div>
+            </div>
+
+            <div class="prompt-card" onclick="chipText('high blood pressure and hypertension management')">
+              <div class="prompt-card-title">Hypertension Management</div>
+              <div class="prompt-card-desc">Inspect cardiovascular therapy clusters and anti-hypertensive indications.</div>
+            </div>
+
+            <div class="prompt-card" onclick="chipText('what are FDA boxed warnings and contraindications for Metformin?')">
+              <div class="prompt-card-title">Metformin FDA Safety Labels</div>
+              <div class="prompt-card-desc">Review verbatim boxed warnings, lactic acidosis risks, and renal safety limits.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPOSER -->
+      <div class="input-area">
+        <div class="composer-row">
+          <textarea id="inp" rows="1" placeholder="Enter symptoms, active ingredients, or medication brand name..." onkeydown="onKey(event)" oninput="resize(this)"></textarea>
+          <button id="btn" onclick="send()" title="Send consultation query (Enter)">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 2: EVIDENCE & KNOWLEDGE GRAPH -->
+    <div class="panel-grounding">
+      <div class="panel-header-tabs">
+        <div class="tab-btn-group">
+          <button id="btn-tab-graph" class="tab-btn active" onclick="switchTab('graph')">
+            Knowledge Graph <span id="badge-graph-count" class="badge-count">0</span>
+          </button>
+          <button id="btn-tab-raw" class="tab-btn" onclick="switchTab('raw')">
+            FDA Records <span id="badge-raw-count" class="badge-count">0</span>
+          </button>
+          <button id="btn-tab-citations" class="tab-btn" onclick="switchTab('citations')">
+            Citations <span id="badge-cit-count" class="badge-count">0</span>
+          </button>
+        </div>
+
+        <div style="font-size: 11px; color: var(--muted);">
+          Reviewable Medical Basis
+        </div>
+      </div>
+
+      <!-- TAB 1: KNOWLEDGE GRAPH -->
+      <div id="tab-graph" class="tab-content active">
+        <div id="graph-tab" style="flex: 1; height: 100%; position: relative;">
+          <div class="graph-legend">
+            <div class="legend-item"><span class="legend-chip chip-symptom"></span> Symptom / Indication</div>
+            <div class="legend-item"><span class="legend-chip chip-ing"></span> Active Ingredient (RxNorm)</div>
+            <div class="legend-item"><span class="legend-chip chip-brand"></span> Formulation (FDA)</div>
+          </div>
+
+          <div id="graph-canvas"></div>
+
+          <div class="graph-controls">
+            <button class="graph-btn" onclick="fitGraph()">Fit View</button>
+            <button class="graph-btn" onclick="togglePhysics()">Toggle Physics</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: RAW RECORDS -->
+      <div id="tab-raw" class="tab-content">
+        <div id="raw-data-tab">
+          <div id="raw-data-empty" style="text-align: center; color: var(--muted); padding: 40px 20px; font-size: 13px;">
+            No records loaded. Submit a query to inspect openFDA & RxNorm database entries.
+          </div>
+          <div id="raw-records-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        </div>
+      </div>
+
+      <!-- TAB 3: CITATIONS -->
+      <div id="tab-citations" class="tab-content">
+        <div style="overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 12px;">
+          <div id="citations-empty" style="text-align: center; color: var(--muted); padding: 40px 20px; font-size: 13px;">
+            Footnote citations [1], [2] will appear here with verbatim regulatory excerpts.
+          </div>
+          <div id="citations-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EVIDENCE INSPECTION MODAL -->
+  <div id="citation-modal" class="drawer-overlay" onclick="if(event.target===this) toggleModal('citation-modal', false)">
+    <div class="drawer-box">
+      <div class="drawer-header">
+        <div class="drawer-title">
+          <span id="modal-cit-badge" class="citation-badge">[1]</span>
+          <span id="modal-cit-title">Evidence Citation</span>
+        </div>
+        <button class="drawer-close" onclick="toggleModal('citation-modal', false)">✕</button>
+      </div>
+
+      <div class="drawer-body">
+        <div style="display: flex; gap: 14px; font-size: 12px; color: var(--muted);">
+          <div><strong>Source:</strong> <span id="modal-cit-source">openFDA Drug Label</span></div>
+          <div><strong>RxCUI:</strong> <span id="modal-cit-rxcui" style="font-family: monospace;">N/A</span></div>
+          <div><strong>Term Type:</strong> <span id="modal-cit-tty">IN / BN</span></div>
+        </div>
+
+        <div>
+          <strong style="font-size: 12px; color: var(--text);">Verbatim Regulatory Label Evidence:</strong>
+          <div id="modal-cit-evidence" class="evidence-quote" style="margin-top: 6px;">
+            Loading evidence excerpt...
+          </div>
+        </div>
+
+        <div style="font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); padding-top: 10px;">
+          Anchored directly to federal regulatory registry records to prevent AI medical hallucination.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <script>
+    // 1. Backend Resolution
+    function getBackendBaseUrl() {
+      const saved = localStorage.getItem('MEDGRAPH_BACKEND_URL');
+      if (saved && saved.trim()) return saved.trim().replace(/\/$/, '');
+      if (window.MEDGRAPH_BACKEND_URL) return window.MEDGRAPH_BACKEND_URL.replace(/\/$/, '');
+
+      const host = window.location.hostname;
+      const proto = window.location.protocol;
+
+      if (proto === 'file:' || host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
+        return window.location.port ? `${window.location.protocol}//${window.location.hostname}:${window.location.port}` : 'http://localhost:8008';
+      }
+      return 'https://medgraph-ai-service-1.onrender.com';
+    }
+
+    function getApiUrl() {
+      const base = getBackendBaseUrl();
+      return base ? (base + '/ask') : '/ask';
+    }
+
+    // 2. Global State
+    let busy = false;
+    const chatHistory = [];
+    let currentCitations = [];
+    let currentClinicalRecords = [];
+    let visNetwork = null;
+    let physicsEnabled = true;
+
+    // 3. Tab Switching
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+      const btn = document.getElementById(`btn-tab-${tabName}`);
+      const content = document.getElementById(`tab-${tabName}`);
+      if (btn && content) {
+        btn.classList.add('active');
+        content.classList.add('active');
+      }
+
+      if (tabName === 'graph' && visNetwork) {
+        setTimeout(() => visNetwork.fit(), 100);
+      }
+    }
+
+    // 4. Modal Toggles
+    function toggleModal(modalId, show) {
+      const m = document.getElementById(modalId);
+      if (m) {
+        if (show) m.classList.add('open');
+        else m.classList.remove('open');
+      }
+    }
+
+    // 5. Open Citation Modal
+    function openCitationModal(citId) {
+      const cit = currentCitations.find(c => c.id == citId);
+      if (!cit) return;
+
+      document.getElementById('modal-cit-badge').textContent = `[${cit.id}]`;
+      document.getElementById('modal-cit-title').textContent = cit.title || 'Clinical Evidence';
+      document.getElementById('modal-cit-source').textContent = cit.source || 'openFDA Label';
+      document.getElementById('modal-cit-rxcui').textContent = cit.rxcui || 'N/A';
+      document.getElementById('modal-cit-tty').textContent = cit.term_type || 'IN';
+      document.getElementById('modal-cit-evidence').textContent = cit.evidence || 'No verbatim excerpt recorded.';
+
+      toggleModal('citation-modal', true);
+    }
+
+    // 6. Interactive Network Graph (vis-network)
+    function initOrUpdateGraph(graphData) {
+      const container = document.getElementById('graph-canvas');
+      if (!container || !graphData || !graphData.nodes || graphData.nodes.length === 0) return;
+
+      const nodeColors = {
+        'Symptom': { background: '#e11d48', border: '#9f1239' },
+        'Ingredient': { background: '#0284c7', border: '#0369a1' },
+        'Brand': { background: '#059669', border: '#047857' }
+      };
+
+      const visNodes = graphData.nodes.map(n => {
+        const colors = nodeColors[n.type] || { background: '#475569', border: '#334155' };
+        return {
+          id: n.id,
+          label: n.label.length > 25 ? n.label.substring(0, 22) + '...' : n.label,
+          title: `<strong>${n.type}:</strong> ${n.label}`,
+          color: {
+            background: colors.background,
+            border: colors.border,
+            highlight: { background: '#2563eb', border: '#1d4ed8' }
+          },
+          font: { color: '#ffffff', size: 12, face: 'Inter', strokeWidth: 2, strokeColor: '#090d16' },
+          shape: n.type === 'Symptom' ? 'box' : 'dot',
+          size: n.type === 'Ingredient' ? 22 : 18,
+          margin: 8,
+          shadow: { enabled: true, color: 'rgba(0,0,0,0.5)', size: 6, x: 2, y: 2 }
+        };
+      });
+
+      const visEdges = graphData.edges.map(e => ({
+        from: e.source,
+        to: e.target,
+        label: e.relationship,
+        arrows: 'to',
+        color: { color: 'rgba(148, 163, 184, 0.4)', highlight: '#93c5fd' },
+        font: { size: 10, face: 'JetBrains Mono', color: '#94a3b8', strokeWidth: 2, strokeColor: '#090d16', align: 'middle' },
+        smooth: { type: 'continuous' }
+      }));
+
+      const data = {
+        nodes: new vis.DataSet(visNodes),
+        edges: new vis.DataSet(visEdges)
+      };
+
+      const options = {
+        physics: {
+          enabled: true,
+          solver: 'forceAtlas2Based',
+          forceAtlas2Based: {
+            gravitationalConstant: -35,
+            centralGravity: 0.008,
+            springLength: 100,
+            springConstant: 0.14
+          },
+          stabilization: { iterations: 120 }
+        },
+        interaction: {
+          hover: true,
+          tooltipDelay: 100,
+          navigationButtons: false,
+          zoomView: true
+        }
+      };
+
+      if (visNetwork) {
+        visNetwork.setData(data);
+      } else {
+        visNetwork = new vis.Network(container, data, options);
+      }
+
+      document.getElementById('badge-graph-count').textContent = visNodes.length;
+
+      visNetwork.on('click', function(params) {
+        if (params.nodes.length > 0) {
+          const clickedNodeId = params.nodes[0];
+          highlightConnected(clickedNodeId);
+        }
+      });
+    }
+
+    function fitGraph() {
+      if (visNetwork) visNetwork.fit({ animation: { duration: 500 } });
+    }
+
+    function togglePhysics() {
+      physicsEnabled = !physicsEnabled;
+      if (visNetwork) visNetwork.setOptions({ physics: { enabled: physicsEnabled } });
+    }
+
+    function highlightConnected(nodeId) {
+      const rawCard = document.querySelector(`[data-node-id="${nodeId}"]`);
+      if (rawCard) {
+        switchTab('raw');
+        rawCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        rawCard.style.borderColor = '#2563eb';
+        setTimeout(() => rawCard.style.borderColor = '', 2000);
+      }
+    }
+
+    // 7. Render Raw Structured Records
+    function renderRawClinicalRecords(records) {
+      currentClinicalRecords = records || [];
+      const container = document.getElementById('raw-records-list');
+      const emptyNotice = document.getElementById('raw-data-empty');
+      const badge = document.getElementById('badge-raw-count');
+
+      container.innerHTML = '';
+      badge.textContent = currentClinicalRecords.length;
+
+      if (currentClinicalRecords.length === 0) {
+        emptyNotice.style.display = 'block';
+        return;
+      }
+      emptyNotice.style.display = 'none';
+
+      currentClinicalRecords.forEach(rec => {
+        const card = document.createElement('div');
+        card.className = 'raw-card';
+        card.setAttribute('data-evidence-id', rec.evidence_id || '');
+
+        const altBrandsHtml = rec.alternative_brands && rec.alternative_brands.length > 0
+          ? `<div class="raw-field"><strong>Alternative Formulations:</strong> ${rec.alternative_brands.join(', ')}</div>`
+          : '';
+
+        const warningHtml = (rec.warnings && rec.warnings !== 'None specified in label summary')
+          ? `<div class="raw-warning-box"><strong>FDA Warning / Precaution:</strong> ${rec.warnings}</div>`
+          : '';
+
+        card.innerHTML = `
+          <div class="raw-card-header">
+            <span class="raw-card-title">${rec.brand_name}</span>
+            <span class="raw-badge-rxcui">RxCUI: ${rec.rxcui || 'N/A'}</span>
+          </div>
+
+          <div class="raw-field"><strong>Active Molecule:</strong> ${rec.active_substance} (${rec.generic_name})</div>
+          <div class="raw-field"><strong>Therapeutic Category:</strong> ${rec.therapeutic_category || 'General Medicine'}</div>
+          <div class="raw-field"><strong>Approved Indication & Usage:</strong> ${rec.indications}</div>
+          ${altBrandsHtml}
+          ${warningHtml}
+
+          <div style="font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; display: flex; justify-content: space-between;">
+            <span>Source: ${rec.source}</span>
+            <span style="font-weight: 600; color: #93c5fd;">Evidence #${rec.evidence_id}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // 8. Render Citations List
+    function renderCitations(citations) {
+      currentCitations = citations || [];
+      const list = document.getElementById('citations-list');
+      const empty = document.getElementById('citations-empty');
+      const badge = document.getElementById('badge-cit-count');
+
+      list.innerHTML = '';
+      badge.textContent = currentCitations.length;
+
+      if (currentCitations.length === 0) {
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+
+      currentCitations.forEach(cit => {
+        const item = document.createElement('div');
+        item.className = 'raw-card';
+        item.style.cursor = 'pointer';
+        item.onclick = () => openCitationModal(cit.id);
+
+        item.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="citation-badge">[${cit.id}]</span>
+              <strong style="font-size: 13px; color: var(--text);">${cit.title}</strong>
+            </div>
+            <span class="raw-badge-rxcui">RxCUI: ${cit.rxcui || 'N/A'}</span>
+          </div>
+          <div style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin-top: 6px;">
+            "${cit.evidence.length > 180 ? cit.evidence.substring(0, 180) + '...' : cit.evidence}"
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    // 9. Footnote Citation Parser for Markdown
+    function parseCitationsInText(text) {
+      if (!text) return '';
+      return text.replace(/\[(\d+)\]/g, (match, p1) => {
+        return `<button class="citation-badge" onclick="openCitationModal(${p1})">[${p1}]</button>`;
+      });
+    }
+
+    // 9b. Entity Chips Tokenizer
+    function parseEntityChipsInText(text) {
+      if (!text) return '';
+      return text.replace(/<strong>\[(.*?)\]<\/strong>/g, (match, entity) => {
+        const clean = entity.trim();
+        const esc = clean.replace(/'/g, "\\'");
+        return `<button class="entity-chip" onclick="inspectEvidence('${esc}')">${clean}</button>`;
+      }).replace(/\*\*\[(.*?)\]\*\*/g, (match, entity) => {
+        const clean = entity.trim();
+        const esc = clean.replace(/'/g, "\\'");
+        return `<button class="entity-chip" onclick="inspectEvidence('${esc}')">${clean}</button>`;
+      });
+    }
+
+    // 9c. Evidence Inspector
+    async function inspectEvidence(entityName) {
+      if (!entityName) return;
+
+      document.querySelectorAll('.entity-chip').forEach(el => {
+        if (el.textContent.trim().toLowerCase() === entityName.trim().toLowerCase()) {
+          el.classList.add('active');
+        } else {
+          el.classList.remove('active');
+        }
+      });
+
+      const base = getBackendBaseUrl();
+      const url = `${base}/api/evidence/${encodeURIComponent(entityName)}`;
+
+      try {
+        switchTab('raw');
+        const container = document.getElementById('raw-records-list');
+        const emptyNotice = document.getElementById('raw-data-empty');
+        if (emptyNotice) emptyNotice.style.display = 'none';
+
+        container.innerHTML = `
+          <div style="background: rgba(37,99,235,0.1); border: 1px solid rgba(37,99,235,0.3); color: #93c5fd; padding: 12px 16px; border-radius: 8px; font-size: 13px;">
+            Retrieving openFDA label evidence for <strong>${entityName}</strong>...
+          </div>
+        `;
+
+        const res = await fetch(url);
+        if (!res.ok) {
+          container.innerHTML = `
+            <div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; padding: 14px; border-radius: 8px; font-size: 13px;">
+              No openFDA label records found for "${entityName}".
+            </div>
+          `;
+          return;
+        }
+
+        const data = await res.json();
+
+        if (data.graph && data.graph.nodes && data.graph.nodes.length > 0) {
+          initOrUpdateGraph(data.graph);
+        }
+
+        const altsHtml = data.alternative_brands && data.alternative_brands.length > 0
+          ? `<div class="raw-field" style="margin-top: 10px;"><strong>Alternative Formulations:</strong> 
+              <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+                ${data.alternative_brands.map(b => `<button class="entity-chip" onclick="inspectEvidence('${b.replace(/'/g, "\\'")}')">${b}</button>`).join('')}
+              </div>
+            </div>`
+          : '';
+
+        const warningsHtml = (data.warnings && data.warnings !== 'None specified in label summary')
+          ? `<div class="raw-warning-box" style="margin-top: 10px;"><strong>FDA Boxed Warnings & Precautions:</strong> ${data.warnings}</div>`
+          : '';
+
+        const contraHtml = (data.contraindications && data.contraindications !== 'None specified in label summary')
+          ? `<div class="raw-field" style="margin-top: 8px;"><strong>Contraindications:</strong> ${data.contraindications}</div>`
+          : '';
+
+        container.innerHTML = `
+          <div class="raw-card" style="border: 1px solid #2563eb;">
+            <div class="raw-card-header">
+              <span class="raw-card-title">${data.entity_name}</span>
+              <span class="raw-badge-rxcui">RxCUI: ${data.rxcui || 'N/A'}</span>
+            </div>
+
+            <div style="padding: 10px 0;">
+              <div class="raw-field"><strong>Category:</strong> ${data.therapeutic_category}</div>
+              ${data.connected_ingredients && data.connected_ingredients.length > 0 ? `<div class="raw-field"><strong>Active Molecule(s):</strong> ${data.connected_ingredients.join(', ')}</div>` : ''}
+              ${data.treated_symptoms && data.treated_symptoms.length > 0 ? `<div class="raw-field"><strong>Indications:</strong> ${data.treated_symptoms.join(', ')}</div>` : ''}
+              <div class="raw-field" style="margin-top: 8px;"><strong>FDA Label Excerpt:</strong> ${data.indications}</div>
+              ${altsHtml}
+              ${warningsHtml}
+              ${contraHtml}
+            </div>
+
+            <div style="font-size: 11.5px; color: var(--muted); border-top: 1px solid var(--border); padding-top: 8px; display: flex; justify-content: space-between;">
+              <span>Source: ${data.source}</span>
+              <button onclick="switchTab('graph')" style="background: transparent; border: none; color: #93c5fd; font-weight: 500; cursor: pointer; font-size: 11.5px;">
+                View in Graph &rarr;
+              </button>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('badge-raw-count').textContent = '1';
+
+      } catch (err) {
+        console.error('Evidence inspection error:', err);
+      }
+    }
+
+    // 10. Message Handling
+    function resize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 110) + 'px';
+    }
+
+    function onKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+    }
+
+    function chipText(text) {
+      document.getElementById('inp').value = text;
+      send();
+    }
+
+    function removeWelcome() {
+      const w = document.getElementById('welcome');
+      if (w) w.remove();
+    }
+
+    function startNewConsult() {
+      chatHistory.length = 0;
+      const log = document.getElementById('log');
+      log.innerHTML = `
+        <div id="welcome" class="welcome-container">
+          <h2 class="welcome-headline">MedGraph</h2>
+          <p class="welcome-subhead">
+            Search colloquial symptoms, explore active pharmaceutical ingredients, or find verified generic equivalents grounded in FDA package inserts.
+          </p>
+
+          <div class="prompt-cards-grid">
+            <div class="prompt-card" onclick="chipText('what are alternative brands for Lipitor?')">
+              <div class="prompt-card-title">Generic Alternatives for Lipitor</div>
+              <div class="prompt-card-desc">Find bioequivalent generic formulations for brand-name atorvastatin.</div>
+            </div>
+
+            <div class="prompt-card" onclick="chipText('my head is pounding and throbbing with sinus pressure')">
+              <div class="prompt-card-title">Headache & Sinus Symptoms</div>
+              <div class="prompt-card-desc">Map multi-hop symptom paths to active decongestant & analgesic molecules.</div>
+            </div>
+
+            <div class="prompt-card" onclick="chipText('high blood pressure and hypertension management')">
+              <div class="prompt-card-title">Hypertension Management</div>
+              <div class="prompt-card-desc">Inspect cardiovascular therapy clusters and anti-hypertensive indications.</div>
+            </div>
+
+            <div class="prompt-card" onclick="chipText('what are FDA boxed warnings and contraindications for Metformin?')">
+              <div class="prompt-card-title">Metformin FDA Safety Labels</div>
+              <div class="prompt-card-desc">Review verbatim boxed warnings, lactic acidosis risks, and renal safety limits.</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const inp = document.getElementById('inp');
+      inp.value = '';
+      inp.style.height = 'auto';
+      inp.focus();
+    }
+
+    function addMsg(role, rawContent, isError = false) {
+      removeWelcome();
+      const log = document.getElementById('log');
+      const wrap = document.createElement('div');
+      wrap.className = 'msg ' + role;
+
+      const av = document.createElement('div');
+      av.className = 'avatar-label ' + (role === 'user' ? 'user' : 'bot');
+      av.textContent = role === 'user' ? 'You' : 'AI';
+
+      const bub = document.createElement('div');
+      bub.className = 'bubble ' + (isError ? 'error' : '');
+
+      if (role === 'user') {
+        bub.textContent = rawContent;
+      } else {
+        const parsedMd = marked.parse(rawContent);
+        const withCitations = parseCitationsInText(parsedMd);
+        bub.innerHTML = parseEntityChipsInText(withCitations);
+      }
+
+      wrap.appendChild(av);
+      wrap.appendChild(bub);
+      log.appendChild(wrap);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function showDoctorThinking() {
+      removeWelcome();
+      const log = document.getElementById('log');
+      const wrap = document.createElement('div');
+      wrap.className = 'msg bot'; wrap.id = 'typing';
+
+      const av = document.createElement('div');
+      av.className = 'avatar-label bot';
+      av.textContent = 'AI';
+
+      const t = document.createElement('div');
+      t.className = 'doctor-thinking';
+      t.innerHTML = `
+        <div class="doctor-thinking-header">
+          Traversing NIH RxNorm & openFDA Knowledge Graph...
+        </div>
+        <div class="doctor-steps">
+          <div class="doctor-step step1 active">1. Resolving clinical symptoms to semantic target entities...</div>
+          <div class="doctor-step step2">2. Traversing knowledge graph to active pharmaceutical ingredients...</div>
+          <div class="doctor-step step3">3. Ingesting openFDA label contraindications & generic equivalents...</div>
+          <div class="doctor-step step4">4. Formulating reviewable evidence summary with citations...</div>
+        </div>
+      `;
+
+      wrap.appendChild(av); wrap.appendChild(t);
+      log.appendChild(wrap);
+      log.scrollTop = log.scrollHeight;
+
+      setTimeout(() => { document.querySelector('.step2')?.classList.add('active'); }, 400);
+      setTimeout(() => { document.querySelector('.step3')?.classList.add('active'); }, 900);
+      setTimeout(() => { document.querySelector('.step4')?.classList.add('active'); }, 1400);
+    }
+
+    function hideDoctorThinking() {
+      const t = document.getElementById('typing');
+      if (t) t.remove();
+    }
+
+    function lock(state) {
+      busy = state;
+      const btn = document.getElementById('btn');
+      const inp = document.getElementById('inp');
+      btn.disabled = inp.disabled = state;
+      btn.textContent = state ? 'Wait...' : 'Send';
+    }
+
+    // 11. Send Consultation Request
+    async function send() {
+      if (busy) return;
+      const inp = document.getElementById('inp');
+      const langSelect = document.getElementById('lang-select');
+      const q = inp.value.trim();
+      if (!q) return;
+
+      const lang = langSelect.value || 'en';
+      addMsg('user', q);
+      inp.value = ''; inp.style.height = 'auto';
+      lock(true); showDoctorThinking();
+
+      try {
+        const payload = {
+          query: q,
+          question: q,
+          language: lang,
+          history: chatHistory.slice(-8)
+        };
+
+        const res = await fetch(getApiUrl(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        hideDoctorThinking();
+
+        if (!res.ok) {
+          let msg = 'Server error: ' + res.status;
+          try { const d = await res.json(); msg = d.detail || msg; } catch (_) { }
+          addMsg('bot', 'Error: ' + msg, true);
+          return;
+        }
+
+        const data = await res.json();
+
+        // 1. Render AI Consultation Text
+        addMsg('bot', data.answer || 'No response returned.');
+
+        // 2. Render Graph Traversal Network
+        if (data.graph && data.graph.nodes && data.graph.nodes.length > 0) {
+          initOrUpdateGraph(data.graph);
+        }
+
+        // 3. Render Raw Structured Records
+        if (data.clinical_records) {
+          renderRawClinicalRecords(data.clinical_records);
+        }
+
+        // 4. Render Granular Citations
+        if (data.citations) {
+          renderCitations(data.citations);
+        }
+
+        // 5. Update history
+        chatHistory.push({ role: 'user', content: q });
+        if (data.answer) {
+          chatHistory.push({ role: 'assistant', content: data.answer });
+        }
+
+      } catch (err) {
+        hideDoctorThinking();
+        addMsg('bot',
+          `Connection Error: Unable to reach MedGraph backend at \`${getApiUrl()}\`. Ensure the server is online.`,
+          true
+        );
+      } finally {
+        lock(false);
+      }
+    }
+
+    // ========================================================
+    // 12. FULL 3D BACKGROUND ENGINE: DNA & FLOATING MEDICINES
+    // ========================================================
+    let bgScene, bgCamera, bgRenderer;
+    let bgDnaPrimary;
+    let floatingMedicines = [];
+    let bgMouse = { x: 0, y: 0 };
+    let bgTargetRotation = { x: 0, y: 0 };
+    let bgClock = null;
+
+    // Capsule Factory (Realistic 2-tone pharmaceutical capsule)
+    function createCapsule(color1, color2) {
+      const group = new THREE.Group();
+      const radius = 0.28;
+      const cylHeight = 0.55;
+
+      const mat1 = new THREE.MeshStandardMaterial({
+        color: color1,
+        roughness: 0.2,
+        metalness: 0.05
+      });
+      const mat2 = new THREE.MeshStandardMaterial({
+        color: color2,
+        roughness: 0.2,
+        metalness: 0.05
+      });
+
+      // Cap
+      const cyl1Geom = new THREE.CylinderGeometry(radius, radius, cylHeight / 2, 20);
+      const cyl1 = new THREE.Mesh(cyl1Geom, mat1);
+      cyl1.position.y = cylHeight / 4;
+      group.add(cyl1);
+
+      const sphere1Geom = new THREE.SphereGeometry(radius, 20, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+      const sphere1 = new THREE.Mesh(sphere1Geom, mat1);
+      sphere1.position.y = cylHeight / 2;
+      group.add(sphere1);
+
+      // Body
+      const cyl2Geom = new THREE.CylinderGeometry(radius, radius, cylHeight / 2, 20);
+      const cyl2 = new THREE.Mesh(cyl2Geom, mat2);
+      cyl2.position.y = -cylHeight / 4;
+      group.add(cyl2);
+
+      const sphere2Geom = new THREE.SphereGeometry(radius, 20, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+      const sphere2 = new THREE.Mesh(sphere2Geom, mat2);
+      sphere2.position.y = -cylHeight / 2;
+      group.add(sphere2);
+
+      return group;
+    }
+
+    // Round Tablet / Pill Factory (with center score line)
+    function createTablet(color) {
+      const group = new THREE.Group();
+      const radius = 0.35;
+      const height = 0.16;
+
+      const mat = new THREE.MeshStandardMaterial({
+        color: color,
+        roughness: 0.35,
+        metalness: 0.05
+      });
+
+      const cylGeom = new THREE.CylinderGeometry(radius, radius, height, 28);
+      const cyl = new THREE.Mesh(cylGeom, mat);
+      group.add(cyl);
+
+      // Center score line
+      const lineGeom = new THREE.BoxGeometry(radius * 1.8, height * 0.2, 0.03);
+      const lineMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.5 });
+      const score = new THREE.Mesh(lineGeom, lineMat);
+      score.position.y = height / 2 + 0.005;
+      group.add(score);
+
+      return group;
+    }
+
+    // Molecular Ring Compound (Benzene ring with covalent chemical bonds)
+    function createMolecularRing(atomColor, bondColor) {
+      const group = new THREE.Group();
+      const ringRadius = 0.55;
+      const atomRadius = 0.11;
+      const numAtoms = 6;
+
+      const atomMat = new THREE.MeshStandardMaterial({ color: atomColor, roughness: 0.25 });
+      const bondMat = new THREE.MeshStandardMaterial({ color: bondColor, roughness: 0.4 });
+      const atomGeom = new THREE.SphereGeometry(atomRadius, 16, 16);
+
+      const points = [];
+      for (let i = 0; i < numAtoms; i++) {
+        const angle = (i / numAtoms) * Math.PI * 2;
+        const x = Math.cos(angle) * ringRadius;
+        const y = Math.sin(angle) * ringRadius;
+        points.push(new THREE.Vector3(x, y, 0));
+
+        const atom = new THREE.Mesh(atomGeom, atomMat);
+        atom.position.set(x, y, 0);
+        group.add(atom);
+      }
+
+      for (let i = 0; i < numAtoms; i++) {
+        const p1 = points[i];
+        const p2 = points[(i + 1) % numAtoms];
+        const dist = p1.distanceTo(p2);
+        const bondGeom = new THREE.CylinderGeometry(0.026, 0.026, dist, 8);
+        const bond = new THREE.Mesh(bondGeom, bondMat);
+
+        bond.position.copy(p1).add(p2).multiplyScalar(0.5);
+        bond.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), p2.clone().sub(p1).normalize());
+        group.add(bond);
+      }
+
+      return group;
+    }
+
+    // Realistic DNA Double Helix Structure
+    function createDnaHelix(color1, color2, radius, height, numPairs, twist) {
+      const group = new THREE.Group();
+      const nodeGeom = new THREE.SphereGeometry(0.14, 16, 16);
+      const mat1 = new THREE.MeshStandardMaterial({ color: color1, roughness: 0.25, metalness: 0.08 });
+      const mat2 = new THREE.MeshStandardMaterial({ color: color2, roughness: 0.25, metalness: 0.08 });
+      const rungMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.45 });
+      const stepY = height / numPairs;
+
+      for (let i = 0; i < numPairs; i++) {
+        const y = (i - numPairs / 2) * stepY;
+        const angle = i * twist;
+
+        const x1 = Math.cos(angle) * radius;
+        const z1 = Math.sin(angle) * radius;
+        const s1 = new THREE.Mesh(nodeGeom, mat1);
+        s1.position.set(x1, y, z1);
+        group.add(s1);
+
+        const x2 = Math.cos(angle + Math.PI) * radius;
+        const z2 = Math.sin(angle + Math.PI) * radius;
+        const s2 = new THREE.Mesh(nodeGeom, mat2);
+        s2.position.set(x2, y, z2);
+        group.add(s2);
+
+        // Solid cylindrical base-pair rung
+        const dist = 2 * radius;
+        const rungGeom = new THREE.CylinderGeometry(0.035, 0.035, dist, 8);
+        const rung = new THREE.Mesh(rungGeom, rungMat);
+        rung.position.set(0, y, 0);
+        rung.rotation.z = Math.PI / 2;
+        rung.rotation.y = -angle;
+        group.add(rung);
+      }
+      return group;
+    }
+
+    function initBackground3D() {
+      const canvas = document.getElementById('bg-3d-canvas');
+      if (!canvas || typeof THREE === 'undefined') return;
+
+      bgClock = new THREE.Clock();
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      bgScene = new THREE.Scene();
+      bgCamera = new THREE.PerspectiveCamera(46, width / height, 0.1, 100);
+      bgCamera.position.set(1.6, 1.2, 25); // Cinematic fly-in starting position
+
+      bgRenderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true,
+        alpha: true,
+        powerPreference: 'high-performance'
+      });
+      bgRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      bgRenderer.setSize(width, height);
+
+      // Clean Clinical Studio Lighting (High contrast & clarity)
+      const ambientLight = new THREE.AmbientLight(0x334155, 1.8);
+      bgScene.add(ambientLight);
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
+      keyLight.position.set(12, 14, 16);
+      bgScene.add(keyLight);
+
+      const fillLight = new THREE.DirectionalLight(0x94a3b8, 1.5);
+      fillLight.position.set(-12, -8, 10);
+      bgScene.add(fillLight);
+
+      const softRim = new THREE.PointLight(0x38bdf8, 1.4, 35);
+      softRim.position.set(0, -10, 6);
+      bgScene.add(softRim);
+
+      // ── 1. SINGLE ICONIC 3D DNA STRUCTURE ──
+      bgDnaPrimary = createDnaHelix(0x2563eb, 0x0284c7, 2.2, 30, 48, 0.32);
+      bgDnaPrimary.position.set(6.8, 0, 0);
+      bgDnaPrimary.rotation.z = Math.PI / 6.5;
+      bgDnaPrimary.rotation.x = 0.25;
+      bgScene.add(bgDnaPrimary);
+
+      // ── 2. FLOATING MEDICINES & PHARMACEUTICAL PARTICLES ──
+      floatingMedicines = [];
+
+      // Presets of realistic clinical capsules & tablets
+      const capsulePresets = [
+        { c1: 0x1d4ed8, c2: 0xf8fafc }, // Blue / White
+        { c1: 0x0f766e, c2: 0xf1f5f9 }, // Deep Teal / Cream
+        { c1: 0x0369a1, c2: 0xe2e8f0 }, // Slate Blue / White
+        { c1: 0xbe123c, c2: 0xffffff }, // Maroon / White
+        { c1: 0x475569, c2: 0xf8fafc }  // Slate / Pearl
+      ];
+
+      const tabletPresets = [
+        0xf8fafc, // Pure White
+        0xe2e8f0, // Bone
+        0xdbeafe, // Soft Blue-White
+        0xccfbf1  // Soft Mint-White
+      ];
+
+      // Spawn 20 Capsules scattered in 3D across foreground and midground
+      for (let i = 0; i < 20; i++) {
+        const preset = capsulePresets[i % capsulePresets.length];
+        const cap = createCapsule(preset.c1, preset.c2);
+
+        // Distribute across screen volume (closer to camera for high visibility)
+        cap.position.set(
+          (Math.random() - 0.5) * 26,
+          (Math.random() - 0.5) * 18,
+          (Math.random() - 0.5) * 8 + 1
+        );
+        cap.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+
+        // Tumble dynamics
+        cap.userData = {
+          rx: (Math.random() - 0.5) * 0.014,
+          ry: (Math.random() - 0.5) * 0.016,
+          rz: (Math.random() - 0.5) * 0.012,
+          driftSpeed: 0.004 + Math.random() * 0.004,
+          floatAmp: 0.45 + Math.random() * 0.6,
+          floatPhase: Math.random() * Math.PI * 2,
+          baseY: cap.position.y
+        };
+
+        bgScene.add(cap);
+        floatingMedicines.push(cap);
+      }
+
+      // Spawn 16 Round Tablets
+      for (let i = 0; i < 16; i++) {
+        const color = tabletPresets[i % tabletPresets.length];
+        const tab = createTablet(color);
+
+        tab.position.set(
+          (Math.random() - 0.5) * 24,
+          (Math.random() - 0.5) * 16,
+          (Math.random() - 0.5) * 8 + 0.5
+        );
+        tab.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+
+        tab.userData = {
+          rx: (Math.random() - 0.5) * 0.012,
+          ry: (Math.random() - 0.5) * 0.014,
+          rz: (Math.random() - 0.5) * 0.010,
+          driftSpeed: 0.003 + Math.random() * 0.003,
+          floatAmp: 0.40 + Math.random() * 0.45,
+          floatPhase: Math.random() * Math.PI * 2,
+          baseY: tab.position.y
+        };
+
+        bgScene.add(tab);
+        floatingMedicines.push(tab);
+      }
+
+      // Spawn 8 Molecular Chemical Rings
+      for (let i = 0; i < 8; i++) {
+        const mol = createMolecularRing(0x0284c7, 0x64748b);
+        mol.position.set(
+          (Math.random() - 0.5) * 22,
+          (Math.random() - 0.5) * 15,
+          (Math.random() - 0.5) * 6 - 0.5
+        );
+        mol.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+
+        mol.userData = {
+          rx: (Math.random() - 0.5) * 0.010,
+          ry: (Math.random() - 0.5) * 0.012,
+          rz: (Math.random() - 0.5) * 0.008,
+          driftSpeed: 0.003,
+          floatAmp: 0.35,
+          floatPhase: Math.random() * Math.PI * 2,
+          baseY: mol.position.y
+        };
+
+        bgScene.add(mol);
+        floatingMedicines.push(mol);
+      }
+
+      window.addEventListener('mousemove', (e) => {
+        bgMouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        bgMouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        bgTargetRotation.y = bgMouse.x * 0.14;
+        bgTargetRotation.x = -bgMouse.y * 0.09;
+      });
+
+      window.addEventListener('resize', () => {
+        if (!bgCamera || !bgRenderer) return;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        bgCamera.aspect = w / h;
+        bgCamera.updateProjectionMatrix();
+        bgRenderer.setSize(w, h);
+      });
+
+      animateBackground();
+    }
+
+    function animateBackground() {
+      requestAnimationFrame(animateBackground);
+      if (!bgRenderer || !bgScene || !bgCamera || !bgClock) return;
+
+      // Conserve 100% of GPU resources while full-screen opaque intro is playing
+      if (!netflixDismissed) return;
+
+      const time = bgClock.getElapsedTime();
+
+      // Smooth cinematic camera entrance glide into clinical vantage position
+      if (bgCamera.position.z > 16.02) {
+        bgCamera.position.z += (16.0 - bgCamera.position.z) * 0.045;
+        bgCamera.position.x += (0.0 - bgCamera.position.x) * 0.045;
+        bgCamera.position.y += (0.0 - bgCamera.position.y) * 0.045;
+      }
+
+      // Parallax smooth lerp
+      bgScene.rotation.y += (bgTargetRotation.y - bgScene.rotation.y) * 0.04;
+      bgScene.rotation.x += (bgTargetRotation.x - bgScene.rotation.x) * 0.04;
+
+      // Continuous DNA rotations
+      if (bgDnaPrimary) {
+        bgDnaPrimary.rotation.y += 0.006;
+      }
+
+      // Continuous Floating Medicines Tumble & Zero-G Drift
+      floatingMedicines.forEach(med => {
+        const d = med.userData;
+        med.rotation.x += d.rx;
+        med.rotation.y += d.ry;
+        med.rotation.z += d.rz;
+
+        // Gentle floating wave
+        med.position.y = d.baseY + Math.sin(time * 0.8 + d.floatPhase) * d.floatAmp;
+      });
+
+      bgRenderer.render(bgScene, bgCamera);
+    }
+
+    // ── NETFLIX INTRO CONTROLLER & SPECTRUM RIBBON ENGINE ──
+    let netflixDismissed = false;
+    let netflixRibbonAnimId = null;
+
+    function playNetflixTadum() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        if (ctx.state === 'suspended') {
+          ctx.resume();
+        }
+        const now = ctx.currentTime;
+
+        // 1. First deep cinematic strike ("Ta")
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(105, now);
+        osc1.frequency.exponentialRampToValueAtTime(36, now + 0.38);
+        gain1.gain.setValueAtTime(0.65, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.45);
+
+        // 2. Second monumental orchestral "DUM" chord (hits at +0.24s)
+        const osc2 = ctx.createOscillator();
+        const osc3 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sawtooth';
+        osc3.type = 'sine';
+        osc2.frequency.setValueAtTime(84, now + 0.24);
+        osc2.frequency.exponentialRampToValueAtTime(32, now + 2.0);
+        osc3.frequency.setValueAtTime(168, now + 0.24);
+        osc3.frequency.exponentialRampToValueAtTime(64, now + 2.0);
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(680, now + 0.24);
+        filter.frequency.exponentialRampToValueAtTime(130, now + 1.9);
+
+        gain2.gain.setValueAtTime(0.001, now + 0.24);
+        gain2.gain.linearRampToValueAtTime(0.85, now + 0.28);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 2.1);
+
+        osc2.connect(filter);
+        osc3.connect(filter);
+        filter.connect(gain2);
+        gain2.connect(ctx.destination);
+
+        osc2.start(now + 0.24);
+        osc3.start(now + 0.24);
+        osc2.stop(now + 2.2);
+        osc3.stop(now + 2.2);
+      } catch (e) {
+        // Safe fallback if browser blocks auto-audio
+      }
+    }
+
+    function initNetflixIntro() {
+      const intro = document.getElementById('netflix-intro');
+      const canvas = document.getElementById('netflix-ribbon-canvas');
+      if (!intro || !canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width = window.innerWidth;
+      const h = canvas.height = window.innerHeight;
+
+      // Spectrum color palette: Clinical Cyan, Sapphire, Indigo, Violet, Magenta, White
+      const spectrumColors = [
+        'rgba(56, 189, 248, ',  // sky
+        'rgba(37, 99, 235, ',   // royal blue
+        'rgba(2, 132, 199, ',   // ocean
+        'rgba(129, 140, 248, ', // indigo
+        'rgba(192, 132, 252, ', // violet
+        'rgba(6, 182, 212, ',   // cyan
+        'rgba(244, 63, 94, ',   // magenta
+        'rgba(255, 255, 255, '  // pure white
+      ];
+
+      // Spawn 42 discrete vertical chromatic light ribbons centered around the logo
+      const ribbons = [];
+      const centerX = w / 2;
+      const spreadWidth = Math.min(w * 0.45, 480);
+
+      for (let i = 0; i < 42; i++) {
+        const offset = (Math.random() - 0.5) * spreadWidth;
+        ribbons.push({
+          x: centerX + offset,
+          width: Math.random() * 3.2 + 1.4,
+          colorBase: spectrumColors[Math.floor(Math.random() * spectrumColors.length)],
+          alpha: 0,
+          maxAlpha: 0.80 + Math.random() * 0.20,
+          speed: 1.2 + Math.random() * 2.2,
+          delay: 0.35 + Math.random() * 0.45,
+          topProgress: 0.5,
+          bottomProgress: 0.5,
+          drift: (Math.random() - 0.5) * 1.5
+        });
+      }
+
+      const startTime = performance.now();
+
+      function renderRibbons(now) {
+        if (netflixDismissed) return;
+        const elapsed = (now - startTime) / 1000;
+
+        ctx.clearRect(0, 0, w, h);
+
+        if (elapsed > 0.4) {
+          ribbons.forEach(r => {
+            if (elapsed < r.delay) return;
+
+            const timeSinceStart = elapsed - r.delay;
+            const expandSpeed = Math.min(1, timeSinceStart * 1.8);
+            const topY = (h * 0.5) * (1 - expandSpeed);
+            const bottomY = (h * 0.5) + (h * 0.5) * expandSpeed;
+
+            if (elapsed < 1.3) {
+              r.alpha = Math.min(r.maxAlpha, (elapsed - 0.4) * 1.5);
+            } else if (elapsed > 1.8) {
+              r.alpha = Math.max(0, 1 - (elapsed - 1.8) * 1.8);
+              r.width *= 1.025;
+            }
+
+            // High-performance dual-pass glow (100% GPU accelerated, 0ms CPU blur)
+            // 1. Soft wide outer halo
+            ctx.fillStyle = r.colorBase + (r.alpha * 0.22) + ')';
+            ctx.fillRect(r.x - r.width * 2.2, topY, r.width * 4.4, bottomY - topY);
+
+            // 2. High-intensity vertical gradient core beam
+            const gradient = ctx.createLinearGradient(r.x, topY, r.x, bottomY);
+            gradient.addColorStop(0, r.colorBase + '0)');
+            gradient.addColorStop(0.25, r.colorBase + (r.alpha * 0.65) + ')');
+            gradient.addColorStop(0.5, r.colorBase + r.alpha + ')');
+            gradient.addColorStop(0.75, r.colorBase + (r.alpha * 0.65) + ')');
+            gradient.addColorStop(1, r.colorBase + '0)');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(r.x - r.width / 2, topY, r.width, bottomY - topY);
+
+            if (elapsed > 1.2) {
+              const dir = r.x > centerX ? 1 : -1;
+              r.x += dir * (elapsed - 1.2) * 5.5;
+            }
+          });
+        }
+
+        if (elapsed < 2.5 && !netflixDismissed) {
+          netflixRibbonAnimId = requestAnimationFrame(renderRibbons);
+        }
+      }
+
+      netflixRibbonAnimId = requestAnimationFrame(renderRibbons);
+
+      // Play signature audio
+      playNetflixTadum();
+
+      // Auto dismiss after 2.45s
+      setTimeout(skipNetflixIntro, 2450);
+    }
+
+    function skipNetflixIntro() {
+      if (netflixDismissed) return;
+      netflixDismissed = true;
+
+      const intro = document.getElementById('netflix-intro');
+      document.body.classList.remove('netflix-active');
+      document.body.classList.add('netflix-done');
+
+      if (netflixRibbonAnimId) cancelAnimationFrame(netflixRibbonAnimId);
+
+      if (intro) {
+        intro.classList.add('netflix-dismissed');
+        setTimeout(() => {
+          if (intro && intro.parentNode) intro.remove();
+        }, 750);
+      }
+    }
+
+    // Auto-initialize when window loads or immediately
+    function startEngines() {
+      if (typeof initBackground3D === 'function') initBackground3D();
+      initNetflixIntro();
+    }
+
+    // User click or key anywhere skips immediately and can trigger audio if permitted
+    window.addEventListener('click', () => {
+      playNetflixTadum();
+      skipNetflixIntro();
+    }, { once: true });
+
+    window.addEventListener('keydown', () => {
+      skipNetflixIntro();
+    }, { once: true });
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(startEngines, 60);
+    } else {
+      window.addEventListener('DOMContentLoaded', startEngines);
+    }
+  </script>
+</body>
+
+</html>
