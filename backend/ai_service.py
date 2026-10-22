@@ -69,7 +69,8 @@ def shutdown_db_client():
 # Strict Pydantic Models
 # ---------------------------------------------------------------------------
 class SearchRequest(BaseModel):
-    query: str = Field(..., min_length=2, max_length=500, description="Natural language user query or symptom description", example="my head is pounding")
+    query: Optional[str] = Field(None, max_length=500, description="Natural language user query or symptom description", example="my head is pounding")
+    question: Optional[str] = Field(None, max_length=500, description="Alias for query")
     language: str = Field("en", description="Target response language (en, es, fr, de, hi, te)", example="en")
     history: List[Dict[str, str]] = Field(default=[], description="Prior conversational turns for multi-turn dialogue")
 
@@ -800,8 +801,12 @@ async def search_symptoms(request: SearchRequest):
        - If Intent A/B: Executes targeted Neo4j traversal.
     3. Step 3 (Conversational Synthesis): Generates intent-tailored clinical answer with citations.
     """
+    active_query = (request.query or request.question or "").strip()
+    if not active_query:
+        raise HTTPException(status_code=400, detail="Query text cannot be empty.")
+
     # Step 1: Intent Triage Router
-    intent_data = classify_user_intent(request.query, request.history)
+    intent_data = classify_user_intent(active_query, request.history)
     if isinstance(intent_data, QueryIntent):
         intent = intent_data.intent
         extracted_entities = intent_data.extracted_entities
@@ -815,9 +820,9 @@ async def search_symptoms(request: SearchRequest):
     lang_key = (request.language or "en").lower()
     if intent in ["AMBIGUOUS", "C"]:
         fallback_tmpl = AMBIGUOUS_FALLBACKS.get(lang_key, AMBIGUOUS_FALLBACKS["en"])
-        clarify_msg = clarification_question or fallback_tmpl.format(query=request.query)
+        clarify_msg = clarification_question or fallback_tmpl.format(query=active_query)
         return SearchResponse(
-            query=request.query,
+            query=active_query,
             answer=clarify_msg,
             is_grounded=False,
             intent="AMBIGUOUS",
@@ -831,7 +836,7 @@ async def search_symptoms(request: SearchRequest):
 
     # Step 2: Dynamic Execution based on Intent
     retrieved = retrieve_graph_subgraph(
-        query_text=request.query,
+        query_text=active_query,
         intent=intent,
         extracted_entities=extracted_entities
     )
@@ -840,7 +845,7 @@ async def search_symptoms(request: SearchRequest):
     if not has_context:
         refusal_msg = REFUSAL_MESSAGES.get(lang_key, REFUSAL_MESSAGES["en"])
         return SearchResponse(
-            query=request.query,
+            query=active_query,
             answer=refusal_msg,
             is_grounded=False,
             intent=intent,
@@ -854,7 +859,7 @@ async def search_symptoms(request: SearchRequest):
 
     # Step 3: Intent-Tailored Conversational Output Generator
     answer_text = generate_conversational_response(
-        query=request.query,
+        query=active_query,
         raw_context=retrieved["raw_context"],
         history=request.history,
         language=request.language,
@@ -863,7 +868,7 @@ async def search_symptoms(request: SearchRequest):
     )
 
     return SearchResponse(
-        query=request.query,
+        query=active_query,
         answer=answer_text,
         is_grounded=True,
         intent=intent,
