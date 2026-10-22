@@ -54,7 +54,7 @@ with st.sidebar:
 
     st.subheader("⚙️ Configuration")
     api_url = st.text_input("Backend API URL", value=API_BASE_URL)
-    language = st.selectbox("Response Language", ["en (English)", "es (Spanish)", "hi (Hindi)", "te (Telugu)"], index=0)
+    language = st.selectbox("Response Language", ["en (English)", "es (Spanish)", "fr (French)", "de (German)", "hi (Hindi)", "te (Telugu)"], index=0)
     lang_code = language.split()[0]
 
     st.divider()

@@ -81,7 +81,7 @@ def shutdown_db_client():
 # ---------------------------------------------------------------------------
 class SearchRequest(BaseModel):
     query: str = Field(..., min_length=2, max_length=500, description="Natural language user query or symptom description", example="my head is pounding")
-    language: str = Field("en", description="Target response language (en, es, hi, te)", example="en")
+    language: str = Field("en", description="Target response language (en, es, fr, de, hi, te)", example="en")
     history: List[Dict[str, str]] = Field(default=[], description="Prior conversational turns for multi-turn dialogue")
 
 
@@ -172,19 +172,19 @@ class AlternativesResponse(BaseModel):
 INTENT_ROUTER_SYSTEM_PROMPT = """You are the clinical triage router for MedGraph Nexus.
 Analyze the user's clinical or pharmaceutical inquiry and classify their intent into one of three strict categories:
 
-1. SYMPTOM_TO_MEDICINE: The user describes physical feelings, medical conditions, or symptoms (e.g., 'my head is pounding and throbbing', 'high blood pressure', 'fever and chills', 'chest pain', 'arthritic joint pain', or in any language like 'dolor de cabeza', 'सिरदर्द', 'calentura'). They want to discover treatments, mechanisms, or therapeutic medications.
-2. BRAND_TO_ALTERNATIVE: The user queries a pharmaceutical brand, commercial trade name, or active chemical substance (e.g., 'What are alternatives to Lisinopril?', 'Lisinopril', 'Advil', 'Exforge', 'Lipitor', 'Amlodipine'). They want composition, bioequivalent alternatives, or what the drug treats.
-3. AMBIGUOUS: The input is a short, isolated phrase or single word without enough context to determine whether they have symptoms or are asking about a specific drug (e.g., 'blood pressure', 'pressure', 'medicine', 'meds', 'pills', 'help', 'drugs', 'sick', 'presión').
+1. SYMPTOM_TO_MEDICINE: The user describes physical feelings, medical conditions, or symptoms (e.g., 'my head is pounding and throbbing', 'high blood pressure', 'fever and chills', 'chest pain', 'arthritic joint pain', or in any language like 'j\'ai mal à la tête', 'ich habe starke Kopfschmerzen', 'dolor de cabeza', 'सिरदर्द', 'calentura'). They want to discover treatments, mechanisms, or therapeutic medications.
+2. BRAND_TO_ALTERNATIVE: The user queries a pharmaceutical brand, commercial trade name, or active chemical substance (e.g., 'What are alternatives to Lisinopril?', 'alternatives à Lisinopril', 'Alternativen zu Lisinopril', 'Lisinopril', 'Advil', 'Exforge', 'Lipitor', 'Amlodipine'). They want composition, bioequivalent alternatives, or what the drug treats.
+3. AMBIGUOUS: The input is a short, isolated phrase or single word without enough context to determine whether they have symptoms or are asking about a specific drug (e.g., 'blood pressure', 'pressure', 'medicine', 'meds', 'pills', 'help', 'drugs', 'sick', 'presión', 'médicament', 'tension', 'Medikamente', 'Blutdruck').
 
 CRITICAL MULTILINGUAL INSTRUCTION:
-Because the FDA Knowledge Graph is indexed in standard English clinical terms, you MUST always translate and normalize the 'extracted_entities' into canonical English clinical terms (e.g., 'dolor de cabeza' -> 'Headache', 'dolor' -> 'Pain', 'presión arterial alta' -> 'Hypertension', 'सिरदर्द' -> 'Headache', 'बुखार' -> 'Fever', 'tos' -> 'Cough').
+Because the FDA Knowledge Graph is indexed in standard English clinical terms, you MUST always translate and normalize the 'extracted_entities' into canonical English clinical terms (e.g., 'mal de tête' / 'Kopfschmerzen' / 'dolor de cabeza' / 'सिरदर्द' -> 'Headache', 'douleur' / 'Schmerz' / 'dolor' / 'दर्द' -> 'Pain', 'hypertension artérielle' / 'Bluthochdruck' / 'presión alta' / 'उच्च रक्तचाप' -> 'Hypertension', 'fièvre' / 'Fieber' / 'fiebre' / 'बुखार' -> 'Fever', 'toux' / 'Husten' / 'tos' / 'खांसी' -> 'Cough', 'douleur articulaire' / 'Gelenkschmerzen' -> 'Arthralgia').
 
 Return ONLY a valid JSON object matching this schema:
 {
   "intent": "SYMPTOM_TO_MEDICINE" | "BRAND_TO_ALTERNATIVE" | "AMBIGUOUS",
   "extracted_entities": ["canonical_english_clinical_term"],
   "confidence": 0.95,
-  "clarification_question": "polite clarifying question if AMBIGUOUS, else null"
+  "clarification_question": "polite clarifying question if AMBIGUOUS in the user's inquiry language, else null"
 }
 """
 
@@ -227,11 +227,17 @@ def classify_user_intent(query: str, history: Optional[List[Dict[str, str]]] = N
     # 1. Fast heuristic for Ambiguous single/double-word inputs
     AMBIGUOUS_KEYWORDS = {
         "blood pressure", "pressure", "medicine", "meds", "pills", "drugs", "options",
-        "sick", "help", "treatment", "cure"
+        "sick", "help", "treatment", "cure",
+        # French
+        "tension", "medicament", "médicament", "médicaments", "pilule", "pilules", "douleur", "maladie",
+        # German
+        "blutdruck", "medikament", "medikamente", "pillen", "tabletten", "schmerz", "krankheit",
+        # Spanish & Hindi
+        "presion", "presión", "medicamento", "medicamentos", "pastillas", "dolor", "दवा", "दवाई", "बीमार", "दर्द"
     }
     normalized_phrase = " ".join(stripped_tokens)
     if normalized_phrase in AMBIGUOUS_KEYWORDS:
-        topic = "blood pressure" if "pressure" in normalized_phrase else clean_q
+        topic = "blood pressure" if ("pressure" in normalized_phrase or "tension" in normalized_phrase or "blutdruck" in normalized_phrase or "presión" in normalized_phrase or "presion" in normalized_phrase) else clean_q
         return QueryIntent(
             intent="AMBIGUOUS",
             extracted_entities=[clean_q],
@@ -239,20 +245,28 @@ def classify_user_intent(query: str, history: Optional[List[Dict[str, str]]] = N
             clarification_question=(
                 f"I see you're asking about {topic}. Are you experiencing elevated blood pressure and looking for "
                 f"treatment options, or do you have a specific medication you'd like to check alternatives for?"
-                if "pressure" in normalized_phrase else
+                if topic == "blood pressure" else
                 f"I see you mentioned '{clean_q}'. Are you looking for medications to treat a specific symptom, "
                 f"or do you have a particular medication you want to find alternatives for?"
             )
         )
 
     # 2. Fast heuristic for Alternative / Substitute Queries
-    ALT_PHRASES = ["alternative", "alternatives", "substitute", "substitutes", "instead of", "switch from", "other brand", "other brands"]
+    ALT_PHRASES = [
+        "alternative", "alternatives", "substitute", "substitutes", "instead of", "switch from", "other brand", "other brands",
+        # French
+        "substitut", "substituts", "remplacer", "au lieu de", "autre marque", "autres marques",
+        # German
+        "alternativen", "ersatz", "statt", "anstelle von", "andere marke", "weitere marken",
+        # Spanish
+        "sustituto", "sustitutos", "en lugar de", "otra marca"
+    ]
     if any(p in lower_q for p in ALT_PHRASES):
         # Extract potential brand name
         candidate = clean_q
         for p in ALT_PHRASES:
             candidate = re.sub(rf"\b{p}\b", "", candidate, flags=re.IGNORECASE)
-        candidate = re.sub(r"\b(what|are|to|for|is|can|i|take|drugs?|medicines?|brands?)\b", "", candidate, flags=re.IGNORECASE).strip(" ?,.!:;")
+        candidate = re.sub(r"\b(what|are|to|for|is|can|i|take|drugs?|medicines?|brands?|pour|pourquoi|zu|für)\b", "", candidate, flags=re.IGNORECASE).strip(" ?,.!:;")
         extracted = [candidate.strip()] if candidate.strip() else [clean_q]
         return QueryIntent(
             intent="BRAND_TO_ALTERNATIVE",
@@ -337,6 +351,34 @@ def classify_user_intent(query: str, history: Optional[List[Dict[str, str]]] = N
     )
 
 
+LANGUAGE_NAMES = {
+    "en": "English",
+    "es": "Spanish (Español)",
+    "fr": "French (Français)",
+    "de": "German (Deutsch)",
+    "hi": "Hindi (हिन्दी)",
+    "te": "Telugu (తెలుగు)"
+}
+
+REFUSAL_MESSAGES = {
+    "en": "I cannot find verified pharmaceutical records in MedGraph Nexus for the requested query. Please consult a qualified healthcare provider or medical professional.",
+    "es": "No puedo encontrar registros farmacéuticos verificados en MedGraph Nexus para la consulta solicitada. Por favor, consulte con un profesional de la salud o médico calificado.",
+    "fr": "Je ne trouve pas d'enregistrements pharmaceutiques vérifiés dans MedGraph Nexus pour la requête demandée. Veuillez consulter un professionnel de la santé qualifié.",
+    "de": "Ich kann in MedGraph Nexus keine verifizierten pharmazeutischen Datensätze für die angeforderte Abfrage finden. Bitte wenden Sie sich an einen qualifizierten Arzt oder Apotheker.",
+    "hi": "मुझे अनुरोधित प्रश्न के लिए MedGraph Nexus में सत्यापित फार्मास्युटिकल रिकॉर्ड नहीं मिले। कृपया किसी योग्य स्वास्थ्य सेवा प्रदाता या चिकित्सक से परामर्श लें।",
+    "te": "అభ్యర్థించిన ప్రశ్న కోసం MedGraph Nexusలో ధృవీకరించబడిన ఫార్మాస్యూటికల్ రికార్డులు కనుగొనబడలేదు. దయచేసి అర్హత కలిగిన వైద్యుడిని సంప్రదించండి."
+}
+
+AMBIGUOUS_FALLBACKS = {
+    "en": "I see you mentioned '{query}'. Are you looking for medications to treat a specific symptom, or do you have a particular medication you want to find alternatives for?",
+    "es": "Veo que mencionó '{query}'. ¿Está buscando medicamentos para tratar un síntoma específico o desea buscar alternativas para un medicamento en particular?",
+    "fr": "Je vois que vous avez mentionné '{query}'. Cherchez-vous des médicaments pour traiter un symptôme précis, ou souhaitez-vous trouver des alternatives pour un médicament particulier ?",
+    "de": "Sie haben '{query}' erwähnt. Suchen Sie nach Medikamenten zur Behandlung eines bestimmten Symptoms oder möchten Sie Alternativen für ein bestimmtes Medikament finden?",
+    "hi": "आपने '{query}' का उल्लेख किया है। क्या आप किसी विशिष्ट लक्षण के उपचार के लिए दवाएं खोज रहे हैं, या किसी विशेष दवा के विकल्प ढूंढना चाहते हैं?",
+    "te": "మీరు '{query}' ను పేర్కొన్నారు. మీరు నిర్దిష్ట లక్షణానికి చికిత్స కోసం మందులను చూస్తున్నారా లేదా ఏదైనా నిర్దిష్ట మందు కోసం ప్రత్యామ్నాయాలను కనుగొనాలనుకుంటున్నారా?"
+}
+
+
 def generate_conversational_response(
     query: str,
     raw_context: str,
@@ -351,6 +393,7 @@ def generate_conversational_response(
     """
     history = history or []
     system_prompt = PROMPT_INTENT_B if intent in ["B", "BRAND_TO_ALTERNATIVE"] else PROMPT_INTENT_A
+    target_lang_desc = LANGUAGE_NAMES.get(language.lower(), language)
 
     # 1. Primary Engine: OpenRouter API (OpenAI GPT-4o-mini / Meta Llama 3.3)
     if OPENROUTER_API_KEY:
@@ -369,7 +412,9 @@ def generate_conversational_response(
                 f"{raw_context}\n\n"
                 f"USER CLINICAL INQUIRY:\n"
                 f"\"{query}\"\n\n"
-                f"TARGET LANGUAGE: {language}\n\n"
+                f"TARGET RESPONSE LANGUAGE: {target_lang_desc}\n"
+                f"(CRITICAL: Write your entire conversational response fluently in {target_lang_desc}, "
+                f"while strictly maintaining bracketed entity tokens like **[Entity Name]** and footnote citations like [1], [2]).\n\n"
                 f"Please formulate a warm, conversational, yet clinically grounded response with proper footnote citations [1], [2] linked to the records above."
             )
             messages.append({"role": "user", "content": user_prompt})
@@ -796,11 +841,10 @@ async def search_symptoms(request: SearchRequest):
         clarification_question = intent_data.get("clarification_question")
 
     # If Intent C / AMBIGUOUS: Skip database search and return clarification directly with zero DB queries!
+    lang_key = (request.language or "en").lower()
     if intent in ["AMBIGUOUS", "C"]:
-        clarify_msg = clarification_question or (
-            f"I see you mentioned '{request.query}'. Are you looking for medications to treat a specific symptom, "
-            f"or do you have a particular medication you want to find alternatives for?"
-        )
+        fallback_tmpl = AMBIGUOUS_FALLBACKS.get(lang_key, AMBIGUOUS_FALLBACKS["en"])
+        clarify_msg = clarification_question or fallback_tmpl.format(query=request.query)
         return SearchResponse(
             query=request.query,
             answer=clarify_msg,
@@ -823,10 +867,7 @@ async def search_symptoms(request: SearchRequest):
     has_context = bool(retrieved["raw_context"])
 
     if not has_context:
-        refusal_msg = (
-            "I cannot find verified pharmaceutical records in MedGraph Nexus for the requested query. "
-            "Please consult a qualified healthcare provider or medical professional."
-        )
+        refusal_msg = REFUSAL_MESSAGES.get(lang_key, REFUSAL_MESSAGES["en"])
         return SearchResponse(
             query=request.query,
             answer=refusal_msg,

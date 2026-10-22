@@ -78,6 +78,10 @@ Built to comply with **FDA Section 520(o)(1)(E)**:
   * **Raw openFDA & RxNorm Data Cards** (unedited indications, contraindications, boxed warnings, RxCUIs)
   * **Citation Evidence Inspector**
 
+### 3. Global Multilingual GraphRAG & Cross-Lingual Normalization
+* **6 Supported Consultation Languages**: Full end-to-end support for **English (`en`)**, **Spanish (`es`)**, **French (`fr`)**, **German (`de`)**, **Hindi (`hi`)**, and **Telugu (`te`)**.
+* **Cross-Lingual Entity Resolution**: Users can express medical conditions in their native tongue (e.g., French *"mal de tête"*, German *"Kopfschmerzen"*, Spanish *"dolor de cabeza"*, Hindi *"सिरदर्द"*). The Intent Router normalizes the entity to canonical English clinical concepts (`Headache`) to traverse the FDA knowledge graph, and synthesizes the clinical findings in the selected language with interactive entity tokens (`**[Entity]**`) and openFDA citations.
+
 ### 3. Interactive Multi-Hop Graph Traversal
 Integrated using `vis-network` with the ForceAtlas2 physics solver:
 * Dynamically visualizes the complete reasoning pathway:
