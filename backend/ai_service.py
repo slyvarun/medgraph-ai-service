@@ -158,28 +158,111 @@ class AlternativesResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Medical Guardrails & Direct Clinical System Prompt
+# Two-Step Prompting Strategy: Intent Classifier & Intent-Tailored Generators
 # ---------------------------------------------------------------------------
-CLINICAL_SYSTEM_GUARDRAIL = """
-You are Doctor AI for MedGraph Nexus, a clinical pharmacotherapy engine.
+INTENT_ROUTER_SYSTEM_PROMPT = """You are the triage router for MedGraph Nexus. Analyze the user's clinical or pharmaceutical inquiry and classify their intent into one of three categories:
 
-COMMUNICATION STYLE:
-- Be direct, concise, and clinically clear.
-- Do NOT use unnecessary pleasantries, emotional filler, or flowery conversational padding (avoid "I understand your concern...", "I am really sorry to hear...", "Your health is paramount").
-- State the clinical findings, active compositions, brand alternatives, and safety warnings directly.
-- Organize answers with clean headings and concise bullet points.
+- Category A (Symptom-to-Medicine): The user describes a physical feeling, condition, or symptom (e.g., 'head is pounding', 'hypertension', 'fever', 'high blood pressure', 'stomach ache'). They want to know what medications or treatments treat this.
+- Category B (Medicine-to-Alternative): The user names a specific drug brand or active chemical (e.g., 'Lisinopril', 'Advil', 'Amlodipine', 'Lipitor', 'Tylenol', 'Exforge'). They want to know its composition, bioequivalent alternatives, or what it is used for.
+- Category C (Ambiguous): The input is too brief, single-word, or unclear to know what they want (e.g., 'pressure', 'meds', 'help', 'feeling sick', 'options').
 
-CRITICAL CITATION DISCIPLINE (REVIEWABLE EVIDENCE):
-Every time you mention an active chemical substance, indication, brand alternative, or safety warning from the Knowledge Graph context, you MUST append a bracketed footnote citation (e.g., [1], [2]) corresponding to the Evidence Record number.
-- Example: "Acetaminophen [1] is an analgesic and antipyretic. Alternative formulations sharing this active substance include Mapap [1] and Panadol [1]."
-- Example: "Do not exceed 4,000 mg in 24 hours due to risk of severe hepatotoxicity [1]."
-
-GROUNDING & REFUSAL RULES:
-1. Formulate statements strictly based on the verified Knowledge Graph records provided below.
-2. If no verified records exist in the context, state directly:
-   "No verified pharmaceutical records were found in MedGraph Nexus for the requested query. Please consult a qualified healthcare provider."
+Return ONLY a valid JSON object matching this schema:
+{
+  "intent": "A" | "B" | "C",
+  "extracted_entities": ["canonical_entity_name"],
+  "clarification_question": "polite clarifying question if Intent C, else null"
+}
 """
 
+PROMPT_INTENT_A = """You are Doctor AI for MedGraph Nexus, a conversational clinical pharmacotherapy engine. The user provided symptoms or a health condition, and you have retrieved verified Knowledge Graph records showing active chemical ingredients and marketed brand formulations that treat them.
+
+INSTRUCTIONS:
+1. Write in a warm, conversational, yet clinically rigorous and professional tone.
+2. Acknowledge their condition or symptoms naturally in an opening sentence.
+3. Group the treatments by active ingredient/chemical class. Briefly explain what the active ingredient does (e.g., 'Amlodipine is a calcium channel blocker that helps relax blood vessels', 'Valsartan is an angiotensin II receptor blocker'), and then list recognized brand name examples (e.g., 'Exforge', 'Diovan').
+4. Write in flowing, natural paragraphs. Avoid rigid bullet dumps unless listing multiple distinct drug classes.
+5. STRICT CITATION DISCIPLINE: Every active substance, therapeutic indication, brand name, and safety warning mentioned MUST include a bracketed footnote citation like [1], [2] corresponding directly to the Evidence Record ID numbers.
+6. CONVERSATIONAL CLOSING: End with an engaging conversational check-in (e.g., asking if they are currently taking a specific medication for this or just researching options) and remind them to consult their healthcare provider before initiating or changing any treatment."""
+
+PROMPT_INTENT_B = """You are Doctor AI for MedGraph Nexus, a conversational clinical pharmacotherapy engine. The user asked about a specific medication brand or active ingredient, and you have retrieved verified Knowledge Graph records showing its composition, bioequivalent alternatives, and FDA label indications.
+
+INSTRUCTIONS:
+1. Write in a warm, conversational, yet clinically precise and direct tone.
+2. Clearly identify the active chemical composition of the queried drug (e.g., 'Lipitor is formulated with the active ingredient Atorvastatin Calcium [1]').
+3. Present the bioequivalent brand formulations sharing the exact same active substance from the graph [1].
+4. Briefly explain its primary therapeutic indications and highlight any critical safety warnings or contraindications documented in the label records [1].
+5. STRICT CITATION DISCIPLINE: Every active substance, alternative brand, indication, and safety warning MUST include bracketed footnote citations like [1], [2] corresponding directly to the Evidence Record ID.
+6. CONVERSATIONAL CLOSING: Conclude by asking if they are exploring alternatives due to side effects, cost, or availability, and remind them to consult their prescribing clinician or pharmacist before switching medications."""
+
+
+def classify_user_intent(query: str, history: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
+    """
+    Step 1: Triage router classifying intent into:
+    - Intent A: Symptom-to-Medicine
+    - Intent B: Medicine-to-Alternative
+    - Intent C: Ambiguous (triggers polite clarification)
+    """
+    clean_q = query.strip()
+    lower_q = clean_q.lower()
+
+    # 1. Fast heuristic for known brand aliases
+    for b in COMMON_BRAND_ALIASES:
+        if b in lower_q:
+            return {"intent": "B", "extracted_entities": [b], "clarification_question": None}
+
+    # 2. Fast heuristic for single-word ambiguity
+    single_tokens = [w.strip("?,.!:;\"'&/()").lower() for w in clean_q.split() if len(w) > 1]
+    if len(single_tokens) == 1 and single_tokens[0] in {"pressure", "help", "meds", "pills", "drugs", "options", "sick"}:
+        return {
+            "intent": "C",
+            "extracted_entities": single_tokens,
+            "clarification_question": f"I see you mentioned '{clean_q}'. Are you looking for medications to treat a specific symptom, or do you have a particular medication you want to find alternatives for?"
+        }
+
+    # 3. OpenRouter Intent Classifier
+    if OPENROUTER_API_KEY:
+        try:
+            messages = [{"role": "system", "content": INTENT_ROUTER_SYSTEM_PROMPT.strip()}]
+            if history:
+                for h in history[-2:]:
+                    r = "user" if h.get("role") in ["user", "human"] else "assistant"
+                    c = (h.get("content") or "").strip()
+                    if c:
+                        messages.append({"role": r, "content": c[:140]})
+            messages.append({"role": "user", "content": clean_q})
+
+            headers = {
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://medgraph.nexus",
+                "X-Title": "MedGraph Nexus Intent Router"
+            }
+            resp = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers=headers,
+                json={
+                    "model": OPENROUTER_MODEL,
+                    "messages": messages,
+                    "temperature": 0.0,
+                    "response_format": {"type": "json_object"}
+                },
+                timeout=10
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                raw_txt = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+                parsed = json.loads(raw_txt)
+                if parsed.get("intent") in ["A", "B", "C"]:
+                    return parsed
+        except Exception:
+            pass
+
+    # Heuristic fallback based on symptom phrases
+    for phrase in PHRASE_NORMALIZATIONS:
+        if phrase in lower_q:
+            return {"intent": "A", "extracted_entities": [PHRASE_NORMALIZATIONS[phrase]], "clarification_question": None}
+
+    return {"intent": "A", "extracted_entities": [clean_q], "clarification_question": None}
 
 
 def generate_conversational_response(
@@ -187,18 +270,20 @@ def generate_conversational_response(
     raw_context: str,
     history: Optional[List[Dict[str, str]]] = None,
     language: str = "en",
-    retrieved_summary: Optional[Dict[str, Any]] = None
+    retrieved_summary: Optional[Dict[str, Any]] = None,
+    intent: str = "A"
 ) -> str:
     """
-    Generates humanly conversational, clinically grounded responses using OpenRouter
-    with fallback to Google Gemini or deterministic graph summaries.
+    Step 2: Generates intent-tailored, humanly conversational, clinically grounded responses
+    using OpenRouter with fallback to Google Gemini or deterministic graph summaries.
     """
     history = history or []
+    system_prompt = PROMPT_INTENT_B if intent == "B" else PROMPT_INTENT_A
 
     # 1. Primary Engine: OpenRouter API (OpenAI GPT-4o-mini / Meta Llama 3.3)
     if OPENROUTER_API_KEY:
         try:
-            messages = [{"role": "system", "content": CLINICAL_SYSTEM_GUARDRAIL.strip()}]
+            messages = [{"role": "system", "content": system_prompt.strip()}]
 
             # Multi-turn conversational continuity (last 4 dialogue turns)
             for h in history[-4:]:
@@ -213,9 +298,7 @@ def generate_conversational_response(
                 f"USER CLINICAL INQUIRY:\n"
                 f"\"{query}\"\n\n"
                 f"TARGET LANGUAGE: {language}\n\n"
-                f"Please formulate a warm, humanly conversational, yet clinically grounded response. "
-                f"Make sure to embed bracketed footnote citations like [1], [2] for all active ingredients, "
-                f"brand alternatives, approved indications, and safety warnings present in the context above."
+                f"Please formulate a warm, conversational, yet clinically grounded response with proper footnote citations [1], [2] linked to the records above."
             )
             messages.append({"role": "user", "content": user_prompt})
 
@@ -250,7 +333,7 @@ def generate_conversational_response(
     if gemini_model:
         try:
             fallback_prompt = (
-                f"{CLINICAL_SYSTEM_GUARDRAIL}\n\n"
+                f"{system_prompt}\n\n"
                 f"VERIFIED KNOWLEDGE GRAPH CONTEXT:\n{raw_context}\n\n"
                 f"USER INQUIRY: {query}\n"
                 f"TARGET LANGUAGE: {language}"
@@ -258,6 +341,9 @@ def generate_conversational_response(
             gem_res = gemini_model.generate_content(fallback_prompt)
             if gem_res and gem_res.text:
                 return gem_res.text.strip()
+        except Exception:
+            pass
+
         except Exception:
             pass
 
@@ -316,11 +402,17 @@ COMMON_BRAND_ALIASES = {
 # ---------------------------------------------------------------------------
 # Graph Retrieval & Multi-Entity Resolution
 # ---------------------------------------------------------------------------
-def retrieve_graph_subgraph(query_text: str) -> Dict[str, Any]:
+def retrieve_graph_subgraph(
+    query_text: str,
+    intent: str = "A",
+    extracted_entities: Optional[List[str]] = None
+) -> Dict[str, Any]:
     """
     Executes graph traversal across Neo4j or uses curated clinical cache
     to extract Symptoms, Ingredients, and Alternative Brands.
-    Supports both direct Brand/Ingredient searches and Symptom searches.
+    Dynamically routes traversal based on intent:
+    - Intent A: Queries Symptom index first -> traverses to Ingredients -> Brands
+    - Intent B: Queries Brand/Ingredient index first -> traverses to Alternatives
     """
     # Safety Guardrail: Intercept lethal/adversarial hazard keywords immediately
     ADVERSARIAL_HAZARDS = {"lethal", "suicide", "overdose", "poison", "toxic dose", "kill"}
@@ -335,8 +427,19 @@ def retrieve_graph_subgraph(query_text: str) -> Dict[str, Any]:
 
     clean_text = query_text.lower().replace("&", " and ")
 
-    # Priority multi-word phrase matching (e.g. "high blood pressure" -> "hypertension")
+    # Build search terms using extracted entities, normalizations, and aliases
     resolved_search_terms = []
+    if extracted_entities:
+        for ent in extracted_entities:
+            clean_ent = ent.lower().strip()
+            if clean_ent in PHRASE_NORMALIZATIONS:
+                resolved_search_terms.append(PHRASE_NORMALIZATIONS[clean_ent])
+            elif clean_ent in COMMON_BRAND_ALIASES:
+                resolved_search_terms.append(COMMON_BRAND_ALIASES[clean_ent])
+            elif clean_ent not in STOPWORDS and len(clean_ent) > 2:
+                resolved_search_terms.append(clean_ent)
+
+    # Priority multi-word phrase matching (e.g. "high blood pressure" -> "hypertension")
     for phrase, term in PHRASE_NORMALIZATIONS.items():
         if phrase in clean_text:
             if term not in resolved_search_terms:
@@ -356,9 +459,7 @@ def retrieve_graph_subgraph(query_text: str) -> Dict[str, Any]:
             resolved_search_terms.append(k)
 
     if not resolved_search_terms:
-        # If words were all filtered (e.g. "blood pressure"), keep meaningful tokens
         resolved_search_terms = [w for w in raw_tokens if w not in {"what", "is", "are", "the", "for", "and"}]
-
 
     if not resolved_search_terms:
         return {
@@ -379,12 +480,11 @@ def retrieve_graph_subgraph(query_text: str) -> Dict[str, Any]:
     raw_context = []
     evidence_counter = 1
 
-    # 1. Attempt Live Neo4j Query (Dual Search: Direct Brand/Ingredient + Symptom Indication)
+    # 1. Attempt Live Neo4j Query (Intent-Routed Traversal)
     db_success = False
     if driver:
         try:
             with driver.session() as session:
-                # Step A: Check if query targets a Brand or Ingredient directly
                 cypher_brand_ing = """
                 MATCH (i:Ingredient)
                 WHERE any(kw IN $terms WHERE toLower(i.name) CONTAINS kw)
@@ -408,34 +508,42 @@ def retrieve_graph_subgraph(query_text: str) -> Dict[str, Any]:
                        }) AS med_details
                 LIMIT 8
                 """
-                res = list(session.run(cypher_brand_ing, terms=resolved_search_terms))
 
-                # Step B: If no direct ingredient/brand hit, query Symptom Indications
-                if not res or len(res) == 0:
-                    cypher_symptom = """
-                    MATCH (s:Symptom)
-                    WHERE any(kw IN $terms WHERE toLower(s.name) CONTAINS kw)
-                    MATCH (s)<-[:TREATS]-(i:Ingredient)
-                    OPTIONAL MATCH (b:Brand)-[:CONTAINS]->(i)
-                    OPTIONAL MATCH (m:Medicine) WHERE toLower(m.brand_name) = toLower(b.name)
-                    RETURN s.name AS symptom,
-                           i.name AS ingredient,
-                           i.rxcui AS ingredient_rxcui,
-                           collect(DISTINCT b.name) AS brands,
-                           collect(DISTINCT {
-                               brand: m.brand_name,
-                               generic: m.generic_name,
-                               rxcui: m.rxcui,
-                               category: m.category,
-                               indications: m.indications,
-                               warnings: m.warnings,
-                               contraindications: m.contraindications,
-                               adverse_reactions: m.adverse_reactions,
-                               drug_interactions: m.drug_interactions
-                           }) AS med_details
-                    LIMIT 8
-                    """
+                cypher_symptom = """
+                MATCH (s:Symptom)
+                WHERE any(kw IN $terms WHERE toLower(s.name) CONTAINS kw)
+                MATCH (s)<-[:TREATS]-(i:Ingredient)
+                OPTIONAL MATCH (b:Brand)-[:CONTAINS]->(i)
+                OPTIONAL MATCH (m:Medicine) WHERE toLower(m.brand_name) = toLower(b.name)
+                RETURN s.name AS symptom,
+                       i.name AS ingredient,
+                       i.rxcui AS ingredient_rxcui,
+                       collect(DISTINCT b.name) AS brands,
+                       collect(DISTINCT {
+                           brand: m.brand_name,
+                           generic: m.generic_name,
+                           rxcui: m.rxcui,
+                           category: m.category,
+                           indications: m.indications,
+                           warnings: m.warnings,
+                           contraindications: m.contraindications,
+                           adverse_reactions: m.adverse_reactions,
+                           drug_interactions: m.drug_interactions
+                       }) AS med_details
+                LIMIT 8
+                """
+
+                if intent == "B":
+                    # Intent B: Search Brand/Ingredient index first
+                    res = list(session.run(cypher_brand_ing, terms=resolved_search_terms))
+                    if not res or len(res) == 0:
+                        res = list(session.run(cypher_symptom, terms=resolved_search_terms))
+                else:
+                    # Intent A (or default): Search Symptom index first
                     res = list(session.run(cypher_symptom, terms=resolved_search_terms))
+                    if not res or len(res) == 0:
+                        res = list(session.run(cypher_brand_ing, terms=resolved_search_terms))
+
 
 
                 for row in res:
@@ -594,19 +702,51 @@ def retrieve_graph_subgraph(query_text: str) -> Dict[str, Any]:
 @app.post("/api/search", response_model=SearchResponse)
 async def search_symptoms(request: SearchRequest):
     """
-    Natural language symptom search pipeline:
-    1. Validates query using Pydantic.
-    2. Executes hybrid retrieval + backward graph traversal.
-    3. Synthesizes clinical response under strict medical anti-hallucination guardrails.
-    4. Returns structured JSON containing the answer and interactive graph data.
+    Two-step intent-routed clinical search pipeline:
+    1. Step 1 (Intent Classifier): Triages query into:
+       - Intent A: Symptom-to-Medicine
+       - Intent B: Medicine-to-Alternative
+       - Intent C: Ambiguous (asks clarifying question directly)
+    2. Step 2 (Dynamic Execution):
+       - If Intent C: Skips graph query and returns clarification.
+       - If Intent A/B: Executes targeted Neo4j traversal.
+    3. Step 3 (Conversational Synthesis): Generates intent-tailored clinical answer with citations.
     """
-    retrieved = retrieve_graph_subgraph(request.query)
+    # Step 1: Intent Triage Router
+    intent_data = classify_user_intent(request.query, request.history)
+    intent = intent_data.get("intent", "A")
+    extracted_entities = intent_data.get("extracted_entities", [])
+    clarification_question = intent_data.get("clarification_question")
+
+    # If Intent C (Ambiguous): Skip database search and ask clarifying question directly!
+    if intent == "C":
+        clarify_msg = clarification_question or (
+            f"I see you mentioned '{request.query}'. Are you looking for medications that treat this condition, "
+            f"or do you have a specific medication in mind that you want to find alternatives for?"
+        )
+        return SearchResponse(
+            query=request.query,
+            answer=clarify_msg,
+            is_grounded=False,
+            symptoms_identified=[],
+            compositions=[],
+            alternative_medicines=[],
+            graph=GraphData(nodes=[], edges=[]),
+            clinical_records=[],
+            citations=[]
+        )
+
+    # Step 2: Dynamic Execution based on Intent
+    retrieved = retrieve_graph_subgraph(
+        query_text=request.query,
+        intent=intent,
+        extracted_entities=extracted_entities
+    )
     has_context = bool(retrieved["raw_context"])
 
     if not has_context:
-        # Strict zero-context refusal per Medical Guardrail specifications
         refusal_msg = (
-            "I cannot find verified pharmaceutical records in MedGraph Nexus for the requested symptoms. "
+            "I cannot find verified pharmaceutical records in MedGraph Nexus for the requested query. "
             "Please consult a qualified healthcare provider or medical professional."
         )
         return SearchResponse(
@@ -616,15 +756,19 @@ async def search_symptoms(request: SearchRequest):
             symptoms_identified=[],
             compositions=[],
             alternative_medicines=[],
-            graph=GraphData(nodes=[], edges=[])
+            graph=GraphData(nodes=[], edges=[]),
+            clinical_records=[],
+            citations=[]
         )
 
+    # Step 3: Intent-Tailored Conversational Output Generator
     answer_text = generate_conversational_response(
         query=request.query,
         raw_context=retrieved["raw_context"],
         history=request.history,
         language=request.language,
-        retrieved_summary=retrieved
+        retrieved_summary=retrieved,
+        intent=intent
     )
 
     return SearchResponse(
