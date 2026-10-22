@@ -1,0 +1,8 @@
+# Netlify Configuration for MedGraph Nexus Frontend
+[build]
+  publish = "frontend"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
