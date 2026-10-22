@@ -24,10 +24,10 @@
   <style>
     :root {
       --bg: #070a12;
-      --bg-panel: rgba(9, 14, 26, 0.35); /* ~65% background visibility */
-      --bg-card: rgba(15, 23, 42, 0.40);
-      --bg-card-hover: rgba(22, 33, 60, 0.65);
-      --header-bg: rgba(8, 12, 22, 0.50);
+      --bg-panel: rgba(10, 15, 26, 0.65); /* 35% background visibility, 65% tinted */
+      --bg-card: rgba(18, 26, 44, 0.72);
+      --bg-card-hover: rgba(26, 38, 64, 0.90);
+      --header-bg: rgba(9, 14, 25, 0.85);
       --border: rgba(255, 255, 255, 0.08);
       --border-subtle: rgba(255, 255, 255, 0.05);
       --border-hover: rgba(148, 163, 184, 0.35);
@@ -37,7 +37,7 @@
       --text-bright: #ffffff;
       --muted: #94a3b8;
       --faint: #64748b;
-      --shadow: 0 4px 20px rgba(0, 0, 0, 0.30);
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.40);
       --radius: 10px;
       --radius-sm: 6px;
     }
@@ -73,7 +73,7 @@
 
     /* ── TOP REGULATORY NOTICE STRIP ── */
     .top-notice-bar {
-      background: rgba(7, 10, 18, 0.55);
+      background: rgba(8, 12, 22, 0.85);
       border-bottom: 1px solid var(--border);
       padding: 6px 24px;
       font-size: 11.5px;
@@ -83,7 +83,7 @@
       flex-shrink: 0;
       z-index: 50;
       color: var(--muted);
-      backdrop-filter: blur(2px);
+      backdrop-filter: blur(10px);
     }
 
     .top-notice-bar strong {
@@ -101,7 +101,7 @@
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
       box-shadow: var(--shadow);
-      backdrop-filter: blur(2px);
+      backdrop-filter: blur(14px);
       position: relative;
       z-index: 40;
     }
@@ -181,7 +181,7 @@
       flex-direction: column;
       border-right: 1px solid var(--border);
       background: var(--bg-panel);
-      backdrop-filter: blur(1px);
+      backdrop-filter: blur(14px);
       min-height: 0;
       position: relative;
     }
@@ -243,7 +243,7 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
-      backdrop-filter: blur(2px);
+      backdrop-filter: blur(8px);
     }
 
     .prompt-card:hover {
@@ -427,14 +427,14 @@
       background: var(--header-bg);
       border-top: 1px solid var(--border);
       flex-shrink: 0;
-      backdrop-filter: blur(2px);
+      backdrop-filter: blur(14px);
     }
 
     .composer-row {
       display: flex;
       align-items: flex-end;
       gap: 10px;
-      background: rgba(13, 19, 35, 0.60);
+      background: rgba(13, 19, 35, 0.75);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 8px 12px;
@@ -490,7 +490,7 @@
       display: flex;
       flex-direction: column;
       background: var(--bg-panel);
-      backdrop-filter: blur(1px);
+      backdrop-filter: blur(14px);
       min-height: 0;
     }
 
@@ -502,7 +502,7 @@
       background: var(--header-bg);
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
-      backdrop-filter: blur(2px);
+      backdrop-filter: blur(14px);
     }
 
     .tab-btn-group {
@@ -573,7 +573,7 @@
       position: absolute;
       top: 14px;
       left: 14px;
-      background: rgba(10, 15, 26, 0.70);
+      background: rgba(10, 15, 26, 0.85);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       padding: 8px 12px;
@@ -582,7 +582,7 @@
       flex-direction: column;
       gap: 6px;
       z-index: 10;
-      backdrop-filter: blur(3px);
+      backdrop-filter: blur(10px);
     }
 
     .legend-item {
@@ -1552,7 +1552,7 @@
     // 12. FULL 3D BACKGROUND ENGINE: DNA & FLOATING MEDICINES
     // ========================================================
     let bgScene, bgCamera, bgRenderer;
-    let bgDnaPrimary, bgDnaSecondary;
+    let bgDnaPrimary;
     let floatingMedicines = [];
     let bgMouse = { x: 0, y: 0 };
     let bgTargetRotation = { x: 0, y: 0 };
@@ -1738,19 +1738,12 @@
       softRim.position.set(0, -10, 6);
       bgScene.add(softRim);
 
-      // ── 1. PRIMARY DNA STRUCTURE (High Definition & Clear Depth) ──
-      bgDnaPrimary = createDnaHelix(0x3b82f6, 0x0284c7, 2.2, 30, 48, 0.32);
+      // ── 1. SINGLE ICONIC 3D DNA STRUCTURE ──
+      bgDnaPrimary = createDnaHelix(0x2563eb, 0x0284c7, 2.2, 30, 48, 0.32);
       bgDnaPrimary.position.set(6.8, 0, 0);
       bgDnaPrimary.rotation.z = Math.PI / 6.5;
       bgDnaPrimary.rotation.x = 0.25;
       bgScene.add(bgDnaPrimary);
-
-      // Secondary DNA structure in deep left background
-      bgDnaSecondary = createDnaHelix(0x64748b, 0x475569, 1.8, 26, 40, -0.28);
-      bgDnaSecondary.position.set(-8.8, -1, -2);
-      bgDnaSecondary.rotation.z = -Math.PI / 5;
-      bgDnaSecondary.rotation.x = -0.2;
-      bgScene.add(bgDnaSecondary);
 
       // ── 2. FLOATING MEDICINES & PHARMACEUTICAL PARTICLES ──
       floatingMedicines = [];
@@ -1881,9 +1874,6 @@
       // Continuous DNA rotations
       if (bgDnaPrimary) {
         bgDnaPrimary.rotation.y += 0.006;
-      }
-      if (bgDnaSecondary) {
-        bgDnaSecondary.rotation.y -= 0.004;
       }
 
       // Continuous Floating Medicines Tumble & Zero-G Drift
