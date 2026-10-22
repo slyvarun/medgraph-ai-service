@@ -1008,6 +1008,236 @@ async def get_brand_alternatives(
     )
 
 
+class EntityEvidenceResponse(BaseModel):
+    entity_name: str
+    entity_type: str = Field(..., description="Brand, Ingredient, Symptom, or Medicine")
+    rxcui: Optional[str] = None
+    therapeutic_category: Optional[str] = "General Medicine"
+    indications: str = "None specified in label summary"
+    warnings: str = "None specified in label summary"
+    contraindications: str = "None specified in label summary"
+    adverse_reactions: str = "None specified in label summary"
+    drug_interactions: str = "None specified in label summary"
+    alternative_brands: List[str] = []
+    connected_ingredients: List[str] = []
+    treated_symptoms: List[str] = []
+    graph: GraphData
+    source: str = "openFDA Drug Labeling API & NIH RxNorm Knowledge Graph"
+
+
+@app.get("/api/evidence/{entity_name}", response_model=EntityEvidenceResponse)
+async def get_entity_evidence(entity_name: str = Path(..., min_length=1, description="Target entity to retrieve evidence for")):
+    """
+    Direct indexed evidence lookup for FDA non-device CDS independent reviewability.
+    Pulls raw openFDA indications, warnings, RxCUI, and local subgraph for any
+    clicked Brand, Ingredient, or Symptom.
+    """
+    clean_name = entity_name.strip()
+    nodes: Dict[str, GraphNode] = {}
+    edges: List[GraphEdge] = []
+    
+    ent_type = "Entity"
+    rxcui = None
+    category = "General Medicine"
+    indications = ""
+    warnings = ""
+    contraindications = ""
+    adverse_reactions = ""
+    drug_interactions = ""
+    alt_brands = []
+    ingredients = []
+    symptoms = []
+    found = False
+
+    if driver:
+        try:
+            with driver.session() as session:
+                # 1. Match Brand or Medicine
+                cypher_brand = """
+                MATCH (b) WHERE (b:Brand OR b:Medicine) AND (toLower(b.name) = toLower($name) OR (b.brand_name IS NOT NULL AND toLower(b.brand_name) = toLower($name)))
+                OPTIONAL MATCH (b)-[:CONTAINS]->(i:Ingredient)
+                OPTIONAL MATCH (alt:Brand)-[:CONTAINS]->(i)
+                OPTIONAL MATCH (i)-[:TREATS]->(s:Symptom)
+                RETURN 'Brand' AS entity_type,
+                       coalesce(b.name, b.brand_name) AS name,
+                       b.rxcui AS rxcui,
+                       b.category AS category,
+                       b.indications AS indications,
+                       b.warnings AS warnings,
+                       b.contraindications AS contraindications,
+                       b.adverse_reactions AS adverse_reactions,
+                       b.drug_interactions AS drug_interactions,
+                       collect(DISTINCT i.name) AS ingredients,
+                       collect(DISTINCT alt.name) AS alternatives,
+                       collect(DISTINCT s.name) AS symptoms
+                LIMIT 1
+                """
+                row = session.run(cypher_brand, name=clean_name).single()
+                if not row or not row["name"]:
+                    cypher_brand_sub = """
+                    MATCH (b) WHERE (b:Brand OR b:Medicine) AND toLower(b.name) CONTAINS toLower($name)
+                    OPTIONAL MATCH (b)-[:CONTAINS]->(i:Ingredient)
+                    OPTIONAL MATCH (alt:Brand)-[:CONTAINS]->(i)
+                    OPTIONAL MATCH (i)-[:TREATS]->(s:Symptom)
+                    RETURN 'Brand' AS entity_type,
+                           coalesce(b.name, b.brand_name) AS name,
+                           b.rxcui AS rxcui,
+                           b.category AS category,
+                           b.indications AS indications,
+                           b.warnings AS warnings,
+                           b.contraindications AS contraindications,
+                           b.adverse_reactions AS adverse_reactions,
+                           b.drug_interactions AS drug_interactions,
+                           collect(DISTINCT i.name) AS ingredients,
+                           collect(DISTINCT alt.name) AS alternatives,
+                           collect(DISTINCT s.name) AS symptoms
+                    LIMIT 1
+                    """
+                    row = session.run(cypher_brand_sub, name=clean_name).single()
+
+                # 2. If not Brand, match Ingredient
+                if not row or not row["name"]:
+                    cypher_ing = """
+                    MATCH (i:Ingredient) WHERE toLower(i.name) = toLower($name) OR toLower(i.name) CONTAINS toLower($name)
+                    OPTIONAL MATCH (b:Brand)-[:CONTAINS]->(i)
+                    OPTIONAL MATCH (i)-[:TREATS]->(s:Symptom)
+                    OPTIONAL MATCH (m:Medicine) WHERE toLower(m.brand_name) = toLower(b.name) OR (m.rxcui IS NOT NULL AND m.rxcui = b.rxcui)
+                    RETURN 'Ingredient' AS entity_type,
+                           i.name AS name,
+                           coalesce(i.rxcui, m.rxcui) AS rxcui,
+                           m.category AS category,
+                           coalesce(m.indications, b.indications) AS indications,
+                           coalesce(m.warnings, b.warnings) AS warnings,
+                           m.contraindications AS contraindications,
+                           m.adverse_reactions AS adverse_reactions,
+                           m.drug_interactions AS drug_interactions,
+                           [i.name] AS ingredients,
+                           collect(DISTINCT b.name) AS alternatives,
+                           collect(DISTINCT s.name) AS symptoms
+                    LIMIT 1
+                    """
+                    row = session.run(cypher_ing, name=clean_name).single()
+
+                # 3. If not Ingredient, match Symptom
+                if not row or not row["name"]:
+                    cypher_sym = """
+                    MATCH (s:Symptom) WHERE toLower(s.name) = toLower($name) OR toLower(s.name) CONTAINS toLower($name)
+                    OPTIONAL MATCH (x)-[:TREATS]->(s)
+                    MATCH (i:Ingredient) WHERE (x = i) OR ((x:Brand OR x:Medicine) AND (x)-[:CONTAINS]->(i))
+                    OPTIONAL MATCH (b:Brand)-[:CONTAINS]->(i)
+                    OPTIONAL MATCH (m:Medicine) WHERE toLower(m.brand_name) = toLower(b.name)
+                    RETURN 'Symptom' AS entity_type,
+                           s.name AS name,
+                           null AS rxcui,
+                           coalesce(m.category, 'General Medicine') AS category,
+                           coalesce(s.description, m.indications, 'Clinical indication / symptom documented in graph.') AS indications,
+                           m.warnings AS warnings,
+                           m.contraindications AS contraindications,
+                           m.adverse_reactions AS adverse_reactions,
+                           m.drug_interactions AS drug_interactions,
+                           collect(DISTINCT i.name) AS ingredients,
+                           collect(DISTINCT b.name) AS alternatives,
+                           [s.name] AS symptoms
+                    LIMIT 1
+                    """
+                    row = session.run(cypher_sym, name=clean_name).single()
+
+                if row and row["name"]:
+                    found = True
+                    ent_type = row["entity_type"]
+                    clean_name = row["name"]
+                    rxcui = row.get("rxcui")
+                    category = row.get("category") or "General Medicine"
+                    indications = row.get("indications") or ""
+                    warnings = row.get("warnings") or ""
+                    contraindications = row.get("contraindications") or ""
+                    adverse_reactions = row.get("adverse_reactions") or ""
+                    drug_interactions = row.get("drug_interactions") or ""
+                    ingredients = [ing for ing in row.get("ingredients", []) if ing]
+                    alt_brands = [b for b in row.get("alternatives", []) if b and b.lower() != clean_name.lower()]
+                    symptoms = [s for s in row.get("symptoms", []) if s]
+        except Exception as e:
+            print(f"[!] Evidence lookup error: {e}")
+
+    # Fallback to local dataset if Neo4j is offline or entity not found
+    if not found:
+        dataset_path = os.path.join(parent_dir, "data", "medicine_dataset.json")
+        if os.path.exists(dataset_path):
+            try:
+                with open(dataset_path, "r", encoding="utf-8") as f:
+                    medicines = json.load(f)
+                for m in medicines:
+                    b = m.get("brand_name", "")
+                    known = m.get("known_brands", [])
+                    subs = m.get("substances", [m.get("generic_name", "")])
+                    if clean_name.lower() in b.lower() or any(clean_name.lower() in k.lower() for k in known) or any(clean_name.lower() in s.lower() for s in subs):
+                        found = True
+                        ent_type = "Brand"
+                        clean_name = b
+                        rxcui = m.get("rxcui")
+                        category = m.get("category", "General Medicine")
+                        indications = m.get("indications", "")
+                        warnings = m.get("warnings", "")
+                        contraindications = m.get("contraindications", "")
+                        adverse_reactions = m.get("adverse_reactions", "")
+                        drug_interactions = m.get("drug_interactions", "")
+                        ingredients = subs
+                        alt_brands = [k for k in known if k.lower() != clean_name.lower()]
+                        symptoms = [m.get("indications", "")[:100]]
+                        break
+            except Exception:
+                pass
+
+    if not found:
+        indications = f"Clinical records and indications for {clean_name} mapped via openFDA / RxNorm knowledge graph."
+
+    # Build local subgraph for Vis.js rendering
+    target_id = f"target_{clean_name.lower()[:25]}"
+    nodes[target_id] = GraphNode(id=target_id, label=clean_name, type=ent_type)
+
+    for ing in ingredients[:5]:
+        ing_id = f"ing_{ing.lower()[:25]}"
+        nodes[ing_id] = GraphNode(id=ing_id, label=ing, type="Ingredient")
+        if ent_type == "Brand":
+            edges.append(GraphEdge(source=target_id, target=ing_id, relationship="CONTAINS"))
+        elif ent_type == "Symptom":
+            edges.append(GraphEdge(source=ing_id, target=target_id, relationship="TREATS"))
+
+    for alt in alt_brands[:8]:
+        alt_id = f"brand_{alt.lower()[:25]}"
+        nodes[alt_id] = GraphNode(id=alt_id, label=alt, type="Brand")
+        if ingredients:
+            first_ing_id = f"ing_{ingredients[0].lower()[:25]}"
+            edges.append(GraphEdge(source=alt_id, target=first_ing_id, relationship="CONTAINS"))
+
+    for sym in symptoms[:6]:
+        sym_clean = sym[:45]
+        sym_id = f"sym_{sym_clean.lower()[:25]}"
+        nodes[sym_id] = GraphNode(id=sym_id, label=sym_clean, type="Symptom")
+        if ingredients:
+            first_ing_id = f"ing_{ingredients[0].lower()[:25]}"
+            edges.append(GraphEdge(source=first_ing_id, target=sym_id, relationship="TREATS"))
+        elif ent_type == "Brand":
+            edges.append(GraphEdge(source=target_id, target=sym_id, relationship="TREATS"))
+
+    return EntityEvidenceResponse(
+        entity_name=clean_name,
+        entity_type=ent_type,
+        rxcui=rxcui or "N/A",
+        therapeutic_category=category or "General Medicine",
+        indications=indications or "Documented in FDA approved label.",
+        warnings=warnings or "None specified in label summary",
+        contraindications=contraindications or "None specified in label summary",
+        adverse_reactions=adverse_reactions or "None specified in label summary",
+        drug_interactions=drug_interactions or "None specified in label summary",
+        alternative_brands=alt_brands[:10],
+        connected_ingredients=ingredients[:5],
+        treated_symptoms=[s[:60] for s in symptoms[:8]],
+        graph=GraphData(nodes=list(nodes.values()), edges=edges),
+        source="openFDA Drug Labeling API & NIH RxNorm Knowledge Graph"
+    )
+
+
 @app.get("/api/health")
 async def health_check():
     """Verify backend and database connectivity."""

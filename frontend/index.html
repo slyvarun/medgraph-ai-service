@@ -471,6 +471,54 @@
       border-color: #2563eb;
     }
 
+    /* ── ENTITY PROVENANCE TOKENS ───────────── */
+    .entity-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      padding: 1px 7px;
+      margin: 0 2px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      vertical-align: baseline;
+      transition: all .15s ease;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
+    .entity-chip:hover {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #1d4ed8;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+    }
+
+    .entity-chip.active {
+      background: #1e3a8a;
+      color: #ffffff;
+      border-color: #172554;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4);
+    }
+
+    .chip-pulse {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #3b82f6;
+      display: inline-block;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .entity-chip:hover .chip-pulse {
+      background: #ffffff;
+    }
+
     .drawer-overlay {
       position: fixed;
       inset: 0;
@@ -1226,6 +1274,122 @@
       });
     }
 
+    // 9b. Clinical Entity Provenance Tokenizer for **[Entity]**
+    function parseEntityChipsInText(text) {
+      if (!text) return '';
+      return text.replace(/<strong>\[(.*?)\]<\/strong>/g, (match, entity) => {
+        const clean = entity.trim();
+        const esc = clean.replace(/'/g, "\\'");
+        return `<button class="entity-chip" onclick="inspectEvidence('${esc}')" title="Inspect clinical evidence for ${clean}"><span class="chip-pulse"></span>${clean}</button>`;
+      }).replace(/\*\*\[(.*?)\]\*\*/g, (match, entity) => {
+        const clean = entity.trim();
+        const esc = clean.replace(/'/g, "\\'");
+        return `<button class="entity-chip" onclick="inspectEvidence('${esc}')" title="Inspect clinical evidence for ${clean}"><span class="chip-pulse"></span>${clean}</button>`;
+      });
+    }
+
+    // 9c. Interactive Provenance Inspector (GET /api/evidence/{entity_name})
+    async function inspectEvidence(entityName) {
+      if (!entityName) return;
+
+      // Update active state across chips
+      document.querySelectorAll('.entity-chip').forEach(el => {
+        if (el.textContent.trim().toLowerCase() === entityName.trim().toLowerCase()) {
+          el.classList.add('active');
+        } else {
+          el.classList.remove('active');
+        }
+      });
+
+      const base = getBackendBaseUrl();
+      const url = `${base}/api/evidence/${encodeURIComponent(entityName)}`;
+
+      try {
+        switchTab('raw');
+        const container = document.getElementById('raw-records-list');
+        const emptyNotice = document.getElementById('raw-data-empty');
+        if (emptyNotice) emptyNotice.style.display = 'none';
+
+        container.innerHTML = `
+          <div id="evidence-loading-banner" style="background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+            <div class="pulse-dot"></div> Loading verified openFDA label evidence for <strong>${entityName}</strong>...
+          </div>
+        `;
+
+        const res = await fetch(url);
+        if (!res.ok) {
+          container.innerHTML = `
+            <div style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 14px; border-radius: 8px; font-size: 13px;">
+              ⚠️ Unable to locate specific openFDA label records for "<strong>${entityName}</strong>".
+            </div>
+          `;
+          return;
+        }
+
+        const data = await res.json();
+
+        // 1. Render Local Subgraph in Vis.js
+        if (data.graph && data.graph.nodes && data.graph.nodes.length > 0) {
+          initOrUpdateGraph(data.graph);
+        }
+
+        // 2. Render Evidence Card in Raw Tab
+        const badgeTypeColor = data.entity_type === 'Brand' ? '#10b981' : (data.entity_type === 'Ingredient' ? '#2563eb' : '#ef4444');
+        
+        const altsHtml = data.alternative_brands && data.alternative_brands.length > 0
+          ? `<div class="raw-field" style="margin-top: 10px;"><strong>Bioequivalent Alternative Formulations:</strong> 
+              <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+                ${data.alternative_brands.map(b => `<button class="entity-chip" onclick="inspectEvidence('${b.replace(/'/g, "\\'")}')"><span class="chip-pulse"></span>${b}</button>`).join('')}
+              </div>
+            </div>`
+          : '';
+
+        const warningsHtml = (data.warnings && data.warnings !== 'None specified in label summary')
+          ? `<div class="raw-warning-box" style="margin-top: 10px;"><strong>⚠️ FDA Boxed Warnings & Precautions:</strong> ${data.warnings}</div>`
+          : '';
+
+        const contraHtml = (data.contraindications && data.contraindications !== 'None specified in label summary')
+          ? `<div class="raw-field" style="margin-top: 8px;"><strong>Contraindications:</strong> ${data.contraindications}</div>`
+          : '';
+
+        container.innerHTML = `
+          <div class="raw-card" style="border: 2px solid #2563eb; box-shadow: 0 4px 14px rgba(37,99,235,0.12); background: #ffffff;">
+            <div class="raw-card-header" style="background: #f8fafc; padding: 12px 16px; border-bottom: 1px solid var(--border); border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: ${badgeTypeColor}; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  ${data.entity_type}
+                </span>
+                <span class="raw-card-title" style="font-size: 16px;">${data.entity_name}</span>
+              </div>
+              <span class="raw-badge-rxcui" style="font-size: 12px; font-family: monospace;">RxCUI: ${data.rxcui || 'N/A'}</span>
+            </div>
+
+            <div style="padding: 16px;">
+              <div class="raw-field"><strong>Therapeutic Category:</strong> ${data.therapeutic_category}</div>
+              ${data.connected_ingredients && data.connected_ingredients.length > 0 ? `<div class="raw-field" style="margin-top: 4px;"><strong>Active Substance(s):</strong> ${data.connected_ingredients.join(', ')}</div>` : ''}
+              ${data.treated_symptoms && data.treated_symptoms.length > 0 ? `<div class="raw-field" style="margin-top: 4px;"><strong>Approved Indications:</strong> ${data.treated_symptoms.join(', ')}</div>` : ''}
+              <div class="raw-field" style="margin-top: 8px;"><strong>FDA Approved Label Excerpt:</strong> ${data.indications}</div>
+              ${altsHtml}
+              ${warningsHtml}
+              ${contraHtml}
+            </div>
+
+            <div style="font-size: 11.5px; color: var(--muted); border-top: 1px solid #f1f5f9; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; background: #fafafa; border-radius: 0 0 8px 8px;">
+              <span>Source: ${data.source}</span>
+              <button onclick="switchTab('graph')" style="background: transparent; border: none; color: #2563eb; font-weight: 600; cursor: pointer; font-size: 12px;">
+                View in Visual Graph 🕸️
+              </button>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('badge-raw-count').textContent = '1';
+
+      } catch (err) {
+        console.error('Evidence inspection error:', err);
+      }
+    }
+
     // 10. Chat Message Handlers
     function resize(el) {
       el.style.height = 'auto';
@@ -1262,9 +1426,10 @@
       if (role === 'user') {
         bub.textContent = rawContent;
       } else {
-        // Parse markdown then convert [1] into clickable citation badges
+        // Parse markdown then convert [1] into citation badges and **[Entity]** into interactive chips
         const parsedMd = marked.parse(rawContent);
-        bub.innerHTML = parseCitationsInText(parsedMd);
+        const withCitations = parseCitationsInText(parsedMd);
+        bub.innerHTML = parseEntityChipsInText(withCitations);
       }
 
       wrap.appendChild(av);
