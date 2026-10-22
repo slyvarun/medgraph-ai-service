@@ -100,8 +100,9 @@ def process_openfda_zip(zip_file_path: str) -> pd.DataFrame:
 def ingest_brands_batch(tx, batch, link_ingredients: bool = True):
     """
     Executes Cypher UNWIND to merge nodes efficiently.
-    Tags nodes as both :Brand and :Medicine for seamless compatibility
-    with MedGraph Nexus GraphRAG queries, and optionally links to :Ingredient.
+    Merges (:Brand {rxcui}) and sets clinical properties, preserving
+    compatibility with GraphRAG queries and avoiding conflicts with
+    the existing (:Medicine {brand_name}) uniqueness constraint.
     """
     if link_ingredients:
         query = """
@@ -109,7 +110,6 @@ def ingest_brands_batch(tx, batch, link_ingredients: bool = True):
         MERGE (b:Brand {rxcui: drug.rxcui})
         ON CREATE SET 
             b.name = drug.brand_name,
-            b.brand_name = drug.brand_name,
             b.generic_name = drug.generic_name,
             b.indications = drug.indications,
             b.warnings = drug.warnings,
@@ -117,7 +117,6 @@ def ingest_brands_batch(tx, batch, link_ingredients: bool = True):
         ON MATCH SET
             b.indications = coalesce(b.indications, drug.indications),
             b.warnings = coalesce(b.warnings, drug.warnings)
-        SET b:Medicine
         WITH b, drug
         WHERE drug.generic_name IS NOT NULL AND drug.generic_name <> ''
         MERGE (i:Ingredient {name: drug.generic_name})
@@ -129,7 +128,6 @@ def ingest_brands_batch(tx, batch, link_ingredients: bool = True):
         MERGE (b:Brand {rxcui: drug.rxcui})
         ON CREATE SET 
             b.name = drug.brand_name,
-            b.brand_name = drug.brand_name,
             b.generic_name = drug.generic_name,
             b.indications = drug.indications,
             b.warnings = drug.warnings,
@@ -137,7 +135,6 @@ def ingest_brands_batch(tx, batch, link_ingredients: bool = True):
         ON MATCH SET
             b.indications = coalesce(b.indications, drug.indications),
             b.warnings = coalesce(b.warnings, drug.warnings)
-        SET b:Medicine
         """
     tx.run(query, batch=batch)
 
