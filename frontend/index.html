@@ -23,11 +23,11 @@
 
   <style>
     :root {
-      --bg: #090d16;
-      --bg-panel: rgba(13, 19, 33, 0.74);
-      --bg-card: rgba(20, 28, 48, 0.82);
-      --bg-card-hover: rgba(28, 38, 64, 0.95);
-      --header-bg: rgba(10, 15, 26, 0.92);
+      --bg: #070a12;
+      --bg-panel: rgba(9, 14, 26, 0.35); /* ~65% background visibility */
+      --bg-card: rgba(15, 23, 42, 0.40);
+      --bg-card-hover: rgba(22, 33, 60, 0.65);
+      --header-bg: rgba(8, 12, 22, 0.50);
       --border: rgba(255, 255, 255, 0.08);
       --border-subtle: rgba(255, 255, 255, 0.05);
       --border-hover: rgba(148, 163, 184, 0.35);
@@ -37,7 +37,7 @@
       --text-bright: #ffffff;
       --muted: #94a3b8;
       --faint: #64748b;
-      --shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.30);
       --radius: 10px;
       --radius-sm: 6px;
     }
@@ -73,7 +73,7 @@
 
     /* ── TOP REGULATORY NOTICE STRIP ── */
     .top-notice-bar {
-      background: rgba(8, 12, 22, 0.96);
+      background: rgba(7, 10, 18, 0.55);
       border-bottom: 1px solid var(--border);
       padding: 6px 24px;
       font-size: 11.5px;
@@ -83,7 +83,7 @@
       flex-shrink: 0;
       z-index: 50;
       color: var(--muted);
-      backdrop-filter: blur(12px);
+      backdrop-filter: blur(2px);
     }
 
     .top-notice-bar strong {
@@ -101,7 +101,7 @@
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
       box-shadow: var(--shadow);
-      backdrop-filter: blur(16px);
+      backdrop-filter: blur(2px);
       position: relative;
       z-index: 40;
     }
@@ -181,7 +181,7 @@
       flex-direction: column;
       border-right: 1px solid var(--border);
       background: var(--bg-panel);
-      backdrop-filter: blur(14px);
+      backdrop-filter: blur(1px);
       min-height: 0;
       position: relative;
     }
@@ -243,6 +243,7 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
+      backdrop-filter: blur(2px);
     }
 
     .prompt-card:hover {
@@ -426,14 +427,14 @@
       background: var(--header-bg);
       border-top: 1px solid var(--border);
       flex-shrink: 0;
-      backdrop-filter: blur(16px);
+      backdrop-filter: blur(2px);
     }
 
     .composer-row {
       display: flex;
       align-items: flex-end;
       gap: 10px;
-      background: rgba(15, 23, 42, 0.9);
+      background: rgba(13, 19, 35, 0.60);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 8px 12px;
@@ -489,7 +490,7 @@
       display: flex;
       flex-direction: column;
       background: var(--bg-panel);
-      backdrop-filter: blur(14px);
+      backdrop-filter: blur(1px);
       min-height: 0;
     }
 
@@ -501,6 +502,7 @@
       background: var(--header-bg);
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
+      backdrop-filter: blur(2px);
     }
 
     .tab-btn-group {
@@ -571,7 +573,7 @@
       position: absolute;
       top: 14px;
       left: 14px;
-      background: rgba(13, 19, 33, 0.92);
+      background: rgba(10, 15, 26, 0.70);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       padding: 8px 12px;
@@ -580,7 +582,7 @@
       flex-direction: column;
       gap: 6px;
       z-index: 10;
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(3px);
     }
 
     .legend-item {
@@ -610,7 +612,7 @@
     }
 
     .graph-btn {
-      background: rgba(13, 19, 33, 0.9);
+      background: rgba(10, 15, 26, 0.70);
       border: 1px solid var(--border);
       color: #cbd5e1;
       padding: 5px 10px;
@@ -618,6 +620,7 @@
       font-size: 11px;
       cursor: pointer;
       transition: all 0.15s;
+      backdrop-filter: blur(2px);
     }
 
     .graph-btn:hover {
@@ -1708,7 +1711,7 @@
 
       bgScene = new THREE.Scene();
       bgCamera = new THREE.PerspectiveCamera(46, width / height, 0.1, 100);
-      bgCamera.position.set(0, 0, 19);
+      bgCamera.position.set(0, 0, 16);
 
       bgRenderer = new THREE.WebGLRenderer({
         canvas: canvas,
@@ -1719,32 +1722,32 @@
       bgRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       bgRenderer.setSize(width, height);
 
-      // Clean Clinical Studio Lighting (No neon flares)
-      const ambientLight = new THREE.AmbientLight(0x1e293b, 1.4);
+      // Clean Clinical Studio Lighting (High contrast & clarity)
+      const ambientLight = new THREE.AmbientLight(0x334155, 1.8);
       bgScene.add(ambientLight);
 
-      const keyLight = new THREE.DirectionalLight(0xffffff, 1.8);
-      keyLight.position.set(10, 12, 14);
+      const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
+      keyLight.position.set(12, 14, 16);
       bgScene.add(keyLight);
 
-      const fillLight = new THREE.DirectionalLight(0x94a3b8, 1.0);
-      fillLight.position.set(-12, -8, 8);
+      const fillLight = new THREE.DirectionalLight(0x94a3b8, 1.5);
+      fillLight.position.set(-12, -8, 10);
       bgScene.add(fillLight);
 
-      const softRim = new THREE.PointLight(0x38bdf8, 1.2, 35);
-      softRim.position.set(0, -10, 4);
+      const softRim = new THREE.PointLight(0x38bdf8, 1.4, 35);
+      softRim.position.set(0, -10, 6);
       bgScene.add(softRim);
 
-      // ── 1. PRIMARY DNA STRUCTURE (High Definition) ──
-      bgDnaPrimary = createDnaHelix(0x2563eb, 0x0284c7, 1.9, 28, 44, 0.32);
-      bgDnaPrimary.position.set(6.5, 0, -2);
+      // ── 1. PRIMARY DNA STRUCTURE (High Definition & Clear Depth) ──
+      bgDnaPrimary = createDnaHelix(0x3b82f6, 0x0284c7, 2.2, 30, 48, 0.32);
+      bgDnaPrimary.position.set(6.8, 0, 0);
       bgDnaPrimary.rotation.z = Math.PI / 6.5;
       bgDnaPrimary.rotation.x = 0.25;
       bgScene.add(bgDnaPrimary);
 
       // Secondary DNA structure in deep left background
-      bgDnaSecondary = createDnaHelix(0x475569, 0x334155, 1.6, 24, 36, -0.28);
-      bgDnaSecondary.position.set(-9.5, -2, -5);
+      bgDnaSecondary = createDnaHelix(0x64748b, 0x475569, 1.8, 26, 40, -0.28);
+      bgDnaSecondary.position.set(-8.8, -1, -2);
       bgDnaSecondary.rotation.z = -Math.PI / 5;
       bgDnaSecondary.rotation.x = -0.2;
       bgScene.add(bgDnaSecondary);
@@ -1768,26 +1771,26 @@
         0xccfbf1  // Soft Mint-White
       ];
 
-      // Spawn 14 Capsules scattered in 3D
-      for (let i = 0; i < 14; i++) {
+      // Spawn 20 Capsules scattered in 3D across foreground and midground
+      for (let i = 0; i < 20; i++) {
         const preset = capsulePresets[i % capsulePresets.length];
         const cap = createCapsule(preset.c1, preset.c2);
 
-        // Distribute across screen volume
+        // Distribute across screen volume (closer to camera for high visibility)
         cap.position.set(
-          (Math.random() - 0.5) * 28,
+          (Math.random() - 0.5) * 26,
           (Math.random() - 0.5) * 18,
-          (Math.random() - 0.5) * 12 - 1
+          (Math.random() - 0.5) * 8 + 1
         );
         cap.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
 
         // Tumble dynamics
         cap.userData = {
-          rx: (Math.random() - 0.5) * 0.012,
-          ry: (Math.random() - 0.5) * 0.014,
-          rz: (Math.random() - 0.5) * 0.010,
+          rx: (Math.random() - 0.5) * 0.014,
+          ry: (Math.random() - 0.5) * 0.016,
+          rz: (Math.random() - 0.5) * 0.012,
           driftSpeed: 0.004 + Math.random() * 0.004,
-          floatAmp: 0.4 + Math.random() * 0.6,
+          floatAmp: 0.45 + Math.random() * 0.6,
           floatPhase: Math.random() * Math.PI * 2,
           baseY: cap.position.y
         };
@@ -1796,24 +1799,24 @@
         floatingMedicines.push(cap);
       }
 
-      // Spawn 10 Round Tablets
-      for (let i = 0; i < 10; i++) {
+      // Spawn 16 Round Tablets
+      for (let i = 0; i < 16; i++) {
         const color = tabletPresets[i % tabletPresets.length];
         const tab = createTablet(color);
 
         tab.position.set(
-          (Math.random() - 0.5) * 26,
+          (Math.random() - 0.5) * 24,
           (Math.random() - 0.5) * 16,
-          (Math.random() - 0.5) * 10 - 2
+          (Math.random() - 0.5) * 8 + 0.5
         );
         tab.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
 
         tab.userData = {
-          rx: (Math.random() - 0.5) * 0.010,
-          ry: (Math.random() - 0.5) * 0.012,
-          rz: (Math.random() - 0.5) * 0.008,
+          rx: (Math.random() - 0.5) * 0.012,
+          ry: (Math.random() - 0.5) * 0.014,
+          rz: (Math.random() - 0.5) * 0.010,
           driftSpeed: 0.003 + Math.random() * 0.003,
-          floatAmp: 0.35 + Math.random() * 0.4,
+          floatAmp: 0.40 + Math.random() * 0.45,
           floatPhase: Math.random() * Math.PI * 2,
           baseY: tab.position.y
         };
@@ -1822,22 +1825,22 @@
         floatingMedicines.push(tab);
       }
 
-      // Spawn 6 Molecular Chemical Rings
-      for (let i = 0; i < 6; i++) {
+      // Spawn 8 Molecular Chemical Rings
+      for (let i = 0; i < 8; i++) {
         const mol = createMolecularRing(0x0284c7, 0x64748b);
         mol.position.set(
-          (Math.random() - 0.5) * 24,
-          (Math.random() - 0.5) * 16,
-          (Math.random() - 0.5) * 8 - 3
+          (Math.random() - 0.5) * 22,
+          (Math.random() - 0.5) * 15,
+          (Math.random() - 0.5) * 6 - 0.5
         );
         mol.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
 
         mol.userData = {
-          rx: (Math.random() - 0.5) * 0.008,
-          ry: (Math.random() - 0.5) * 0.010,
-          rz: (Math.random() - 0.5) * 0.006,
+          rx: (Math.random() - 0.5) * 0.010,
+          ry: (Math.random() - 0.5) * 0.012,
+          rz: (Math.random() - 0.5) * 0.008,
           driftSpeed: 0.003,
-          floatAmp: 0.3,
+          floatAmp: 0.35,
           floatPhase: Math.random() * Math.PI * 2,
           baseY: mol.position.y
         };
