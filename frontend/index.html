@@ -60,7 +60,7 @@
       position: relative;
     }
 
-    /* ── BLURRED CINEMATIC 3D BACKGROUND (35% VISIBILITY + BOKEH) ── */
+    /* ── BLURRED CINEMATIC 3D BACKGROUND (HARDWARE-ACCELERATED BOKEH VEIL) ── */
     #bg-3d-canvas {
       position: fixed;
       top: 0;
@@ -69,10 +69,17 @@
       height: 100vh;
       z-index: 0;
       pointer-events: none;
-      filter: blur(10px);
-      transform: scale(1.06);
-      opacity: 0.55;
-      transition: filter 1s ease, opacity 1s ease;
+      opacity: 0.50;
+    }
+
+    .bg-bokeh-veil {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      background: radial-gradient(circle at 65% 50%, rgba(7, 10, 18, 0.25) 0%, rgba(4, 7, 14, 0.55) 100%);
     }
 
     /* ── NETFLIX-STYLE CINEMATIC INTRO: MEDGRAPH NEXUS ── */
@@ -89,7 +96,8 @@
       perspective: 1200px;
       cursor: pointer;
       user-select: none;
-      transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s ease;
+      transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s ease;
+      will-change: opacity, transform;
     }
 
     #netflix-intro.netflix-dismissed {
@@ -115,6 +123,7 @@
       align-items: center;
       justify-content: center;
       transform-style: preserve-3d;
+      will-change: transform, opacity;
       animation: netflixCinematicZoom 2.5s cubic-bezier(0.2, 0.85, 0.15, 1) forwards;
     }
 
@@ -1039,6 +1048,7 @@
 
   <!-- 3D FULL VIEWPORT BACKGROUND (DNA & FLOATING MEDICINES) -->
   <canvas id="bg-3d-canvas"></canvas>
+  <div class="bg-bokeh-veil"></div>
 
   <!-- TOP REGULATORY NOTICE STRIP -->
   <div class="top-notice-bar">
@@ -2106,6 +2116,9 @@
       requestAnimationFrame(animateBackground);
       if (!bgRenderer || !bgScene || !bgCamera || !bgClock) return;
 
+      // Conserve 100% of GPU resources while full-screen opaque intro is playing
+      if (!netflixDismissed) return;
+
       const time = bgClock.getElapsedTime();
 
       // Smooth cinematic camera entrance glide into clinical vantage position
@@ -2220,19 +2233,19 @@
         'rgba(255, 255, 255, '  // pure white
       ];
 
-      // Spawn 68 vertical chromatic light ribbons centered around the logo
+      // Spawn 42 discrete vertical chromatic light ribbons centered around the logo
       const ribbons = [];
       const centerX = w / 2;
       const spreadWidth = Math.min(w * 0.45, 480);
 
-      for (let i = 0; i < 68; i++) {
+      for (let i = 0; i < 42; i++) {
         const offset = (Math.random() - 0.5) * spreadWidth;
         ribbons.push({
           x: centerX + offset,
-          width: Math.random() * 3.5 + 1.2,
+          width: Math.random() * 3.2 + 1.4,
           colorBase: spectrumColors[Math.floor(Math.random() * spectrumColors.length)],
           alpha: 0,
-          maxAlpha: 0.75 + Math.random() * 0.25,
+          maxAlpha: 0.80 + Math.random() * 0.20,
           speed: 1.2 + Math.random() * 2.2,
           delay: 0.35 + Math.random() * 0.45,
           topProgress: 0.5,
@@ -2265,16 +2278,20 @@
               r.width *= 1.025;
             }
 
+            // High-performance dual-pass glow (100% GPU accelerated, 0ms CPU blur)
+            // 1. Soft wide outer halo
+            ctx.fillStyle = r.colorBase + (r.alpha * 0.22) + ')';
+            ctx.fillRect(r.x - r.width * 2.2, topY, r.width * 4.4, bottomY - topY);
+
+            // 2. High-intensity vertical gradient core beam
             const gradient = ctx.createLinearGradient(r.x, topY, r.x, bottomY);
             gradient.addColorStop(0, r.colorBase + '0)');
-            gradient.addColorStop(0.2, r.colorBase + (r.alpha * 0.6) + ')');
+            gradient.addColorStop(0.25, r.colorBase + (r.alpha * 0.65) + ')');
             gradient.addColorStop(0.5, r.colorBase + r.alpha + ')');
-            gradient.addColorStop(0.8, r.colorBase + (r.alpha * 0.6) + ')');
+            gradient.addColorStop(0.75, r.colorBase + (r.alpha * 0.65) + ')');
             gradient.addColorStop(1, r.colorBase + '0)');
 
             ctx.fillStyle = gradient;
-            ctx.shadowBlur = 14;
-            ctx.shadowColor = r.colorBase + '0.8)';
             ctx.fillRect(r.x - r.width / 2, topY, r.width, bottomY - topY);
 
             if (elapsed > 1.2) {
