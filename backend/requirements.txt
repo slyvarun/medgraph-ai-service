@@ -2,4 +2,4 @@ fastapi
 uvicorn
 neo4j
 python-dotenv
-google-generativeai
+requests

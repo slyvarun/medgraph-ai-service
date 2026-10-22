@@ -21,7 +21,6 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from neo4j import GraphDatabase, Driver
 from dotenv import load_dotenv
-import google.generativeai as genai
 
 
 # Load environment configuration
@@ -45,12 +44,11 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------------------
-# Database & LLM Connections
+# Database & LLM Connections (Exclusively OpenRouter Free Tier)
 # ---------------------------------------------------------------------------
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", os.getenv("NEO4J_USERNAME", "neo4j"))
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "nvidia/nemotron-3-ultra-550b-a55b:free")
 
@@ -58,15 +56,6 @@ try:
     driver: Optional[Driver] = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 except Exception:
     driver = None
-
-if GEMINI_API_KEY:
-    try:
-        genai.configure(api_key=GEMINI_API_KEY)
-        gemini_model = genai.GenerativeModel("gemini-1.5-pro")
-    except Exception:
-        gemini_model = None
-else:
-    gemini_model = None
 
 
 
@@ -389,13 +378,13 @@ def generate_conversational_response(
 ) -> str:
     """
     Step 2: Generates intent-tailored, humanly conversational, clinically grounded responses
-    using OpenRouter with fallback to Google Gemini or deterministic graph summaries.
+    using OpenRouter free tier models with fallback to deterministic graph summaries.
     """
     history = history or []
     system_prompt = PROMPT_INTENT_B if intent in ["B", "BRAND_TO_ALTERNATIVE"] else PROMPT_INTENT_A
     target_lang_desc = LANGUAGE_NAMES.get(language.lower(), language)
 
-    # 1. Primary Engine: OpenRouter API (OpenAI GPT-4o-mini / Meta Llama 3.3)
+    # 1. Primary Engine: OpenRouter API (Free Model Tier)
     if OPENROUTER_API_KEY:
         try:
             messages = [{"role": "system", "content": system_prompt.strip()}]
@@ -446,25 +435,7 @@ def generate_conversational_response(
         except Exception:
             pass
 
-    # 2. Secondary Fallback: Google Gemini
-    if gemini_model:
-        try:
-            fallback_prompt = (
-                f"{system_prompt}\n\n"
-                f"VERIFIED KNOWLEDGE GRAPH CONTEXT:\n{raw_context}\n\n"
-                f"USER INQUIRY: {query}\n"
-                f"TARGET LANGUAGE: {language}"
-            )
-            gem_res = gemini_model.generate_content(fallback_prompt)
-            if gem_res and gem_res.text:
-                return gem_res.text.strip()
-        except Exception:
-            pass
-
-        except Exception:
-            pass
-
-    # 3. Tertiary Deterministic Fallback
+    # 2. Deterministic Graph Fallback (Guaranteed zero-hallucination ground truth)
     syms = ', '.join(retrieved_summary.get('symptoms', [])) if retrieved_summary else 'General Indication'
     comps = ', '.join(retrieved_summary.get('compositions', [])) if retrieved_summary else 'Active Substance'
     alts = ', '.join(retrieved_summary.get('alternative_medicines', [])[:8]) if retrieved_summary else 'Documented Brands'
@@ -1297,7 +1268,8 @@ async def health_check():
     return {
         "status": "healthy",
         "neo4j_connected": neo4j_online,
-        "gemini_configured": bool(gemini_model is not None),
+        "openrouter_configured": bool(OPENROUTER_API_KEY),
+        "openrouter_model": OPENROUTER_MODEL,
         "version": "2.0.0"
     }
 

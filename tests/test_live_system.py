@@ -21,8 +21,8 @@ def run_tests():
     print(f"  Response ({round(time.time() - t0, 3)}s): {h}")
     assert h["status"] == "healthy", "Server not healthy"
     assert h["neo4j_connected"] is True, "Neo4j not connected"
-    assert h["gemini_configured"] is True, "Gemini not configured"
-    print("  -> Status: PASSED (Neo4j Aura Cloud & Gemini 1.5 Pro Online)")
+    assert h.get("openrouter_configured") is True, "OpenRouter not configured"
+    print("  -> Status: PASSED (Neo4j Aura Cloud & OpenRouter Free Tier Online)")
 
     # 2. Natural Language Symptom Query (Grounded GraphRAG)
     query_text = "my head is pounding and throbbing"

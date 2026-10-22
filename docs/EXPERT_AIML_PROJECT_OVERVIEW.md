@@ -5,8 +5,8 @@
 # ⚕️ MedGraph Nexus
 ### *Production-Grade Clinical Knowledge Graph & Neuro-Symbolic GraphRAG System*
 
-[![Neo4j AuraDB](https://img.shields.io/badge/Neo4j-10%2C434_Nodes_%7C_22%2C098_Edges-008CC1?style=for-the-badge&logo=neo4j)](https://neo4j.com/)
-[![LLM](https://img.shields.io/badge/LLM-Gemini_2.5_Flash-FF6F00?style=for-the-badge&logo=google)](https://deepmind.google/)
+[![Neo4j AuraDB](https://img.shields.io/badge/Neo4j-14%2C387_Nodes_%7C_38%2C721_Edges-008CC1?style=for-the-badge&logo=neo4j)](https://neo4j.com/)
+[![LLM](https://img.shields.io/badge/LLM-NVIDIA_Nemotron_550B_(OpenRouter_Free)-76B900?style=for-the-badge&logo=nvidia)](https://openrouter.ai/)
 [![Dataset](https://img.shields.io/badge/Data-OpenFDA_%2B_NIH_RxNorm_%2B_DailyMed-27AE60?style=for-the-badge)](https://open.fda.gov/)
 [![Architecture](https://img.shields.io/badge/Architecture-Neuro--Symbolic_GraphRAG-8E44AD?style=for-the-badge)](#-neuro-symbolic-architecture)
 [![Reliability](https://img.shields.io/badge/Fail--Safe-Deterministic_Graph_Fallback-10B981?style=for-the-badge)](#-high-availability--zero-hallucination-fallback)
@@ -38,7 +38,7 @@ flowchart LR
     A["👤 User / Clinician Query"] --> B["🔍 Clinical Entity Resolution"]
     B --> C["🕸️ Neo4j Graph Traversal"]
     C --> D{"Active Link Exists?"}
-    D -->|Yes| E["⚡ Neuro-Symbolic Synthesis (Gemini 2.5)"]
+    D -->|Yes| E["⚡ Neuro-Symbolic Synthesis (Nemotron 550B)"]
     D -->|Fallback / Offline| F["📋 Deterministic Graph Card"]
     E --> G["⚕️ Clinically Grounded Answer + Exact Provenance"]
     F --> G
@@ -88,7 +88,7 @@ flowchart TD
         Extractor --> Graph
         Graph --> Subgraph["Extracted Subgraph<br/>(Nodes, Relationships, Properties)"]
         Subgraph --> Prompt["Context-Grounded Clinical Prompt"]
-        Prompt --> LLM["Gemini 2.5 Flash Engine"]
+        Prompt --> LLM["OpenRouter Free MoE Engine"]
         LLM --> Response["Grounded Answer with Provenance"]
         Subgraph -.->|"High-Availability Fail-Safe"| Fallback["Direct Graph Fact Card"]
     end
@@ -170,19 +170,19 @@ The pipeline cleaned out 292 non-medicinal cosmetic products (sun creams, fluori
 ### 3. High-Availability & Zero-Hallucination Fallback
 In high-stakes enterprise applications, an AI system cannot simply display an error or fabricate text when third-party model APIs face rate limits or latency spikes. 
 
-MedGraph includes an integrated **Deterministic Graph Fallback**: if Gemini 2.5 Flash encounters a `ResourceExhausted` (429) or connection error, the backend bypasses generative synthesis and directly formats the raw Neo4j graph subgraph into a structured clinical fact card.
+MedGraph includes an integrated **Deterministic Graph Fallback**: if OpenRouter encounters a network timeout or connection error, the backend bypasses generative synthesis and directly formats the raw Neo4j graph subgraph into a structured clinical fact card.
 
 ---
 
 ## 📂 Source Code & Pipeline Artifacts
 
-- **Data Curation Engine**: [`curate_clinical_dataset.py`](file:///c:/Users/VARUN/OneDrive/Desktop/medgraph/curate_clinical_dataset.py)  
-  *Processes 14 bulk FDA zips, maps NIH RxNorm and DailyMed classes, filters non-drugs, and produces clean master records.*
-- **Neo4j Graph Ingestion Engine**: [`ingest_graph.py`](file:///c:/Users/VARUN/OneDrive/Desktop/medgraph/ingest_graph.py)  
-  *Batch-loads medicines, active substances, drug classes, categories, and indications into Neo4j Aura using parameterized UNWIND queries.*
-- **GraphRAG Backend Microservice**: [`backend/ai_service.py`](file:///c:/Users/VARUN/OneDrive/Desktop/medgraph/backend/ai_service.py)  
-  *FastAPI service powered by Google Gemini 2.5 Flash with multi-attribute clinical entity extraction, Cypher traversal, and high-availability fallback.*
+- **Data Ingestion Engine**: [`pipelines/ingest_openfda_zip.py`](file:///c:/projects/medgraph/pipelines/ingest_openfda_zip.py)  
+  *Processes 14 bulk FDA zips, maps NIH RxNorm and DailyMed classes, filters non-drugs, and loads clean master records into Neo4j Aura.*
+- **Indication Mapping Engine**: [`pipelines/map_indications.py`](file:///c:/projects/medgraph/pipelines/map_indications.py)  
+  *Extracts clinical indications and builds bidirectional `[:TREATS]` relationship paths.*
+- **GraphRAG Backend Microservice**: [`backend/ai_service.py`](file:///c:/projects/medgraph/backend/ai_service.py)  
+  *FastAPI service powered exclusively by OpenRouter's free model tier (`nvidia/nemotron-3-ultra-550b-a55b:free`) with multi-attribute clinical entity extraction, Cypher traversal, and high-availability fallback.*
 - **Clean Master Dataset**: [`medicine_dataset.json`](file:///c:/Users/VARUN/OneDrive/Desktop/medgraph/medicine_dataset.json)  
   *3,256 clinical master medicines with verified attributes (5.81 MB).*
-- **Curated Dataset Audit Report**: [`walkthrough.md`](file:///C:/Users/VARUN/.gemini/antigravity-ide/brain/e1e83a0e-ac54-4ae7-b0ea-7b192c9f820c/walkthrough.md)  
+- **Curated Dataset Audit Report**: `walkthrough.md`  
   *Full graph verification report and database node counts.*

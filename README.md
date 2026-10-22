@@ -131,10 +131,9 @@ flowchart TD
         BrandNode["(:Brand / :Medicine)"]
     end
 
-    subgraph Inference["Inference Gateway"]
-        OpenRouter["OpenRouter Gateway\n(openai/gpt-4o-mini | meta-llama/llama-3.3-70b)"]
-        FallbackGemini["Fallback 1: Google Gemini"]
-        FallbackCypher["Fallback 2: Deterministic Cypher Graph Summary"]
+    subgraph Inference["Inference Gateway (100% Free Tier)"]
+        OpenRouter["OpenRouter Gateway\n(nvidia/nemotron-3-ultra-550b-a55b:free)"]
+        FallbackCypher["Fallback: Deterministic Cypher Graph Summary"]
     end
 
     UI --> Router
@@ -146,8 +145,7 @@ flowchart TD
     GraphEngine <--> Neo4j
     GraphEngine --> Generator
     Generator --> OpenRouter
-    OpenRouter -.->|Fallback| FallbackGemini
-    FallbackGemini -.->|Fallback| FallbackCypher
+    OpenRouter -.->|Fallback| FallbackCypher
     Generator --> Router
     Router --> UI
     UI --> Chat
@@ -205,7 +203,7 @@ The FastAPI backend runs on port `8008` with automatic Swagger UI documentation 
 ### Prerequisites
 * **Python**: 3.10+
 * **Neo4j Database**: AuraDB Cloud or local Neo4j instance
-* **OpenRouter API Key**: [OpenRouter.ai](https://openrouter.ai/) (or Google Gemini API Key)
+* **OpenRouter API Key**: [OpenRouter.ai](https://openrouter.ai/) (Zero-cost free model: `nvidia/nemotron-3-ultra-550b-a55b:free`)
 
 ### 1. Clone the Repository
 ```bash
@@ -216,17 +214,16 @@ cd medgraph-ai-service
 ### 2. Configure Environment Variables
 Create a `.env` file in the project root:
 ```env
-# Database Credentials (Neo4j Aura Cloud or Local)
+# Database Credentials (Neo4j Aura Cloud Free Tier)
 NEO4J_URI="neo4j+s://your-instance-id.databases.neo4j.io"
 NEO4J_USER="neo4j"
 NEO4J_PASSWORD="your-neo4j-password"
 
-# LLM Gateway Credentials
+# LLM Gateway Credentials (Free Tier MoE Model)
 OPENROUTER_API_KEY="sk-or-v1-your-openrouter-key"
-OPENROUTER_MODEL="openai/gpt-4o-mini"
+OPENROUTER_MODEL="nvidia/nemotron-3-ultra-550b-a55b:free"
 
-# Optional Fallbacks & APIs
-GEMINI_API_KEY="your-gemini-key"
+# Optional: High-Throughput APIs
 OPEN_FDA_API="your-openfda-key"
 RXNORM_API_KEY="your-rxnorm-key"
 ```
