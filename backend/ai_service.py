@@ -426,7 +426,7 @@ def generate_conversational_response(
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers=headers,
                 json=payload,
-                timeout=25
+                timeout=18
             )
             if resp.status_code == 200:
                 data = resp.json()
