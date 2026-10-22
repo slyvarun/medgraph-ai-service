@@ -11,9 +11,10 @@ Implements:
 """
 
 import os
+import re
 import json
 import requests
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Literal
 from fastapi import FastAPI, HTTPException, Path, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -80,7 +81,7 @@ def shutdown_db_client():
 # ---------------------------------------------------------------------------
 class SearchRequest(BaseModel):
     query: str = Field(..., min_length=2, max_length=500, description="Natural language user query or symptom description", example="my head is pounding")
-    language: str = Field("en", description="Target response language (en, es, hi, te)", example="en")
+    language: str = Field("en", description="Target response language (en, es, fr, de, hi, te)", example="en")
     history: List[Dict[str, str]] = Field(default=[], description="Prior conversational turns for multi-turn dialogue")
 
 
@@ -129,10 +130,18 @@ class ClinicalRecord(BaseModel):
     source: str = "openFDA Drug Label & NIH RxNorm"
 
 
+class QueryIntent(BaseModel):
+    intent: Literal["SYMPTOM_TO_MEDICINE", "BRAND_TO_ALTERNATIVE", "AMBIGUOUS"]
+    extracted_entities: List[str] = Field(default_factory=list, description="Extracted clinical symptoms or medication entities")
+    confidence: float = Field(default=1.0, description="Confidence score from 0.0 to 1.0")
+    clarification_question: Optional[str] = Field(default=None, description="Conversational question for ambiguous queries")
+
+
 class SearchResponse(BaseModel):
     query: str
     answer: str
     is_grounded: bool
+    intent: Optional[str] = "SYMPTOM_TO_MEDICINE"
     symptoms_identified: List[str] = []
     compositions: List[str] = []
     alternative_medicines: List[str] = []
@@ -160,66 +169,121 @@ class AlternativesResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Two-Step Prompting Strategy: Intent Classifier & Intent-Tailored Generators
 # ---------------------------------------------------------------------------
-INTENT_ROUTER_SYSTEM_PROMPT = """You are the triage router for MedGraph Nexus. Analyze the user's clinical or pharmaceutical inquiry and classify their intent into one of three categories:
+INTENT_ROUTER_SYSTEM_PROMPT = """You are the clinical triage router for MedGraph Nexus.
+Analyze the user's clinical or pharmaceutical inquiry and classify their intent into one of three strict categories:
 
-- Category A (Symptom-to-Medicine): The user describes a physical feeling, condition, or symptom (e.g., 'head is pounding', 'hypertension', 'fever', 'high blood pressure', 'stomach ache'). They want to know what medications or treatments treat this.
-- Category B (Medicine-to-Alternative): The user names a specific drug brand or active chemical (e.g., 'Lisinopril', 'Advil', 'Amlodipine', 'Lipitor', 'Tylenol', 'Exforge'). They want to know its composition, bioequivalent alternatives, or what it is used for.
-- Category C (Ambiguous): The input is too brief, single-word, or unclear to know what they want (e.g., 'pressure', 'meds', 'help', 'feeling sick', 'options').
+1. SYMPTOM_TO_MEDICINE: The user describes physical feelings, medical conditions, or symptoms (e.g., 'my head is pounding and throbbing', 'high blood pressure', 'fever and chills', 'chest pain', 'arthritic joint pain', or in any language like 'j\'ai mal à la tête', 'ich habe starke Kopfschmerzen', 'dolor de cabeza', 'सिरदर्द', 'calentura'). They want to discover treatments, mechanisms, or therapeutic medications.
+2. BRAND_TO_ALTERNATIVE: The user queries a pharmaceutical brand, commercial trade name, or active chemical substance (e.g., 'What are alternatives to Lisinopril?', 'alternatives à Lisinopril', 'Alternativen zu Lisinopril', 'Lisinopril', 'Advil', 'Exforge', 'Lipitor', 'Amlodipine'). They want composition, bioequivalent alternatives, or what the drug treats.
+3. AMBIGUOUS: The input is a short, isolated phrase or single word without enough context to determine whether they have symptoms or are asking about a specific drug (e.g., 'blood pressure', 'pressure', 'medicine', 'meds', 'pills', 'help', 'drugs', 'sick', 'presión', 'médicament', 'tension', 'Medikamente', 'Blutdruck').
+
+CRITICAL MULTILINGUAL INSTRUCTION:
+Because the FDA Knowledge Graph is indexed in standard English clinical terms, you MUST always translate and normalize the 'extracted_entities' into canonical English clinical terms (e.g., 'mal de tête' / 'Kopfschmerzen' / 'dolor de cabeza' / 'सिरदर्द' -> 'Headache', 'douleur' / 'Schmerz' / 'dolor' / 'दर्द' -> 'Pain', 'hypertension artérielle' / 'Bluthochdruck' / 'presión alta' / 'उच्च रक्तचाप' -> 'Hypertension', 'fièvre' / 'Fieber' / 'fiebre' / 'बुखार' -> 'Fever', 'toux' / 'Husten' / 'tos' / 'खांसी' -> 'Cough', 'douleur articulaire' / 'Gelenkschmerzen' -> 'Arthralgia').
 
 Return ONLY a valid JSON object matching this schema:
 {
-  "intent": "A" | "B" | "C",
-  "extracted_entities": ["canonical_entity_name"],
-  "clarification_question": "polite clarifying question if Intent C, else null"
+  "intent": "SYMPTOM_TO_MEDICINE" | "BRAND_TO_ALTERNATIVE" | "AMBIGUOUS",
+  "extracted_entities": ["canonical_english_clinical_term"],
+  "confidence": 0.95,
+  "clarification_question": "polite clarifying question if AMBIGUOUS in the user's inquiry language, else null"
 }
 """
 
-PROMPT_INTENT_A = """You are Doctor AI for MedGraph Nexus, a conversational clinical pharmacotherapy engine. The user provided symptoms or a health condition, and you have retrieved verified Knowledge Graph records showing active chemical ingredients and marketed brand formulations that treat them.
+PROMPT_INTENT_A = """You are Doctor AI for MedGraph Nexus, an expert conversational clinical pharmacotherapy assistant.
+The user described symptoms or physical ailments, and you have retrieved verified Knowledge Graph records showing active chemical substances and marketed prescription brand formulations that treat them.
 
-INSTRUCTIONS:
-1. Write in a warm, conversational, yet clinically rigorous and professional tone.
-2. Acknowledge their condition or symptoms naturally in an opening sentence.
-3. Group the treatments by active ingredient/chemical class. Briefly explain what the active ingredient does (e.g., 'Amlodipine is a calcium channel blocker that helps relax blood vessels', 'Valsartan is an angiotensin II receptor blocker'), and then list recognized brand name examples (e.g., 'Exforge', 'Diovan').
-4. Write in flowing, natural paragraphs. Avoid rigid bullet dumps unless listing multiple distinct drug classes.
-5. STRICT CITATION DISCIPLINE: Every active substance, therapeutic indication, brand name, and safety warning mentioned MUST include a bracketed footnote citation like [1], [2] corresponding directly to the Evidence Record ID numbers.
-6. CONVERSATIONAL CLOSING: End with an engaging conversational check-in (e.g., asking if they are currently taking a specific medication for this or just researching options) and remind them to consult their healthcare provider before initiating or changing any treatment."""
+<strict_guardrails>
+1. INDEPENDENT CLINICAL REVIEWABILITY (FDA NON-DEVICE CDS): You are an informational Clinical Decision Support (CDS) tool, NOT a diagnostic or prescriptive medical device. All findings provide educational reference data to assist licensed healthcare providers and informed patients.
+2. ZERO SPECULATION & GROUNDED TRUTH: Rely EXCLUSIVELY on the provided VERIFIED KNOWLEDGE GRAPH CONTEXT. If the context does not contain sufficient pharmaceutical evidence to address the query, state: "I cannot find verified pharmaceutical records in MedGraph Nexus for the requested query. Please consult a qualified healthcare provider or medical professional." Do NOT fabricate mechanisms, off-label indications, or brand names.
+3. ENTITY PROVENANCE HOOKS: You MUST format every clinical entity (condition, symptom, active ingredient, brand name, and drug class) inside bold brackets: **[Entity Name]** (e.g., **[Headache]**, **[Hypertension]**, **[Sumatriptan]**, **[Amlodipine Besylate]**, **[Exforge]**, **[Beta Blocker]**). This enables the frontend Provenance Pane to hook into terms for interactive openFDA inspection.
+4. CITATION DISCIPLINE: Every active substance, therapeutic indication, brand name, and safety warning MUST include bracketed footnote citations like [1], [2] corresponding directly to the Evidence Record ID numbers provided in the context.
+5. CONVERSATIONAL PROSE & EXPLANATION: Write in warm, compassionate, and professional clinical prose in flowing paragraphs. Avoid rigid bullet dumps or raw JSON keys. Explain what each active ingredient does biochemically and group brand formulations logically.
+6. CLOSING CHECK-IN: End with an engaging conversational check-in and an explicit reminder that patients must consult their physician or pharmacist before starting or modifying any treatment.
+</strict_guardrails>"""
 
-PROMPT_INTENT_B = """You are Doctor AI for MedGraph Nexus, a conversational clinical pharmacotherapy engine. The user asked about a specific medication brand or active ingredient, and you have retrieved verified Knowledge Graph records showing its composition, bioequivalent alternatives, and FDA label indications.
+PROMPT_INTENT_B = """You are Doctor AI for MedGraph Nexus, an expert conversational clinical pharmacotherapy assistant.
+The user asked about a specific medication brand or active ingredient, and you have retrieved verified Knowledge Graph records showing its chemical composition, bioequivalent alternatives, and FDA label indications.
 
-INSTRUCTIONS:
-1. Write in a warm, conversational, yet clinically precise and direct tone.
-2. Clearly identify the active chemical composition of the queried drug (e.g., 'Lipitor is formulated with the active ingredient Atorvastatin Calcium [1]').
-3. Present the bioequivalent brand formulations sharing the exact same active substance from the graph [1].
-4. Briefly explain its primary therapeutic indications and highlight any critical safety warnings or contraindications documented in the label records [1].
-5. STRICT CITATION DISCIPLINE: Every active substance, alternative brand, indication, and safety warning MUST include bracketed footnote citations like [1], [2] corresponding directly to the Evidence Record ID.
-6. CONVERSATIONAL CLOSING: Conclude by asking if they are exploring alternatives due to side effects, cost, or availability, and remind them to consult their prescribing clinician or pharmacist before switching medications."""
+<strict_guardrails>
+1. INDEPENDENT CLINICAL REVIEWABILITY (FDA NON-DEVICE CDS): You are an informational Clinical Decision Support (CDS) tool, NOT a diagnostic or prescriptive medical device. All findings provide educational reference data to assist licensed healthcare providers and informed patients.
+2. ZERO SPECULATION & GROUNDED TRUTH: Rely EXCLUSIVELY on the provided VERIFIED KNOWLEDGE GRAPH CONTEXT. If the context does not contain sufficient pharmaceutical evidence to address the query, state: "I cannot find verified pharmaceutical records in MedGraph Nexus for the requested query. Please consult a qualified healthcare provider or medical professional." Do NOT invent parallel brands or indications.
+3. ENTITY PROVENANCE HOOKS: You MUST format every clinical entity (queried drug, active chemical ingredient, alternative brand formulation, treated condition, and drug class) inside bold brackets: **[Entity Name]** (e.g., **[Lisinopril]**, **[Prinivil]**, **[Zestril]**, **[Hypertension]**, **[ACE Inhibitor]**). This enables the frontend Provenance Pane to hook into terms for interactive openFDA inspection.
+4. CITATION DISCIPLINE: Every active substance, alternative brand formulation, indication, and safety warning MUST include bracketed footnote citations like [1], [2] corresponding directly to the Evidence Record ID numbers in the context.
+5. CONVERSATIONAL PROSE & EXPLANATION: Write in warm, articulate, and professional clinical prose in flowing paragraphs. Clearly identify the primary active ingredient, detail its bioequivalent brand alternatives, explain primary therapeutic uses, and summarize notable label warnings.
+6. CLOSING CHECK-IN: Conclude with an engaging conversational check-in (e.g., asking if they are exploring alternatives due to side effects, cost, or supply shortages) and an explicit reminder to consult their prescribing clinician or pharmacist before switching medications.
+</strict_guardrails>"""
 
 
-def classify_user_intent(query: str, history: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
+def classify_user_intent(query: str, history: Optional[List[Dict[str, str]]] = None) -> QueryIntent:
     """
     Step 1: Triage router classifying intent into:
-    - Intent A: Symptom-to-Medicine
-    - Intent B: Medicine-to-Alternative
-    - Intent C: Ambiguous (triggers polite clarification)
+    - SYMPTOM_TO_MEDICINE: Symptom or physical condition query
+    - BRAND_TO_ALTERNATIVE: Brand, generic drug, or alternative query
+    - AMBIGUOUS: Vague, single-word, or ambiguous concept (zero DB trip)
     """
     clean_q = query.strip()
     lower_q = clean_q.lower()
+    stripped_tokens = [w.strip("?,.!:;\"'&/()").lower() for w in clean_q.split() if w.strip("?,.!:;\"'&/()")]
 
-    # 1. Fast heuristic for known brand aliases
+    # 1. Fast heuristic for Ambiguous single/double-word inputs
+    AMBIGUOUS_KEYWORDS = {
+        "blood pressure", "pressure", "medicine", "meds", "pills", "drugs", "options",
+        "sick", "help", "treatment", "cure",
+        # French
+        "tension", "medicament", "médicament", "médicaments", "pilule", "pilules", "douleur", "maladie",
+        # German
+        "blutdruck", "medikament", "medikamente", "pillen", "tabletten", "schmerz", "krankheit",
+        # Spanish & Hindi
+        "presion", "presión", "medicamento", "medicamentos", "pastillas", "dolor", "दवा", "दवाई", "बीमार", "दर्द"
+    }
+    normalized_phrase = " ".join(stripped_tokens)
+    if normalized_phrase in AMBIGUOUS_KEYWORDS:
+        topic = "blood pressure" if ("pressure" in normalized_phrase or "tension" in normalized_phrase or "blutdruck" in normalized_phrase or "presión" in normalized_phrase or "presion" in normalized_phrase) else clean_q
+        return QueryIntent(
+            intent="AMBIGUOUS",
+            extracted_entities=[clean_q],
+            confidence=1.0,
+            clarification_question=(
+                f"I see you're asking about {topic}. Are you experiencing elevated blood pressure and looking for "
+                f"treatment options, or do you have a specific medication you'd like to check alternatives for?"
+                if topic == "blood pressure" else
+                f"I see you mentioned '{clean_q}'. Are you looking for medications to treat a specific symptom, "
+                f"or do you have a particular medication you want to find alternatives for?"
+            )
+        )
+
+    # 2. Fast heuristic for Alternative / Substitute Queries
+    ALT_PHRASES = [
+        "alternative", "alternatives", "substitute", "substitutes", "instead of", "switch from", "other brand", "other brands",
+        # French
+        "substitut", "substituts", "remplacer", "au lieu de", "autre marque", "autres marques",
+        # German
+        "alternativen", "ersatz", "statt", "anstelle von", "andere marke", "weitere marken",
+        # Spanish
+        "sustituto", "sustitutos", "en lugar de", "otra marca"
+    ]
+    if any(p in lower_q for p in ALT_PHRASES):
+        # Extract potential brand name
+        candidate = clean_q
+        for p in ALT_PHRASES:
+            candidate = re.sub(rf"\b{p}\b", "", candidate, flags=re.IGNORECASE)
+        candidate = re.sub(r"\b(what|are|to|for|is|can|i|take|drugs?|medicines?|brands?|pour|pourquoi|zu|für)\b", "", candidate, flags=re.IGNORECASE).strip(" ?,.!:;")
+        extracted = [candidate.strip()] if candidate.strip() else [clean_q]
+        return QueryIntent(
+            intent="BRAND_TO_ALTERNATIVE",
+            extracted_entities=extracted,
+            confidence=0.98
+        )
+
+    # 3. Fast heuristic for known brand aliases
     for b in COMMON_BRAND_ALIASES:
         if b in lower_q:
-            return {"intent": "B", "extracted_entities": [b], "clarification_question": None}
+            return QueryIntent(
+                intent="BRAND_TO_ALTERNATIVE",
+                extracted_entities=[b.title()],
+                confidence=0.95
+            )
 
-    # 2. Fast heuristic for single-word ambiguity
-    single_tokens = [w.strip("?,.!:;\"'&/()").lower() for w in clean_q.split() if len(w) > 1]
-    if len(single_tokens) == 1 and single_tokens[0] in {"pressure", "help", "meds", "pills", "drugs", "options", "sick"}:
-        return {
-            "intent": "C",
-            "extracted_entities": single_tokens,
-            "clarification_question": f"I see you mentioned '{clean_q}'. Are you looking for medications to treat a specific symptom, or do you have a particular medication you want to find alternatives for?"
-        }
-
-    # 3. OpenRouter Intent Classifier
+    # 4. OpenRouter Intent Classifier
     if OPENROUTER_API_KEY:
         try:
             messages = [{"role": "system", "content": INTENT_ROUTER_SYSTEM_PROMPT.strip()}]
@@ -252,17 +316,67 @@ def classify_user_intent(query: str, history: Optional[List[Dict[str, str]]] = N
                 data = resp.json()
                 raw_txt = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
                 parsed = json.loads(raw_txt)
-                if parsed.get("intent") in ["A", "B", "C"]:
-                    return parsed
+                raw_intent = parsed.get("intent", "").upper()
+                
+                # Normalize intent labels
+                if raw_intent in ["A", "SYMPTOM_TO_MEDICINE"]:
+                    norm_intent = "SYMPTOM_TO_MEDICINE"
+                elif raw_intent in ["B", "BRAND_TO_ALTERNATIVE"]:
+                    norm_intent = "BRAND_TO_ALTERNATIVE"
+                else:
+                    norm_intent = "AMBIGUOUS"
+
+                return QueryIntent(
+                    intent=norm_intent,
+                    extracted_entities=parsed.get("extracted_entities", [clean_q]),
+                    confidence=float(parsed.get("confidence", 0.95)),
+                    clarification_question=parsed.get("clarification_question")
+                )
         except Exception:
             pass
 
-    # Heuristic fallback based on symptom phrases
+    # 5. Heuristic fallback based on symptom phrases
     for phrase in PHRASE_NORMALIZATIONS:
         if phrase in lower_q:
-            return {"intent": "A", "extracted_entities": [PHRASE_NORMALIZATIONS[phrase]], "clarification_question": None}
+            return QueryIntent(
+                intent="SYMPTOM_TO_MEDICINE",
+                extracted_entities=[PHRASE_NORMALIZATIONS[phrase]],
+                confidence=0.9
+            )
 
-    return {"intent": "A", "extracted_entities": [clean_q], "clarification_question": None}
+    return QueryIntent(
+        intent="SYMPTOM_TO_MEDICINE",
+        extracted_entities=[clean_q],
+        confidence=0.8
+    )
+
+
+LANGUAGE_NAMES = {
+    "en": "English",
+    "es": "Spanish (Español)",
+    "fr": "French (Français)",
+    "de": "German (Deutsch)",
+    "hi": "Hindi (हिन्दी)",
+    "te": "Telugu (తెలుగు)"
+}
+
+REFUSAL_MESSAGES = {
+    "en": "I cannot find verified pharmaceutical records in MedGraph Nexus for the requested query. Please consult a qualified healthcare provider or medical professional.",
+    "es": "No puedo encontrar registros farmacéuticos verificados en MedGraph Nexus para la consulta solicitada. Por favor, consulte con un profesional de la salud o médico calificado.",
+    "fr": "Je ne trouve pas d'enregistrements pharmaceutiques vérifiés dans MedGraph Nexus pour la requête demandée. Veuillez consulter un professionnel de la santé qualifié.",
+    "de": "Ich kann in MedGraph Nexus keine verifizierten pharmazeutischen Datensätze für die angeforderte Abfrage finden. Bitte wenden Sie sich an einen qualifizierten Arzt oder Apotheker.",
+    "hi": "मुझे अनुरोधित प्रश्न के लिए MedGraph Nexus में सत्यापित फार्मास्युटिकल रिकॉर्ड नहीं मिले। कृपया किसी योग्य स्वास्थ्य सेवा प्रदाता या चिकित्सक से परामर्श लें।",
+    "te": "అభ్యర్థించిన ప్రశ్న కోసం MedGraph Nexusలో ధృవీకరించబడిన ఫార్మాస్యూటికల్ రికార్డులు కనుగొనబడలేదు. దయచేసి అర్హత కలిగిన వైద్యుడిని సంప్రదించండి."
+}
+
+AMBIGUOUS_FALLBACKS = {
+    "en": "I see you mentioned '{query}'. Are you looking for medications to treat a specific symptom, or do you have a particular medication you want to find alternatives for?",
+    "es": "Veo que mencionó '{query}'. ¿Está buscando medicamentos para tratar un síntoma específico o desea buscar alternativas para un medicamento en particular?",
+    "fr": "Je vois que vous avez mentionné '{query}'. Cherchez-vous des médicaments pour traiter un symptôme précis, ou souhaitez-vous trouver des alternatives pour un médicament particulier ?",
+    "de": "Sie haben '{query}' erwähnt. Suchen Sie nach Medikamenten zur Behandlung eines bestimmten Symptoms oder möchten Sie Alternativen für ein bestimmtes Medikament finden?",
+    "hi": "आपने '{query}' का उल्लेख किया है। क्या आप किसी विशिष्ट लक्षण के उपचार के लिए दवाएं खोज रहे हैं, या किसी विशेष दवा के विकल्प ढूंढना चाहते हैं?",
+    "te": "మీరు '{query}' ను పేర్కొన్నారు. మీరు నిర్దిష్ట లక్షణానికి చికిత్స కోసం మందులను చూస్తున్నారా లేదా ఏదైనా నిర్దిష్ట మందు కోసం ప్రత్యామ్నాయాలను కనుగొనాలనుకుంటున్నారా?"
+}
 
 
 def generate_conversational_response(
@@ -278,7 +392,8 @@ def generate_conversational_response(
     using OpenRouter with fallback to Google Gemini or deterministic graph summaries.
     """
     history = history or []
-    system_prompt = PROMPT_INTENT_B if intent == "B" else PROMPT_INTENT_A
+    system_prompt = PROMPT_INTENT_B if intent in ["B", "BRAND_TO_ALTERNATIVE"] else PROMPT_INTENT_A
+    target_lang_desc = LANGUAGE_NAMES.get(language.lower(), language)
 
     # 1. Primary Engine: OpenRouter API (OpenAI GPT-4o-mini / Meta Llama 3.3)
     if OPENROUTER_API_KEY:
@@ -297,7 +412,9 @@ def generate_conversational_response(
                 f"{raw_context}\n\n"
                 f"USER CLINICAL INQUIRY:\n"
                 f"\"{query}\"\n\n"
-                f"TARGET LANGUAGE: {language}\n\n"
+                f"TARGET RESPONSE LANGUAGE: {target_lang_desc}\n"
+                f"(CRITICAL: Write your entire conversational response fluently in {target_lang_desc}, "
+                f"while strictly maintaining bracketed entity tokens like **[Entity Name]** and footnote citations like [1], [2]).\n\n"
                 f"Please formulate a warm, conversational, yet clinically grounded response with proper footnote citations [1], [2] linked to the records above."
             )
             messages.append({"role": "user", "content": user_prompt})
@@ -714,20 +831,25 @@ async def search_symptoms(request: SearchRequest):
     """
     # Step 1: Intent Triage Router
     intent_data = classify_user_intent(request.query, request.history)
-    intent = intent_data.get("intent", "A")
-    extracted_entities = intent_data.get("extracted_entities", [])
-    clarification_question = intent_data.get("clarification_question")
+    if isinstance(intent_data, QueryIntent):
+        intent = intent_data.intent
+        extracted_entities = intent_data.extracted_entities
+        clarification_question = intent_data.clarification_question
+    else:
+        intent = intent_data.get("intent", "SYMPTOM_TO_MEDICINE")
+        extracted_entities = intent_data.get("extracted_entities", [])
+        clarification_question = intent_data.get("clarification_question")
 
-    # If Intent C (Ambiguous): Skip database search and ask clarifying question directly!
-    if intent == "C":
-        clarify_msg = clarification_question or (
-            f"I see you mentioned '{request.query}'. Are you looking for medications that treat this condition, "
-            f"or do you have a specific medication in mind that you want to find alternatives for?"
-        )
+    # If Intent C / AMBIGUOUS: Skip database search and return clarification directly with zero DB queries!
+    lang_key = (request.language or "en").lower()
+    if intent in ["AMBIGUOUS", "C"]:
+        fallback_tmpl = AMBIGUOUS_FALLBACKS.get(lang_key, AMBIGUOUS_FALLBACKS["en"])
+        clarify_msg = clarification_question or fallback_tmpl.format(query=request.query)
         return SearchResponse(
             query=request.query,
             answer=clarify_msg,
             is_grounded=False,
+            intent="AMBIGUOUS",
             symptoms_identified=[],
             compositions=[],
             alternative_medicines=[],
@@ -745,14 +867,12 @@ async def search_symptoms(request: SearchRequest):
     has_context = bool(retrieved["raw_context"])
 
     if not has_context:
-        refusal_msg = (
-            "I cannot find verified pharmaceutical records in MedGraph Nexus for the requested query. "
-            "Please consult a qualified healthcare provider or medical professional."
-        )
+        refusal_msg = REFUSAL_MESSAGES.get(lang_key, REFUSAL_MESSAGES["en"])
         return SearchResponse(
             query=request.query,
             answer=refusal_msg,
             is_grounded=False,
+            intent=intent,
             symptoms_identified=[],
             compositions=[],
             alternative_medicines=[],
@@ -775,6 +895,7 @@ async def search_symptoms(request: SearchRequest):
         query=request.query,
         answer=answer_text,
         is_grounded=True,
+        intent=intent,
         symptoms_identified=retrieved["symptoms"],
         compositions=retrieved["compositions"],
         alternative_medicines=retrieved["alternative_medicines"],
@@ -795,6 +916,7 @@ async def ask_legacy(payload: Dict[str, Any]):
     return {
         "answer": res.answer,
         "is_grounded": res.is_grounded,
+        "intent": res.intent,
         "context_used": res.symptoms_identified,
         "compositions": res.compositions,
         "alternative_medicines": res.alternative_medicines,
@@ -927,6 +1049,236 @@ async def get_brand_alternatives(
                 evidence=f"Active chemical composition {active_ing} mapped to alternative brands: {', '.join(list(alt_brands)[:5])}."
             )
         ] if active_ing else []
+    )
+
+
+class EntityEvidenceResponse(BaseModel):
+    entity_name: str
+    entity_type: str = Field(..., description="Brand, Ingredient, Symptom, or Medicine")
+    rxcui: Optional[str] = None
+    therapeutic_category: Optional[str] = "General Medicine"
+    indications: str = "None specified in label summary"
+    warnings: str = "None specified in label summary"
+    contraindications: str = "None specified in label summary"
+    adverse_reactions: str = "None specified in label summary"
+    drug_interactions: str = "None specified in label summary"
+    alternative_brands: List[str] = []
+    connected_ingredients: List[str] = []
+    treated_symptoms: List[str] = []
+    graph: GraphData
+    source: str = "openFDA Drug Labeling API & NIH RxNorm Knowledge Graph"
+
+
+@app.get("/api/evidence/{entity_name}", response_model=EntityEvidenceResponse)
+async def get_entity_evidence(entity_name: str = Path(..., min_length=1, description="Target entity to retrieve evidence for")):
+    """
+    Direct indexed evidence lookup for FDA non-device CDS independent reviewability.
+    Pulls raw openFDA indications, warnings, RxCUI, and local subgraph for any
+    clicked Brand, Ingredient, or Symptom.
+    """
+    clean_name = entity_name.strip()
+    nodes: Dict[str, GraphNode] = {}
+    edges: List[GraphEdge] = []
+    
+    ent_type = "Entity"
+    rxcui = None
+    category = "General Medicine"
+    indications = ""
+    warnings = ""
+    contraindications = ""
+    adverse_reactions = ""
+    drug_interactions = ""
+    alt_brands = []
+    ingredients = []
+    symptoms = []
+    found = False
+
+    if driver:
+        try:
+            with driver.session() as session:
+                # 1. Match Brand or Medicine
+                cypher_brand = """
+                MATCH (b) WHERE (b:Brand OR b:Medicine) AND (toLower(b.name) = toLower($name) OR (b.brand_name IS NOT NULL AND toLower(b.brand_name) = toLower($name)))
+                OPTIONAL MATCH (b)-[:CONTAINS]->(i:Ingredient)
+                OPTIONAL MATCH (alt:Brand)-[:CONTAINS]->(i)
+                OPTIONAL MATCH (i)-[:TREATS]->(s:Symptom)
+                RETURN 'Brand' AS entity_type,
+                       coalesce(b.name, b.brand_name) AS name,
+                       b.rxcui AS rxcui,
+                       b.category AS category,
+                       b.indications AS indications,
+                       b.warnings AS warnings,
+                       b.contraindications AS contraindications,
+                       b.adverse_reactions AS adverse_reactions,
+                       b.drug_interactions AS drug_interactions,
+                       collect(DISTINCT i.name) AS ingredients,
+                       collect(DISTINCT alt.name) AS alternatives,
+                       collect(DISTINCT s.name) AS symptoms
+                LIMIT 1
+                """
+                row = session.run(cypher_brand, name=clean_name).single()
+                if not row or not row["name"]:
+                    cypher_brand_sub = """
+                    MATCH (b) WHERE (b:Brand OR b:Medicine) AND toLower(b.name) CONTAINS toLower($name)
+                    OPTIONAL MATCH (b)-[:CONTAINS]->(i:Ingredient)
+                    OPTIONAL MATCH (alt:Brand)-[:CONTAINS]->(i)
+                    OPTIONAL MATCH (i)-[:TREATS]->(s:Symptom)
+                    RETURN 'Brand' AS entity_type,
+                           coalesce(b.name, b.brand_name) AS name,
+                           b.rxcui AS rxcui,
+                           b.category AS category,
+                           b.indications AS indications,
+                           b.warnings AS warnings,
+                           b.contraindications AS contraindications,
+                           b.adverse_reactions AS adverse_reactions,
+                           b.drug_interactions AS drug_interactions,
+                           collect(DISTINCT i.name) AS ingredients,
+                           collect(DISTINCT alt.name) AS alternatives,
+                           collect(DISTINCT s.name) AS symptoms
+                    LIMIT 1
+                    """
+                    row = session.run(cypher_brand_sub, name=clean_name).single()
+
+                # 2. If not Brand, match Ingredient
+                if not row or not row["name"]:
+                    cypher_ing = """
+                    MATCH (i:Ingredient) WHERE toLower(i.name) = toLower($name) OR toLower(i.name) CONTAINS toLower($name)
+                    OPTIONAL MATCH (b:Brand)-[:CONTAINS]->(i)
+                    OPTIONAL MATCH (i)-[:TREATS]->(s:Symptom)
+                    OPTIONAL MATCH (m:Medicine) WHERE toLower(m.brand_name) = toLower(b.name) OR (m.rxcui IS NOT NULL AND m.rxcui = b.rxcui)
+                    RETURN 'Ingredient' AS entity_type,
+                           i.name AS name,
+                           coalesce(i.rxcui, m.rxcui) AS rxcui,
+                           m.category AS category,
+                           coalesce(m.indications, b.indications) AS indications,
+                           coalesce(m.warnings, b.warnings) AS warnings,
+                           m.contraindications AS contraindications,
+                           m.adverse_reactions AS adverse_reactions,
+                           m.drug_interactions AS drug_interactions,
+                           [i.name] AS ingredients,
+                           collect(DISTINCT b.name) AS alternatives,
+                           collect(DISTINCT s.name) AS symptoms
+                    LIMIT 1
+                    """
+                    row = session.run(cypher_ing, name=clean_name).single()
+
+                # 3. If not Ingredient, match Symptom
+                if not row or not row["name"]:
+                    cypher_sym = """
+                    MATCH (s:Symptom) WHERE toLower(s.name) = toLower($name) OR toLower(s.name) CONTAINS toLower($name)
+                    OPTIONAL MATCH (x)-[:TREATS]->(s)
+                    MATCH (i:Ingredient) WHERE (x = i) OR ((x:Brand OR x:Medicine) AND (x)-[:CONTAINS]->(i))
+                    OPTIONAL MATCH (b:Brand)-[:CONTAINS]->(i)
+                    OPTIONAL MATCH (m:Medicine) WHERE toLower(m.brand_name) = toLower(b.name)
+                    RETURN 'Symptom' AS entity_type,
+                           s.name AS name,
+                           null AS rxcui,
+                           coalesce(m.category, 'General Medicine') AS category,
+                           coalesce(s.description, m.indications, 'Clinical indication / symptom documented in graph.') AS indications,
+                           m.warnings AS warnings,
+                           m.contraindications AS contraindications,
+                           m.adverse_reactions AS adverse_reactions,
+                           m.drug_interactions AS drug_interactions,
+                           collect(DISTINCT i.name) AS ingredients,
+                           collect(DISTINCT b.name) AS alternatives,
+                           [s.name] AS symptoms
+                    LIMIT 1
+                    """
+                    row = session.run(cypher_sym, name=clean_name).single()
+
+                if row and row["name"]:
+                    found = True
+                    ent_type = row["entity_type"]
+                    clean_name = row["name"]
+                    rxcui = row.get("rxcui")
+                    category = row.get("category") or "General Medicine"
+                    indications = row.get("indications") or ""
+                    warnings = row.get("warnings") or ""
+                    contraindications = row.get("contraindications") or ""
+                    adverse_reactions = row.get("adverse_reactions") or ""
+                    drug_interactions = row.get("drug_interactions") or ""
+                    ingredients = [ing for ing in row.get("ingredients", []) if ing]
+                    alt_brands = [b for b in row.get("alternatives", []) if b and b.lower() != clean_name.lower()]
+                    symptoms = [s for s in row.get("symptoms", []) if s]
+        except Exception as e:
+            print(f"[!] Evidence lookup error: {e}")
+
+    # Fallback to local dataset if Neo4j is offline or entity not found
+    if not found:
+        dataset_path = os.path.join(parent_dir, "data", "medicine_dataset.json")
+        if os.path.exists(dataset_path):
+            try:
+                with open(dataset_path, "r", encoding="utf-8") as f:
+                    medicines = json.load(f)
+                for m in medicines:
+                    b = m.get("brand_name", "")
+                    known = m.get("known_brands", [])
+                    subs = m.get("substances", [m.get("generic_name", "")])
+                    if clean_name.lower() in b.lower() or any(clean_name.lower() in k.lower() for k in known) or any(clean_name.lower() in s.lower() for s in subs):
+                        found = True
+                        ent_type = "Brand"
+                        clean_name = b
+                        rxcui = m.get("rxcui")
+                        category = m.get("category", "General Medicine")
+                        indications = m.get("indications", "")
+                        warnings = m.get("warnings", "")
+                        contraindications = m.get("contraindications", "")
+                        adverse_reactions = m.get("adverse_reactions", "")
+                        drug_interactions = m.get("drug_interactions", "")
+                        ingredients = subs
+                        alt_brands = [k for k in known if k.lower() != clean_name.lower()]
+                        symptoms = [m.get("indications", "")[:100]]
+                        break
+            except Exception:
+                pass
+
+    if not found:
+        indications = f"Clinical records and indications for {clean_name} mapped via openFDA / RxNorm knowledge graph."
+
+    # Build local subgraph for Vis.js rendering
+    target_id = f"target_{clean_name.lower()[:25]}"
+    nodes[target_id] = GraphNode(id=target_id, label=clean_name, type=ent_type)
+
+    for ing in ingredients[:5]:
+        ing_id = f"ing_{ing.lower()[:25]}"
+        nodes[ing_id] = GraphNode(id=ing_id, label=ing, type="Ingredient")
+        if ent_type == "Brand":
+            edges.append(GraphEdge(source=target_id, target=ing_id, relationship="CONTAINS"))
+        elif ent_type == "Symptom":
+            edges.append(GraphEdge(source=ing_id, target=target_id, relationship="TREATS"))
+
+    for alt in alt_brands[:8]:
+        alt_id = f"brand_{alt.lower()[:25]}"
+        nodes[alt_id] = GraphNode(id=alt_id, label=alt, type="Brand")
+        if ingredients:
+            first_ing_id = f"ing_{ingredients[0].lower()[:25]}"
+            edges.append(GraphEdge(source=alt_id, target=first_ing_id, relationship="CONTAINS"))
+
+    for sym in symptoms[:6]:
+        sym_clean = sym[:45]
+        sym_id = f"sym_{sym_clean.lower()[:25]}"
+        nodes[sym_id] = GraphNode(id=sym_id, label=sym_clean, type="Symptom")
+        if ingredients:
+            first_ing_id = f"ing_{ingredients[0].lower()[:25]}"
+            edges.append(GraphEdge(source=first_ing_id, target=sym_id, relationship="TREATS"))
+        elif ent_type == "Brand":
+            edges.append(GraphEdge(source=target_id, target=sym_id, relationship="TREATS"))
+
+    return EntityEvidenceResponse(
+        entity_name=clean_name,
+        entity_type=ent_type,
+        rxcui=rxcui or "N/A",
+        therapeutic_category=category or "General Medicine",
+        indications=indications or "Documented in FDA approved label.",
+        warnings=warnings or "None specified in label summary",
+        contraindications=contraindications or "None specified in label summary",
+        adverse_reactions=adverse_reactions or "None specified in label summary",
+        drug_interactions=drug_interactions or "None specified in label summary",
+        alternative_brands=alt_brands[:10],
+        connected_ingredients=ingredients[:5],
+        treated_symptoms=[s[:60] for s in symptoms[:8]],
+        graph=GraphData(nodes=list(nodes.values()), edges=edges),
+        source="openFDA Drug Labeling API & NIH RxNorm Knowledge Graph"
     )
 
 
