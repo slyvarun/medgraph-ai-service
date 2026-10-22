@@ -1,39 +1,102 @@
 <div align="center">
 
 # ⚕️ MedGraph Nexus
-### *Production-Grade Clinical Knowledge Graph & Neuro-Symbolic GraphRAG System*
+### *FDA 2026 CDS-Compliant Clinical Decision Support & Neuro-Symbolic GraphRAG System*
 
 [![Neo4j AuraDB](https://img.shields.io/badge/Neo4j-10%2C434_Nodes_%7C_22%2C098_Edges-008CC1?style=for-the-badge&logo=neo4j)](https://neo4j.com/)
-[![LLM](https://img.shields.io/badge/LLM-Gemini_2.5_Flash-FF6F00?style=for-the-badge&logo=google)](https://deepmind.google/)
+[![OpenRouter](https://img.shields.io/badge/LLM_Gateway-OpenRouter_(GPT--4o--mini_/_Llama_3.3)-6366F1?style=for-the-badge)](https://openrouter.ai/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
-[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python)](https://www.python.org/)
-[![Data Sources](https://img.shields.io/badge/Data-OpenFDA_%2B_NIH_RxNorm_%2B_DailyMed-27AE60?style=for-the-badge)](https://open.fda.gov/)
-[![Multilingual](https://img.shields.io/badge/Multilingual-EN_%7C_TE_%7C_HI-8E44AD?style=for-the-badge)](#-multilingual-clinical-support)
-[![Reliability](https://img.shields.io/badge/Fail--Safe-Deterministic_Graph_Fallback-10B981?style=for-the-badge)](#-fail-safe-deterministic-fallback)
+[![FDA CDS](https://img.shields.io/badge/FDA_2026_CDS-Reviewable_Basis_Compliant-10B981?style=for-the-badge)](#-regulatory-compliance--fda-2026-cds)
+[![Interactive Graph](https://img.shields.io/badge/Visualization-vis--network-E11D48?style=for-the-badge)](https://visjs.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 <p align="center">
-  <b>A clinical decision-support and search engine that eliminates generative AI hallucinations by grounding clinical queries in a 10,434-node heterogeneous Neo4j Knowledge Graph.</b>
+  <b>A clinical decision-support and pharmaceutical discovery engine that eliminates LLM hallucinations by grounding queries in a 10,434-node heterogeneous Neo4j Knowledge Graph with deterministic multi-hop traversal and granular footnote evidence citations.</b>
 </p>
 
 </div>
 
 ---
 
+## 📑 Table of Contents
+- [Overview](#-overview)
+- [Why GraphRAG Over Traditional Vector RAG](#-why-graphrag-over-traditional-vector-rag)
+- [Core Capabilities](#-core-capabilities)
+  - [1. Two-Step Prompting & Intent Triage Router](#1-two-step-prompting--intent-triage-router)
+  - [2. Split-Screen Reviewable Layout](#2-split-screen-reviewable-layout)
+  - [3. Interactive Multi-Hop Graph Traversal](#3-interactive-multi-hop-graph-traversal)
+  - [4. Granular Footnote Micro-Citations & Evidence Inspector](#4-granular-footnote-micro-citations--evidence-inspector)
+  - [5. Medical Entity Normalization & Brand Alias Resolution](#5-medical-entity-normalization--brand-alias-resolution)
+- [System Architecture](#-system-architecture)
+- [Knowledge Graph Schema & Ontologies](#-knowledge-graph-schema--ontologies)
+- [REST API Endpoints](#-rest-api-endpoints)
+- [Quickstart & Local Setup](#-quickstart--local-setup)
+- [Regulatory Compliance (FDA 2026 CDS)](#-regulatory-compliance--fda-2026-cds)
+- [Repository Structure](#-repository-structure)
+- [License](#-license)
+
+---
+
 ## 📖 Overview
 
-**MedGraph Nexus** is a next-generation clinical reasoning platform designed to query, reason over, and visualize complex pharmaceutical knowledge. Built on a **curated knowledge graph of 10,434 nodes and 22,098 biological/pharmacological relationships**, MedGraph Nexus enables clinicians, researchers, and patients to explore medicine classifications, active chemical substances, therapeutic categories, adverse warnings, and mechanism-based alternative treatments in **English, Telugu, and Hindi**.
+**MedGraph Nexus** is a production-grade **Clinical Decision Support (CDS) platform** built for healthcare professionals (HCPs), clinical pharmacotherapists, and researchers. By bridging official **openFDA Structured Product Labeling (SPL)** with the **NIH National Library of Medicine (RxNorm)**, the platform models deep biochemical, clinical, and regulatory relationships in an enterprise **Neo4j Knowledge Graph** (10,434 nodes, 22,098 relationships).
 
-### The Core Problem It Solves: Eliminating Clinical Hallucinations
-When standard generative LLMs (or traditional Vector RAG systems) answer complex medical queries, they predict words based on statistical token probabilities. In healthcare, hallucinating a drug interaction or active chemical ingredient can be catastrophic.
+The platform transforms raw clinical queries into verifiable, deterministic reasoning paths:
+$$\text{[Queried Drug]} \xrightarrow{\text{CONTAINS}} \text{[Active Chemical Ingredient]} \xrightarrow{\text{TREATS}} \text{[Symptom / Indication]} \xleftarrow{\text{CONTAINS}} \text{[Alternative Brands]}$$
 
-**MedGraph Nexus solves this through Neuro-Symbolic GraphRAG**:
-1. **Symbolic Ground Truth**: The **Neo4j Knowledge Graph** enforces explicit, verifiable biological facts (active substances, drug classes, indications).
-2. **Generative Reasoning**: **Google Gemini 2.5 Flash** synthesizes natural, multi-lingual explanations grounded strictly within the retrieved graph subgraphs.
-3. **Deterministic Provenance**: Every clinical statement is directly traceable to official regulatory package inserts from the **U.S. FDA**, **NIH RxNorm**, and **DailyMed**.
+Every claim synthesized by Doctor AI is paired with clickable footnote citations (`[1]`, `[2]`), unedited regulatory drug label text, and interactive force-directed graph paths, ensuring complete auditability and zero hallucination.
 
-> [!NOTE]
-> For an in-depth technical analysis and defense of MedGraph's Applied AI/ML architecture, read the **[Comprehensive AI/ML Project Specification](docs/EXPERT_AIML_PROJECT_OVERVIEW.md)**.
+---
+
+## 🔬 Why GraphRAG Over Traditional Vector RAG
+
+Standard Dense Passage Retrieval (DPR) and vector embeddings fail in clinical pharmacology due to structural limitations:
+
+| Architectural Challenge | Traditional Vector RAG | MedGraph Nexus GraphRAG |
+| :--- | :--- | :--- |
+| **Relational Reasoning** | **Semantic Drift**: Fuzzily clusters related terms (*"Lipitor"*, *"cholesterol"*, *"statin"*, *"liver enzymes"*) without knowing which drug bioequivalently replaces another. | **Deterministic Multi-Hop Traversal**: Executes strict relational joins. If an edge does not exist in the graph, no drug pairing is hallucinated. |
+| **Chunk Fragmentation** | Arbitrary 500-token boundaries slice boxed warnings away from approved indications, leading to dangerous advice. | **Atomic Property Modeling**: Warnings, indications, and RxCUIs are stored as atomic properties bound directly to the medicine node. |
+| **Brand Alias Resolution** | Fails when a user queries commercial names (`"Lipitor"`) if the database only ingested generic names (`"Atorvastatin"`). | **Canonical Entity Linking**: Resolves brand aliases (`Lipitor → Atorvastatin`) and normalizes compound clinical terms (`"high blood pressure" → "hypertension"`). |
+| **Hallucination Control** | Top-k chunks are fed to the LLM regardless of relevance; the LLM extrapolates from pre-trained memory. | **Zero-Context Strict Refusal**: If traversal yields zero matching clinical nodes, the system halts with a standardized refusal. |
+| **Auditability & Traceability** | Generates opaque paragraphs with vague document-level links (*"Source: fda_labels.pdf"*). | **Token-Level Micro-Citations**: Every claim contains interactive citations (`[1]`, `[2]`) opening exact FDA label text and NIH RxCUI/TTY mappings. |
+
+---
+
+## 🌟 Core Capabilities
+
+### 1. Two-Step Prompting & Intent Triage Router
+Before any database query is executed, incoming queries pass through a pre-retrieval **Intent Classifier**:
+* **Category A (Symptom-to-Medicine)**: User describes symptoms or conditions (*"high blood pressure"*, *"my head is pounding"*). The system executes backward traversal from `(:Symptom)` to active ingredients and brand formulations.
+* **Category B (Medicine-to-Alternative)**: User queries a brand or chemical (*"what are alternative brands for Lipitor?"*). The system executes downward traversal from `(:Brand)` / `(:Ingredient)` to bioequivalent alternatives and therapeutic indications.
+* **Category C (Ambiguous)**: User inputs brief or vague terms (*"pressure"*, *"meds"*). The system **skips database queries entirely** and responds immediately with a polite clarifying question.
+
+### 2. Split-Screen Reviewable Layout
+Built to comply with **FDA Section 520(o)(1)(E)**:
+* **Left Panel**: Conversational Doctor AI synthesis with flowing clinical paragraphs, drug class mechanisms, and footnote citations.
+* **Right Panel (Reviewable Grounding Hub)**: Tabbed clinical workstation featuring:
+  * **Interactive Graph Traversal Canvas**
+  * **Raw openFDA & RxNorm Data Cards** (unedited indications, contraindications, boxed warnings, RxCUIs)
+  * **Citation Evidence Inspector**
+
+### 3. Interactive Multi-Hop Graph Traversal
+Integrated using `vis-network` with the ForceAtlas2 physics solver:
+* Dynamically visualizes the complete reasoning pathway:
+  $$\text{🔴 Symptom} \longleftrightarrow \text{🔵 Active Ingredient} \longleftrightarrow \text{🟢 Marketed Brand}$$
+* Clicking any node in the graph automatically highlights connected relationships and scrolls to the corresponding raw FDA card in the data inspector.
+
+### 4. Granular Footnote Micro-Citations & Evidence Inspector
+* Every active substance, brand alternative, approved indication, and safety precaution in the AI prose features an interactive footnote citation (`[1]`, `[2]`).
+* Clicking any citation badge opens the **Citation Evidence Inspector modal**, displaying:
+  * **Source**: `openFDA Drug Label & NIH RxNorm`
+  * **Ontology Mapping**: Exact `RxCUI` and Term Type (`TTY: IN / BN`)
+  * **Unedited Evidence**: Verbatim manufacturer prescribing information excerpt.
+
+### 5. Medical Entity Normalization & Brand Alias Resolution
+* **Compound Phrase Normalization**: Normalizes colloquial multi-word phrases to canonical medical concepts:
+  $$\text{"high blood pressure" / "blood pressure"} \longrightarrow \text{"hypertension"}$$
+  $$\text{"head pounding" / "throbbing head"} \longrightarrow \text{"headache"}$$
+* **Commercial Brand Resolver**: Maps commercial trade names to active chemical entities (`Lipitor → Atorvastatin`, `Tylenol → Acetaminophen`, `Norvasc → Amlodipine`, `Advil → Ibuprofen`, `Aleve → Naproxen`, etc.).
+* **Lexical Specificity Filtering**: Prunes weak, ambiguous stopwords (`"pressure"`, `"blood"`, `"high"`) that would otherwise cause false-positive matches in unindexed label scans.
 
 ---
 
@@ -41,124 +104,127 @@ When standard generative LLMs (or traditional Vector RAG systems) answer complex
 
 ```mermaid
 flowchart TD
-    subgraph Data_Pipeline["1. Data Harmonization & Entity Resolution Pipeline"]
-        FDA["OpenFDA Raw Package Inserts<br/>(14 Bulk Partitions | 262,887 Records)"] --> Curate["pipelines/curate_clinical_dataset.py<br/>Regex & Lexicon Filtering Engine"]
-        RxNorm["NIH RxNorm SPL Mappings<br/>(105,513 Set IDs)"] --> Curate
-        DMed["DailyMed Pharmacologic Classes<br/>(EPC, PE, MoA Mappings)"] --> Curate
-        Curate --> Clean["Purged 292 non-medicines (sanitizers, cosmetics)<br/>Consolidated 2,049 distributor repackagings"]
-        Clean --> Master["3,256 Master Clinical Medicines<br/>(Normalized RxCUIs, Brands, Indications)"]
+    subgraph Frontend["Presentation Layer (FDA 2026 CDS Split-Screen)"]
+        UI["Split-Screen UI (frontend/index.html)"]
+        Chat["Doctor AI Chat Panel"]
+        GraphVis["vis-network Graph Traversal (ForceAtlas2)"]
+        Inspector["Citation Evidence Inspector Modal"]
     end
 
-    subgraph KG["2. Heterogeneous Neo4j Knowledge Graph"]
-        Master --> Ingest["pipelines/ingest_graph.py<br/>(UNWIND Batch Ingestion Engine)"]
-        Ingest --> Graph[("Neo4j Aura Cloud<br/>10,434 Nodes | 22,098 Edges")]
+    subgraph Backend["FastAPI Application Server (:8008)"]
+        Router["API Endpoints (/ask, /api/search, /api/alternatives)"]
+        Safety["Adversarial Safety Interceptor"]
+        IntentClassifier["Step 1: Intent Triage Router (A, B, C)"]
+        Norm["Entity Normalizer & Brand Alias Resolver"]
+        GraphEngine["Step 2: Dual-Path Cypher Traversal Engine"]
+        Generator["Step 3: Intent-Tailored Conversational Generator"]
     end
 
-    subgraph RAG["3. Clinical GraphRAG Reasoning Service"]
-        User["User / Clinician Query<br/>(EN, TE, HI)"] --> Extractor["backend/ai_service.py<br/>Clinical Entity Extraction & Scoring"]
-        Extractor --> Graph
-        Graph --> Subgraph["Extracted Clinical Subgraph<br/>(1-Hop & 2-Hop Traversal)"]
-        Subgraph --> Prompt["Context-Grounded Clinical Prompt"]
-        Prompt --> LLM["Google Gemini 2.5 Flash Engine"]
-        LLM --> Response["Clinically Grounded Answer + Provenance"]
-        Subgraph -.->|"High-Availability Fail-Safe"| Fallback["Deterministic Graph Fact Card"]
+    subgraph DataStore["Knowledge Graph (Neo4j Aura Cloud)"]
+        Neo4j[("Neo4j Aura DB\n10,434 Nodes | 22,098 Edges")]
+        SymptomNode["(:Symptom / :Indication)"]
+        IngNode["(:Ingredient / :ActiveSubstance)"]
+        BrandNode["(:Brand / :Medicine)"]
     end
+
+    subgraph Inference["Inference Gateway"]
+        OpenRouter["OpenRouter Gateway\n(openai/gpt-4o-mini | meta-llama/llama-3.3-70b)"]
+        FallbackGemini["Fallback 1: Google Gemini"]
+        FallbackCypher["Fallback 2: Deterministic Cypher Graph Summary"]
+    end
+
+    UI --> Router
+    Router --> Safety
+    Safety --> IntentClassifier
+    IntentClassifier -- "Intent C (Ambiguous)" --> UI
+    IntentClassifier -- "Intent A / B" --> Norm
+    Norm --> GraphEngine
+    GraphEngine <--> Neo4j
+    GraphEngine --> Generator
+    Generator --> OpenRouter
+    OpenRouter -.->|Fallback| FallbackGemini
+    FallbackGemini -.->|Fallback| FallbackCypher
+    Generator --> Router
+    Router --> UI
+    UI --> Chat
+    UI --> GraphVis
+    UI --> Inspector
 ```
 
 ---
 
-## 🏥 Real-World Clinical Use Cases
+## 📊 Knowledge Graph Schema & Ontologies
 
-| Clinical Scenario | The Problem with Standard AI | How MedGraph Nexus Solves It |
-| :--- | :--- | :--- |
-| **Alternative Drug Discovery** | Recommends random drugs without verifying cross-class contraindications. | Traverses `(:Medicine)-[:TREATS_INDICATION]->(:Indication)` and filters by `(:DrugClass)` to find true pharmacological substitutes (e.g., finding ARBs for patients with ACE-inhibitor cough). |
-| **Brand Name Unmasking & Overdose Prevention** | Fails to recognize that different commercial trade names share the identical chemical entity. | Traverses both trade names to a single canonical `(:ActiveSubstance)` node, alerting the user to accidental double-dosing. |
-| **Off-Label & Pharmacologic Exploration** | Hallucinates approved indications or combines conflicting drug labels. | Navigates the entire class sub-network deterministically, synthesizing approved indications across all sibling molecules. |
+The production graph is hosted on **Neo4j Aura Cloud** and harmonizes two federal clinical standards:
+* **openFDA Drug Labels (SPL)**: Product-level trade names, raw indications, contraindications, and black box warnings.
+* **NIH RxNorm (NLM)**: Clinical drug nomenclature, normalized RXCUIs, and Term Types (`IN` = Active Ingredient, `BN` = Brand Name, `MIN` = Multi-Ingredient).
 
----
-
-## 📊 Knowledge Graph Schema & Statistics
-
-The production graph is hosted on **Neo4j Aura Cloud**, structured across 7 distinct node labels and 7 directed relationship types:
-
-<div align="center">
-
-| Metric | Count | Description |
-| :--- | :---: | :--- |
-| **Total Graph Nodes** | **10,434** | Interconnected clinical entities in Neo4j Aura |
-| **Total Graph Relationships** | **22,098** | Strongly typed semantic and biological edges |
-| **Verified Master Medicines** | **3,191** | Canonical clinical drugs consolidated from 3,256 curated records |
-| **Active Chemical Substances** | **2,362** | Unique active pharmaceutical ingredients (APIs) |
-| **Pharmacologic Drug Classes** | **468** | Mechanisms of action (Beta-Blockers, Statins, SSRIs, etc.) |
-| **Medical Indications** | **3,136** | Approved symptoms and clinical conditions |
-| **Therapeutic Categories** | **14** | Top-level specialties (Cardiovascular, Oncology, CNS, etc.) |
-| **Sanitizers / Cosmetics** | **0** | 100% clinically sanitized and filtered |
-
-</div>
-
-### Graph Schema Model
 ```mermaid
-erDiagram
-    MEDICINE }|--|| ACTIVE_SUBSTANCE : CONTAINS_SUBSTANCE
-    MEDICINE }|--|| DRUG_CLASS : BELONGS_TO_CLASS
-    MEDICINE }|--|| INDICATION : TREATS_INDICATION
-    MEDICINE }|--|| THERAPEUTIC_CATEGORY : IN_CATEGORY
-    MEDICINE }|--|| MANUFACTURER : MANUFACTURED_BY
-    MEDICINE }|--|| ROUTE : ADMINISTERED_VIA
-    MEDICINE }|--|| PRODUCT_TYPE : IS_TYPE
+graph LR
+    B["(:Brand / :Medicine)\nname: 'Exforge'\nrxcui: '722126'"]
+    I1["(:Ingredient / :ActiveSubstance)\nname: 'Amlodipine Besylate'\nrxcui: '17767'"]
+    I2["(:Ingredient / :ActiveSubstance)\nname: 'Valsartan'\nrxcui: '67108'"]
+    S["(:Symptom / :Indication)\nname: 'Hypertension'\nlabel: 'openFDA SPL'"]
+
+    B -- "[:CONTAINS]" --> I1
+    B -- "[:CONTAINS]" --> I2
+    I1 -- "[:TREATS]" --> S
+    I2 -- "[:TREATS]" --> S
 ```
+
+### Graph Statistics:
+* **Total Graph Nodes**: `10,434`
+* **Total Graph Edges**: `22,098`
+* **Master Medicines / Brands**: `3,191`
+* **Active Substances / Ingredients**: `2,362`
+* **Medical Indications / Symptoms**: `3,136`
+* **Pharmacologic Drug Classes**: `468`
+* **Therapeutic Specialties**: `14`
 
 ---
 
-## 📁 Repository Structure
+## 🔌 REST API Endpoints
 
-```
-medgraph/
-├── backend/                       # Python FastAPI & Knowledge Graph RAG Service
-│   ├── ai_service.py              # FastAPI HTTP server & Gemini 2.5 GraphRAG engine
-│   ├── requirements.txt           # Python backend dependencies
-│   └── Procfile                   # Cloud deployment configuration
-├── frontend/                      # Web User Interface
-│   └── index.html                 # Single-page Doctor AI clinical chatbot interface
-├── pipelines/                     # Data Harmonization & Graph Ingestion Engines
-│   ├── build_full_clinical_graph.py  # Bulk 14-partition OpenFDA & RxNorm harvester
-│   ├── curate_clinical_dataset.py    # Non-drug purge & entity deduplication engine
-│   ├── ingest_graph.py               # Neo4j Aura batch UNWIND loader
-│   └── fetch_openfda.py              # OpenFDA REST API connector
-├── docs/                          # Architecture & Scientific Documentation
-│   └── EXPERT_AIML_PROJECT_OVERVIEW.md # Comprehensive AI/ML evaluation & thesis
-├── data/                          # (Local / Git-Ignored) Raw archives & JSON datasets
-├── .env.example                   # Environment configuration template
-├── .gitignore                     # Production Git ignore rules (strictly excludes data)
-└── README.md                      # Primary project documentation
-```
+The FastAPI backend runs on port `8008` with automatic Swagger UI documentation at `http://localhost:8008/docs`:
+
+| Endpoint | Method | Description |
+| :--- | :---: | :--- |
+| `/api/search` | `POST` | Primary natural language endpoint. Runs Intent Router $\rightarrow$ Targeted Graph Traversal $\rightarrow$ Conversational Generator. Returns answer, graph nodes/edges, raw clinical records, and citations. |
+| `/ask` | `POST` | Backwards-compatible endpoint for web frontends with multi-turn chat history support. |
+| `/api/alternatives/{brand_name}` | `GET` | Direct graph lookup endpoint. Traverses `(:Brand)-[:CONTAINS]->(:Ingredient)<-[:CONTAINS]-(:Alternative)` for a specific pharmaceutical trade name. |
+| `/api/health` | `GET` | System liveness probe returning Neo4j connectivity and active node counts. |
 
 ---
 
-## ⚡ Quickstart & Installation
+## ⚡ Quickstart & Local Setup
 
 ### Prerequisites
-- **Python**: 3.10 or higher
-- **Neo4j AuraDB**: Free cloud instance or local Neo4j instance
-- **Google Gemini API Key**: [Google AI Studio](https://aistudio.google.com/)
+* **Python**: 3.10+
+* **Neo4j Database**: AuraDB Cloud or local Neo4j instance
+* **OpenRouter API Key**: [OpenRouter.ai](https://openrouter.ai/) (or Google Gemini API Key)
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/medgraph.git
-cd medgraph
+git clone https://github.com/slyvarun/medgraph-ai-service.git
+cd medgraph-ai-service
 ```
 
 ### 2. Configure Environment Variables
-Copy the template `.env.example` into `.env` (or `backend/.env`):
-```bash
-cp .env.example .env
-```
-Fill in your credentials:
+Create a `.env` file in the project root:
 ```env
-NEO4J_URI=neo4j+s://your-instance-id.databases.neo4j.io
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=your_neo4j_password
-GEMINI_API_KEY=your_gemini_api_key
+# Database Credentials (Neo4j Aura Cloud or Local)
+NEO4J_URI="neo4j+s://your-instance-id.databases.neo4j.io"
+NEO4J_USER="neo4j"
+NEO4J_PASSWORD="your-neo4j-password"
+
+# LLM Gateway Credentials
+OPENROUTER_API_KEY="sk-or-v1-your-openrouter-key"
+OPENROUTER_MODEL="openai/gpt-4o-mini"
+
+# Optional Fallbacks & APIs
+GEMINI_API_KEY="your-gemini-key"
+OPEN_FDA_API="your-openfda-key"
+RXNORM_API_KEY="your-rxnorm-key"
 ```
 
 ### 3. Install Dependencies
@@ -166,70 +232,57 @@ GEMINI_API_KEY=your_gemini_api_key
 pip install -r backend/requirements.txt
 ```
 
-### 4. Start the GraphRAG Backend Service
+### 4. Start the Application Server
 ```bash
-cd backend
-python -m uvicorn ai_service:app --host 127.0.0.1 --port 8000 --reload
+python -m uvicorn backend.ai_service:app --host 0.0.0.0 --port 8008 --reload
 ```
-The FastAPI service will initialize the Neo4j driver and Gemini 2.5 Flash model:
-- **Interactive API Docs (Swagger UI)**: `http://localhost:8000/docs`
-- **Healthcheck & Graph Statistics**: `http://localhost:8000/`
 
-### 5. Launch the Frontend
-Open `frontend/index.html` directly in any modern web browser or serve it via a local static server:
-```bash
-# Optional static server:
-python -m http.server 3000 --directory frontend
+### 5. Access the Platform
+* **Web UI (Split-Screen CDS Workstation)**: Open [http://localhost:8008](http://localhost:8008) in any modern browser.
+* **Interactive API Documentation (Swagger)**: [http://localhost:8008/docs](http://localhost:8008/docs)
+
+---
+
+## 🛡️ Regulatory Compliance (FDA 2026 CDS)
+
+MedGraph Nexus is architected in accordance with **Section 520(o)(1)(E) of the FD&C Act** and FDA's 2026 guidance for Clinical Decision Support software:
+
+1. **Reviewable Basis**: Clinicians are never forced to accept generative summaries blindly. The dual-screen layout provides simultaneous access to the AI conversational explanation and the unedited openFDA/RxNorm records.
+2. **Deterministic Explainability**: Visualizes the exact relationship path taken through the graph, proving the deterministic logic behind every recommendation.
+3. **Traceable Citations**: Every claim is linked via clickable footnote badges (`[1]`, `[2]`) to official SPL manufacturer inserts and RxCUI ontologies.
+4. **Persistent Intended Use Disclaimer**: Non-dismissible regulatory banner establishing that MedGraph Nexus is an informational reference tool intended to assist, not replace, clinical judgment.
+
+---
+
+## 📁 Repository Structure
+
 ```
-Navigate to `http://localhost:3000` to interact with the **Doctor AI** assistant.
-
----
-
-## 🌐 Multilingual Clinical Support
-
-MedGraph Nexus natively supports clinical queries across three languages:
-- **English**: Standard international pharmacopeia terminology.
-- **తెలుగు (Telugu)**: Native regional Telugu medical inquiries with phonetically normalized symptom matching.
-- **हिन्दी (Hindi)**: Hindi clinical queries with Devanagari script processing.
-
-The reasoning agent preserves medical substance integrity across translations, ensuring drug names and active molecules remain standard while conversational guidance adapts to the user's native language.
-
----
-
-## 🛡️ Fail-Safe Deterministic Fallback
-
-In high-stakes clinical domains, an AI system cannot crash or output generic error messages when third-party LLM APIs face rate limits or latency ceilings.
-
-MedGraph includes an integrated **High-Availability Graph Fallback**:
-- If Gemini 2.5 Flash encounters a rate limit (HTTP 429) or network timeout, the backend catches the exception and immediately constructs a **Deterministic Graph Fact Card** directly from the retrieved Neo4j nodes.
-- The user receives verified active substances, indications, warnings, and drug classes with zero latency and **zero hallucination risk**.
-
----
-
-## 🔬 Running Data Harmonization (Optional)
-
-To rebuild or curate the dataset from raw federal archives:
-
-1. **Extract and Harmonize Master Medicines**:
-   ```bash
-   python pipelines/curate_clinical_dataset.py
-   ```
-   *Purges cosmetic/sanitizer records and deduplicates repackaged medicines into `data/medicine_dataset.json`.*
-
-2. **Batch-Ingest into Neo4j**:
-   ```bash
-   python pipelines/ingest_graph.py
-   ```
-   *Executes parameterized UNWIND Cypher batches with uniqueness constraints and full-text indexes.*
+medgraph-ai-service/
+├── backend/
+│   ├── ai_service.py              # FastAPI server, Intent Router, GraphRAG engine, and OpenRouter client
+│   ├── requirements.txt           # Python backend dependencies
+│   └── Procfile                   # Cloud container deployment configuration
+├── frontend/
+│   ├── index.html                 # Split-screen CDS workstation (vis-network, citations, raw FDA tab)
+│   └── streamlit_app.py           # Rapid-prototyping Streamlit alternative UI
+├── pipelines/
+│   ├── build_full_clinical_graph.py  # Bulk 14-partition openFDA & RxNorm harvester
+│   ├── curate_clinical_dataset.py    # Cosmetic/non-drug purge & entity resolution engine
+│   ├── fetch_drug_relations.py       # Live openFDA & NIH RxNorm REST connector
+│   └── ingest_graph.py               # Neo4j Aura batch UNWIND Cypher loader
+├── docs/
+│   └── EXPERT_AIML_PROJECT_OVERVIEW.md # Comprehensive AI/ML evaluation & engineering thesis
+├── .env.example                   # Environment configuration template
+├── .gitignore                     # Git ignore rules
+└── README.md                      # Primary project documentation
+```
 
 ---
 
 ## 📜 License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
-
----
+Distributed under the **MIT License**. See `LICENSE` for details.
 
 <div align="center">
-  <b>Built with ❤️ for precision clinical medicine, explainable AI, and patient safety.</b>
+  <b>Built with precision for explainable pharmacology, patient safety, and clinical decision support.</b>
 </div>
