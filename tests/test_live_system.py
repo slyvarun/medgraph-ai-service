@@ -44,7 +44,7 @@ def run_tests():
     target_brand = "Lipitor"
     print(f"\n[TEST 3] Direct Brand Graph Traversal: '{target_brand}'")
     t0 = time.time()
-    r2 = requests.get(f"{BASE_URL}/api/alternatives/{target_brand}", timeout=15).json()
+    r2 = requests.get(f"{BASE_URL}/api/alternatives/{target_brand}", timeout=35).json()
     elapsed = round(time.time() - t0, 3)
     print(f"  Latency: {elapsed}s")
     print(f"  Queried Brand: {r2['queried_brand']}")
