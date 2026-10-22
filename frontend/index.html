@@ -60,108 +60,179 @@
       position: relative;
     }
 
-    /* ── CINEMATIC SITE ENTRY OVERLAY ── */
-    #site-entry-overlay {
+    /* ── CLINICAL MATRIX HUD ENTRANCE ANIMATION ── */
+    #clinical-hud-entrance {
       position: fixed;
       inset: 0;
-      background: radial-gradient(circle at center, #0e172a 0%, #060912 100%);
-      z-index: 9999;
+      z-index: 99999;
+      pointer-events: none;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-                  transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-                  visibility 0.75s;
-      pointer-events: auto;
+      background: radial-gradient(circle at 50% 50%, rgba(7, 10, 18, 0.90) 0%, rgba(3, 6, 12, 0.97) 100%);
+      transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1), filter 0.75s ease;
+      will-change: opacity, transform;
     }
 
-    #site-entry-overlay.loaded {
+    #clinical-hud-entrance.hud-dismissed {
       opacity: 0;
-      transform: scale(1.03);
-      visibility: hidden;
-      pointer-events: none;
+      transform: scale(1.05);
+      filter: blur(8px);
     }
 
-    .entry-brand {
+    .hud-scanner-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.9), #60a5fa, transparent);
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.75);
+      animation: hudScanSweep 1.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+
+    @keyframes hudScanSweep {
+      0% { top: 0%; opacity: 0; }
+      15% { opacity: 1; }
+      85% { opacity: 0.9; }
+      100% { top: 100%; opacity: 0; }
+    }
+
+    .hud-center-cluster {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
-      animation: entryPulse 1.8s ease-in-out infinite alternate;
-      text-align: center;
-      padding: 20px;
-    }
-
-    .entry-logo-text {
-      font-size: 32px;
-      font-weight: 700;
-      letter-spacing: -0.6px;
-      color: #ffffff;
-    }
-
-    .entry-subtitle {
-      font-size: 13px;
-      color: var(--muted);
-      letter-spacing: 0.2px;
-      font-weight: 500;
-    }
-
-    .entry-loader-bar {
-      width: 220px;
-      height: 3px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 3px;
-      overflow: hidden;
-      margin-top: 14px;
+      justify-content: center;
       position: relative;
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
     }
 
-    .entry-loader-fill {
-      width: 0%;
-      height: 100%;
-      background: var(--primary);
-      border-radius: 3px;
-      animation: fillBar 1.0s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    #clinical-hud-entrance.hud-dismissed .hud-center-cluster {
+      transform: scale(1.15);
+      opacity: 0;
     }
 
-    .entry-status {
-      font-size: 11.5px;
-      color: var(--faint);
-      margin-top: 6px;
+    .hud-reticle-wrap {
+      width: 170px;
+      height: 170px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .hud-reticle-ring {
+      position: absolute;
+      inset: 0;
+      border: 1px dashed rgba(56, 189, 248, 0.35);
+      border-radius: 50%;
+      animation: hudRingSpin 18s linear infinite;
+    }
+
+    .hud-reticle-inner-ring {
+      position: absolute;
+      inset: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-top-color: rgba(56, 189, 248, 0.75);
+      border-radius: 50%;
+      animation: hudRingSpin 7s linear infinite reverse;
+    }
+
+    .hud-reticle-pulse {
+      position: absolute;
+      inset: 28px;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 50%;
+      animation: hudPulseWave 2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+    }
+
+    @keyframes hudRingSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes hudPulseWave {
+      0% { transform: scale(0.7); opacity: 0.8; }
+      60% { transform: scale(1.35); opacity: 0; }
+      100% { transform: scale(1.35); opacity: 0; }
+    }
+
+    .hud-core-glyph {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(14, 28, 55, 0.95) 0%, rgba(7, 13, 26, 0.98) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 24px rgba(37, 99, 235, 0.4);
+      color: #38bdf8;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .hud-brand-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .hud-brand-subtitle {
       font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #94a3b8;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
     }
 
-    @keyframes fillBar {
-      0% { width: 0%; }
-      55% { width: 70%; }
-      100% { width: 100%; }
+    .hud-status-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      padding: 3px 12px;
+      border-radius: 12px;
+      letter-spacing: 0.5px;
     }
 
-    @keyframes entryPulse {
-      from { opacity: 0.9; transform: translateY(0); }
-      to { opacity: 1; transform: translateY(-2px); }
+    /* Workspace Optical Reveal */
+    .split-workspace, header, .top-notice-bar {
+      transition: filter 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease;
     }
 
-    /* ── STAGGERED UI CASCADE ENTRANCES ── */
-    @keyframes entrySlideDown {
-      from { opacity: 0; transform: translateY(-16px); }
-      to { opacity: 1; transform: translateY(0); }
+    body.hud-loading .split-workspace,
+    body.hud-loading header,
+    body.hud-loading .top-notice-bar {
+      filter: blur(12px);
+      transform: scale(0.985);
+      opacity: 0.15;
     }
 
-    @keyframes entryFadeLeft {
-      from { opacity: 0; transform: translateX(-24px); }
-      to { opacity: 1; transform: translateX(0); }
+    body.hud-ready .split-workspace,
+    body.hud-ready header,
+    body.hud-ready .top-notice-bar {
+      filter: blur(0px);
+      transform: scale(1);
+      opacity: 1;
     }
 
-    @keyframes entryFadeRight {
-      from { opacity: 0; transform: translateX(24px); }
-      to { opacity: 1; transform: translateX(0); }
+    /* Interactive Card Click Flash */
+    .prompt-card.card-pulse {
+      animation: cardPulseGlow 0.6s ease-out;
     }
 
-    @keyframes entryFadeUp {
-      from { opacity: 0; transform: translateY(18px); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes cardPulseGlow {
+      0% { box-shadow: 0 0 0 rgba(37, 99, 235, 0); border-color: var(--primary); }
+      50% { box-shadow: 0 0 20px rgba(37, 99, 235, 0.5); border-color: #60a5fa; }
+      100% { box-shadow: 0 0 0 rgba(37, 99, 235, 0); }
     }
 
     /* ── 3D FULL VIEWPORT BACKGROUND (DNA & FLOATING MEDICINES) ── */
@@ -909,16 +980,20 @@
   </style>
 </head>
 
-<body>
-  <!-- SITE ENTRY ANIMATION OVERLAY -->
-  <div id="site-entry-overlay">
-    <div class="entry-brand">
-      <div class="entry-logo-text">MedGraph</div>
-      <div class="entry-subtitle">Clinical Knowledge & Generic Drug Intelligence</div>
-      <div class="entry-loader-bar">
-        <div class="entry-loader-fill"></div>
+<body class="hud-loading">
+  <!-- CLINICAL MATRIX HUD PRESENTATION ENTRANCE -->
+  <div id="clinical-hud-entrance">
+    <div class="hud-scanner-bar"></div>
+    <div class="hud-center-cluster">
+      <div class="hud-reticle-wrap">
+        <div class="hud-reticle-ring"></div>
+        <div class="hud-reticle-inner-ring"></div>
+        <div class="hud-reticle-pulse"></div>
+        <div class="hud-core-glyph">MG</div>
       </div>
-      <div class="entry-status">Traversing NIH RxNorm & openFDA Knowledge Graph...</div>
+      <div class="hud-brand-title">MedGraph Nexus</div>
+      <div class="hud-brand-subtitle">Clinical Pharmacotherapy Intelligence</div>
+      <div class="hud-status-badge">&bull; 3D KNOWLEDGE MATRIX ACTIVE &bull;</div>
     </div>
   </div>
 
@@ -1837,7 +1912,7 @@
 
       bgScene = new THREE.Scene();
       bgCamera = new THREE.PerspectiveCamera(46, width / height, 0.1, 100);
-      bgCamera.position.set(0, 0, 26); // Cinematic fly-in starting position
+      bgCamera.position.set(1.6, 1.2, 25); // Cinematic fly-in starting position
 
       bgRenderer = new THREE.WebGLRenderer({
         canvas: canvas,
@@ -1993,9 +2068,11 @@
 
       const time = bgClock.getElapsedTime();
 
-      // Smooth cinematic camera entrance glide from deep space
-      if (bgCamera.position.z > 16.05) {
+      // Smooth cinematic camera entrance glide into clinical vantage position
+      if (bgCamera.position.z > 16.02) {
         bgCamera.position.z += (16.0 - bgCamera.position.z) * 0.045;
+        bgCamera.position.x += (0.0 - bgCamera.position.x) * 0.045;
+        bgCamera.position.y += (0.0 - bgCamera.position.y) * 0.045;
       }
 
       // Parallax smooth lerp
@@ -2021,26 +2098,34 @@
       bgRenderer.render(bgScene, bgCamera);
     }
 
-    // Dismiss site entry overlay gracefully
-    function dismissEntryOverlay() {
-      const overlay = document.getElementById('site-entry-overlay');
-      if (overlay && !overlay.classList.contains('loaded')) {
-        overlay.classList.add('loaded');
-        setTimeout(() => { if (overlay) overlay.remove(); }, 850);
+    // Dismiss clinical HUD entrance animation and bring workspace into crisp focus
+    function dismissHudEntrance() {
+      const hud = document.getElementById('clinical-hud-entrance');
+      document.body.classList.remove('hud-loading');
+      document.body.classList.add('hud-ready');
+
+      if (hud && !hud.classList.contains('hud-dismissed')) {
+        hud.classList.add('hud-dismissed');
+        setTimeout(() => {
+          if (hud && hud.parentNode) hud.remove();
+        }, 750);
       }
     }
 
     // Auto-initialize when window loads or immediately
     function startEngines() {
       if (typeof initBackground3D === 'function') initBackground3D();
-      setTimeout(dismissEntryOverlay, 950);
+      setTimeout(dismissHudEntrance, 420);
     }
 
-    window.addEventListener('load', () => { setTimeout(dismissEntryOverlay, 850); });
-    setTimeout(dismissEntryOverlay, 1400);
+    // User click or key immediately dismisses so interaction is instant
+    window.addEventListener('click', dismissHudEntrance, { once: true });
+    window.addEventListener('keydown', dismissHudEntrance, { once: true });
+    window.addEventListener('load', () => { setTimeout(dismissHudEntrance, 500); });
+    setTimeout(dismissHudEntrance, 1000);
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
-      setTimeout(startEngines, 100);
+      setTimeout(startEngines, 60);
     } else {
       window.addEventListener('DOMContentLoaded', startEngines);
     }
